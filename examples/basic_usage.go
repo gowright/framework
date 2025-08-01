@@ -8,21 +8,44 @@ import (
 )
 
 func main() {
+	fmt.Println("Gowright Testing Framework - Basic Usage Example")
+
 	// Create a new Gowright instance with default configuration
-	gw, err := gowright.NewWithDefaults()
-	if err != nil {
-		log.Fatalf("Failed to create Gowright instance: %v", err)
+	gw := gowright.NewWithDefaults()
+
+	// Get and display the configuration
+	config := gw.GetConfig()
+	fmt.Printf("Framework initialized with log level: %s\n", config.LogLevel)
+	fmt.Printf("Browser headless mode: %t\n", config.BrowserConfig.Headless)
+	fmt.Printf("API timeout: %v\n", config.APIConfig.Timeout)
+
+	// Create a simple test suite
+	testSuite := &gowright.TestSuite{
+		Name:  "Basic Example Suite",
+		Tests: make([]gowright.Test, 0),
+		SetupFunc: func() error {
+			fmt.Println("Setting up test suite...")
+			return nil
+		},
+		TeardownFunc: func() error {
+			fmt.Println("Tearing down test suite...")
+			return nil
+		},
 	}
 
-	fmt.Printf("Gowright Framework v%s initialized successfully!\n", gowright.Version())
-	fmt.Printf("Configuration: %+v\n", gw.GetConfig())
+	// Set the test suite
+	gw.SetTestSuite(testSuite)
 
-	// Example of loading configuration from file
-	// gw, err := gowright.NewFromFile("config.json")
-	// if err != nil {
-	//     log.Fatalf("Failed to load config: %v", err)
-	// }
+	// Demonstrate configuration loading from environment
+	envConfig := gowright.LoadConfigFromEnv()
+	fmt.Printf("Environment config loaded with log level: %s\n", envConfig.LogLevel)
 
-	// Example of loading configuration from environment
-	// gw := gowright.NewFromEnv()
+	// Demonstrate saving configuration to file
+	if err := config.SaveToFile("gowright-config.json"); err != nil {
+		log.Printf("Failed to save config: %v", err)
+	} else {
+		fmt.Println("Configuration saved to gowright-config.json")
+	}
+
+	fmt.Println("Basic usage example completed successfully!")
 }

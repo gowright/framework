@@ -1,0 +1,27 @@
+{
+  "log_level": "info",
+  "parallel": false,
+  "max_retries": 3,
+  "browser_config": {
+    "headless": true,
+    "timeout": 30000000000,
+    "window_size": {
+      "width": 1920,
+      "height": 1080
+    }
+  },
+  "api_config": {
+    "timeout": 30000000000
+  },
+  "database_config": {
+    "connections": {}
+  },
+  "report_config": {
+    "local_reports": {
+      "json": true,
+      "html": true,
+      "output_dir": "./reports"
+    },
+    "remote_reports": {}
+  }
+}

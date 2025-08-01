@@ -33,6 +33,7 @@ graph TB
             Testify[stretchr/testify]
             Resty[go-resty/resty]
             Rod[go-rod/rod]
+            ctrf[ctrf-io/go-ctrf-json-reporter]
         end
     end
     
