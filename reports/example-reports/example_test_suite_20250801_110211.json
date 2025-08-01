@@ -1,0 +1,63 @@
+{
+  "suite_name": "Example Test Suite",
+  "start_time": "2025-08-01T11:02:11.722257148+01:00",
+  "end_time": "2025-08-01T11:04:11.722257148+01:00",
+  "total_tests": 4,
+  "passed_tests": 2,
+  "failed_tests": 1,
+  "skipped_tests": 1,
+  "error_tests": 0,
+  "test_cases": [
+    {
+      "name": "Login Test",
+      "status": 0,
+      "duration": 15000000000,
+      "screenshots": [
+        "login_success.png"
+      ],
+      "logs": [
+        "User logged in successfully",
+        "Dashboard loaded"
+      ],
+      "start_time": "2025-08-01T11:02:11.722257148+01:00",
+      "end_time": "2025-08-01T11:02:26.722257148+01:00"
+    },
+    {
+      "name": "API Health Check",
+      "status": 0,
+      "duration": 5000000000,
+      "logs": [
+        "API responded with 200 OK",
+        "Health check passed"
+      ],
+      "start_time": "2025-08-01T11:02:26.722257148+01:00",
+      "end_time": "2025-08-01T11:02:31.722257148+01:00"
+    },
+    {
+      "name": "Database Connection Test",
+      "status": 1,
+      "duration": 30000000000,
+      "screenshots": [
+        "db_error_screen.png"
+      ],
+      "logs": [
+        "Attempting database connection",
+        "Connection timeout",
+        "Test failed"
+      ],
+      "start_time": "2025-08-01T11:02:31.722257148+01:00",
+      "end_time": "2025-08-01T11:03:01.722257148+01:00",
+      "error": "connection timeout after 30 seconds"
+    },
+    {
+      "name": "Performance Test",
+      "status": 2,
+      "duration": 0,
+      "logs": [
+        "Test skipped due to missing performance baseline"
+      ],
+      "start_time": "2025-08-01T11:03:01.722257148+01:00",
+      "end_time": "2025-08-01T11:03:01.722257148+01:00"
+    }
+  ]
+}

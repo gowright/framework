@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gowright Test Report - Comprehensive API Test Suite</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header .meta {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .summary-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            border-left: 4px solid #ddd;
+        }
+        
+        .summary-card.total { border-left-color: #3498db; }
+        .summary-card.passed { border-left-color: #2ecc71; }
+        .summary-card.failed { border-left-color: #e74c3c; }
+        .summary-card.skipped { border-left-color: #f39c12; }
+        .summary-card.error { border-left-color: #9b59b6; }
+        
+        .summary-card .number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .summary-card .label {
+            color: #666;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+        }
+        
+        .summary-card .percentage {
+            font-size: 0.9em;
+            color: #888;
+            margin-top: 5px;
+        }
+        
+        .test-results {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .test-results h2 {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .test-case {
+            border-bottom: 1px solid #eee;
+            padding: 20px;
+            transition: background-color 0.2s;
+        }
+        
+        .test-case:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .test-case:last-child {
+            border-bottom: none;
+        }
+        
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .test-name {
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+        
+        .test-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .test-status.passed {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .test-status.failed {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .test-status.skipped {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .test-status.error {
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
+        
+        .test-meta {
+            display: flex;
+            gap: 20px;
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        
+        .test-error {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #721c24;
+        }
+        
+        .test-logs {
+            margin-top: 15px;
+        }
+        
+        .test-logs h4 {
+            margin-bottom: 10px;
+            color: #495057;
+        }
+        
+        .log-entry {
+            background-color: #f8f9fa;
+            border-left: 3px solid #007bff;
+            padding: 10px 15px;
+            margin-bottom: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+        
+        .screenshots {
+            margin-top: 15px;
+        }
+        
+        .screenshots h4 {
+            margin-bottom: 10px;
+            color: #495057;
+        }
+        
+        .screenshot-list {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .screenshot-link {
+            color: #007bff;
+            text-decoration: none;
+            padding: 5px 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+        
+        .screenshot-link:hover {
+            background-color: #dee2e6;
+        }
+        
+        .assertion-steps {
+            margin-top: 15px;
+        }
+        
+        .assertion-steps h4 {
+            margin-bottom: 10px;
+            color: #495057;
+        }
+        
+        .assertion-step {
+            background-color: #f8f9fa;
+            border-left: 3px solid #dee2e6;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .assertion-step.passed {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+        }
+        
+        .assertion-step.failed {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .step-name {
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .step-status {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .step-status.passed {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .step-status.failed {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .step-duration {
+            font-size: 0.85em;
+            color: #6c757d;
+        }
+        
+        .step-description {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+        
+        .step-values {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        
+        .expected-value, .actual-value {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            padding: 5px 8px;
+            border-radius: 3px;
+            background-color: #e9ecef;
+        }
+        
+        .expected-value {
+            border-left: 3px solid #28a745;
+        }
+        
+        .actual-value {
+            border-left: 3px solid #17a2b8;
+        }
+        
+        .step-error {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            color: #721c24;
+            background-color: #f5c6cb;
+            padding: 8px;
+            border-radius: 3px;
+            border-left: 3px solid #dc3545;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .summary {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .test-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .test-meta {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Comprehensive API Test Suite</h1>
+            <div class="meta">
+                <div>Started: 2025-08-01 11:11:36</div>
+                <div>Completed: 2025-08-01 11:11:36</div>
+                <div>Duration: 45.567273ms</div>
+            </div>
+        </div>
+        
+        <div class="summary">
+            <div class="summary-card total">
+                <div class="number">5</div>
+                <div class="label">Total Tests</div>
+            </div>
+            <div class="summary-card passed">
+                <div class="number">4</div>
+                <div class="label">Passed</div>
+                <div class="percentage">80.0%</div>
+            </div>
+            <div class="summary-card failed">
+                <div class="number">1</div>
+                <div class="label">Failed</div>
+                <div class="percentage">20.0%</div>
+            </div>
+            <div class="summary-card skipped">
+                <div class="number">0</div>
+                <div class="label">Skipped</div>
+                <div class="percentage">0.0%</div>
+            </div>
+            
+        </div>
+        
+        <div class="test-results">
+            <h2>Test Results</h2>
+            
+            <div class="test-case">
+                <div class="test-header">
+                    <div class="test-name">User Authentication Test</div>
+                    <div class="test-status passed">passed</div>
+                </div>
+                <div class="test-meta">
+                    <div>Duration: 57.66µs</div>
+                    <div>Started: 2025-08-01 11:11:36</div>
+                    <div>Ended: 2025-08-01 11:11:36</div>
+                </div>
+                
+                
+                <div class="test-logs">
+                    <h4>Logs</h4>
+                    
+                    <div class="log-entry">[11:11:36.635] Starting user authentication test</div>
+                    
+                    <div class="log-entry">[11:11:36.635] Validating login response</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ True: Login should be successful</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ NotNil: Token should be present</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ NotEmpty: Token should not be empty</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ True: User ID should be positive</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ Contains: Email should be valid</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ Equal: User should have admin role</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ True: Token should have expiration time</div>
+                    
+                    <div class="log-entry">[11:11:36.635] User authentication test completed successfully</div>
+                    
+                </div>
+                
+                
+                
+                <div class="assertion-steps">
+                    <h4>Assertion Steps</h4>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">True</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">201ns</span>
+                        </div>
+                        <div class="step-description">Login should be successful</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: true</div>
+                            <div class="actual-value">Actual: true</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">NotNil</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">190ns</span>
+                        </div>
+                        <div class="step-description">Token should be present</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: not nil</div>
+                            <div class="actual-value">Actual: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">NotEmpty</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">1.343µs</span>
+                        </div>
+                        <div class="step-description">Token should not be empty</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: not empty</div>
+                            <div class="actual-value">Actual: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">True</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">50ns</span>
+                        </div>
+                        <div class="step-description">User ID should be positive</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: true</div>
+                            <div class="actual-value">Actual: true</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">Contains</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">7.253µs</span>
+                        </div>
+                        <div class="step-description">Email should be valid</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: string containing &#39;@&#39;</div>
+                            <div class="actual-value">Actual: user@example.com</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">Equal</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">731ns</span>
+                        </div>
+                        <div class="step-description">User should have admin role</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: admin</div>
+                            <div class="actual-value">Actual: admin</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">True</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">50ns</span>
+                        </div>
+                        <div class="step-description">Token should have expiration time</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: true</div>
+                            <div class="actual-value">Actual: true</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                </div>
+                
+            </div>
+            
+            <div class="test-case">
+                <div class="test-header">
+                    <div class="test-name">Data Validation Test</div>
+                    <div class="test-status passed">passed</div>
+                </div>
+                <div class="test-meta">
+                    <div>Duration: 15.78µs</div>
+                    <div>Started: 2025-08-01 11:11:36</div>
+                    <div>Ended: 2025-08-01 11:11:36</div>
+                </div>
+                
+                
+                <div class="test-logs">
+                    <h4>Logs</h4>
+                    
+                    <div class="log-entry">[11:11:36.635] Starting data validation test</div>
+                    
+                    <div class="log-entry">[11:11:36.635] Validating API data structure</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ NotNil: Users array should be present</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ Len: Should have exactly 3 users</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ Equal: Total count should match users array length</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ Equal: Should be on page 1</div>
+                    
+                    <div class="log-entry">[11:11:36.635] Validating individual user records</div>
+                    
+                    <div class="log-entry">[11:11:36.635] Validating user 1</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ True: User 1 should have positive ID</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ NotEmpty: User 1 should have name</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ NotNil: User 1 should have active status</div>
+                    
+                    <div class="log-entry">[11:11:36.635] Validating user 2</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ True: User 2 should have positive ID</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ NotEmpty: User 2 should have name</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ NotNil: User 2 should have active status</div>
+                    
+                    <div class="log-entry">[11:11:36.635] Validating user 3</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ True: User 3 should have positive ID</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ NotEmpty: User 3 should have name</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ NotNil: User 3 should have active status</div>
+                    
+                    <div class="log-entry">[11:11:36.635] Data validation test completed successfully</div>
+                    
+                </div>
+                
+                
+                
+                <div class="assertion-steps">
+                    <h4>Assertion Steps</h4>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">NotNil</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">111ns</span>
+                        </div>
+                        <div class="step-description">Users array should be present</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: not nil</div>
+                            <div class="actual-value">Actual: [map[active:true id:1 name:Alice] map[active:false id:2 name:Bob] map[active:true id:3 name:Charlie]]</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">Len</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">251ns</span>
+                        </div>
+                        <div class="step-description">Should have exactly 3 users</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: 3</div>
+                            <div class="actual-value">Actual: 3</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">Equal</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">220ns</span>
+                        </div>
+                        <div class="step-description">Total count should match users array length</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: 3</div>
+                            <div class="actual-value">Actual: 3</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">Equal</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">80ns</span>
+                        </div>
+                        <div class="step-description">Should be on page 1</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: 1</div>
+                            <div class="actual-value">Actual: 1</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">True</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">40ns</span>
+                        </div>
+                        <div class="step-description">User 1 should have positive ID</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: true</div>
+                            <div class="actual-value">Actual: true</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">NotEmpty</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">130ns</span>
+                        </div>
+                        <div class="step-description">User 1 should have name</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: not empty</div>
+                            <div class="actual-value">Actual: Alice</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">NotNil</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">60ns</span>
+                        </div>
+                        <div class="step-description">User 1 should have active status</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: not nil</div>
+                            <div class="actual-value">Actual: true</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">True</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">50ns</span>
+                        </div>
+                        <div class="step-description">User 2 should have positive ID</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: true</div>
+                            <div class="actual-value">Actual: true</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">NotEmpty</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">80ns</span>
+                        </div>
+                        <div class="step-description">User 2 should have name</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: not empty</div>
+                            <div class="actual-value">Actual: Bob</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">NotNil</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">50ns</span>
+                        </div>
+                        <div class="step-description">User 2 should have active status</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: not nil</div>
+                            <div class="actual-value">Actual: false</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">True</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">40ns</span>
+                        </div>
+                        <div class="step-description">User 3 should have positive ID</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: true</div>
+                            <div class="actual-value">Actual: true</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">NotEmpty</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">80ns</span>
+                        </div>
+                        <div class="step-description">User 3 should have name</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: not empty</div>
+                            <div class="actual-value">Actual: Charlie</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">NotNil</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">50ns</span>
+                        </div>
+                        <div class="step-description">User 3 should have active status</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: not nil</div>
+                            <div class="actual-value">Actual: true</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                </div>
+                
+            </div>
+            
+            <div class="test-case">
+                <div class="test-header">
+                    <div class="test-name">Error Handling Test</div>
+                    <div class="test-status failed">failed</div>
+                </div>
+                <div class="test-meta">
+                    <div>Duration: 129.567µs</div>
+                    <div>Started: 2025-08-01 11:11:36</div>
+                    <div>Ended: 2025-08-01 11:11:36</div>
+                </div>
+                
+                <div class="test-error">
+                    <strong>Error:</strong> test failed with 1 assertion failures
+                </div>
+                
+                
+                <div class="test-logs">
+                    <h4>Logs</h4>
+                    
+                    <div class="log-entry">[11:11:36.635] Starting error handling test</div>
+                    
+                    <div class="log-entry">[11:11:36.635] Validating error response structure</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ False: Response should indicate failure</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ NotNil: Error object should be present</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ Equal: Error code should be 400</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ Equal: Error message should be &#39;Bad Request&#39;</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✓ Contains: Error details should mention email</div>
+                    
+                    <div class="log-entry">[11:11:36.635] ✗ Equal: This assertion will fail to demonstrate error reporting - Expected: success, Actual: failure</div>
+                    
+                    <div class="log-entry">[11:11:36.635] Error handling test completed</div>
+                    
+                </div>
+                
+                
+                
+                <div class="assertion-steps">
+                    <h4>Assertion Steps</h4>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">False</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">60ns</span>
+                        </div>
+                        <div class="step-description">Response should indicate failure</div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">NotNil</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">411ns</span>
+                        </div>
+                        <div class="step-description">Error object should be present</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: not nil</div>
+                            <div class="actual-value">Actual: map[code:400 details:Invalid parameter &#39;email&#39; message:Bad Request]</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">Equal</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">140ns</span>
+                        </div>
+                        <div class="step-description">Error code should be 400</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: 400</div>
+                            <div class="actual-value">Actual: 400</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">Equal</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">110ns</span>
+                        </div>
+                        <div class="step-description">Error message should be &#39;Bad Request&#39;</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: Bad Request</div>
+                            <div class="actual-value">Actual: Bad Request</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">Contains</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">180ns</span>
+                        </div>
+                        <div class="step-description">Error details should mention email</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: string containing &#39;email&#39;</div>
+                            <div class="actual-value">Actual: Invalid parameter &#39;email&#39;</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step failed">
+                        <div class="step-header">
+                            <span class="step-name">Equal</span>
+                            <span class="step-status failed">failed</span>
+                            <span class="step-duration">122.904µs</span>
+                        </div>
+                        <div class="step-description">This assertion will fail to demonstrate error reporting</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: success</div>
+                            <div class="actual-value">Actual: failure</div>
+                        </div>
+                        
+                        
+                        <div class="step-error">assertion failed: expected success, got failure</div>
+                        
+                    </div>
+                    
+                </div>
+                
+            </div>
+            
+            <div class="test-case">
+                <div class="test-header">
+                    <div class="test-name">Performance Validation Test</div>
+                    <div class="test-status passed">passed</div>
+                </div>
+                <div class="test-meta">
+                    <div>Duration: 45.288934ms</div>
+                    <div>Started: 2025-08-01 11:11:36</div>
+                    <div>Ended: 2025-08-01 11:11:36</div>
+                </div>
+                
+                
+                <div class="test-logs">
+                    <h4>Logs</h4>
+                    
+                    <div class="log-entry">[11:11:36.635] Starting performance validation test</div>
+                    
+                    <div class="log-entry">[11:11:36.680] Validating performance metrics</div>
+                    
+                    <div class="log-entry">[11:11:36.680] ✓ True: Response time should be under 1 second</div>
+                    
+                    <div class="log-entry">[11:11:36.680] ✓ True: Memory usage should be under 200MB</div>
+                    
+                    <div class="log-entry">[11:11:36.680] ✓ True: CPU usage should be under 80%</div>
+                    
+                    <div class="log-entry">[11:11:36.680] Performance metrics - Response: 45ms, Memory: 68MB, CPU: 12%</div>
+                    
+                    <div class="log-entry">[11:11:36.680] Performance validation test completed successfully</div>
+                    
+                </div>
+                
+                
+                
+                <div class="assertion-steps">
+                    <h4>Assertion Steps</h4>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">True</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">711ns</span>
+                        </div>
+                        <div class="step-description">Response time should be under 1 second</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: true</div>
+                            <div class="actual-value">Actual: true</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">True</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">30ns</span>
+                        </div>
+                        <div class="step-description">Memory usage should be under 200MB</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: true</div>
+                            <div class="actual-value">Actual: true</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">True</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">30ns</span>
+                        </div>
+                        <div class="step-description">CPU usage should be under 80%</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: true</div>
+                            <div class="actual-value">Actual: true</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                </div>
+                
+            </div>
+            
+            <div class="test-case">
+                <div class="test-header">
+                    <div class="test-name">Integration Test</div>
+                    <div class="test-status passed">passed</div>
+                </div>
+                <div class="test-meta">
+                    <div>Duration: 42.15µs</div>
+                    <div>Started: 2025-08-01 11:11:36</div>
+                    <div>Ended: 2025-08-01 11:11:36</div>
+                </div>
+                
+                
+                <div class="test-logs">
+                    <h4>Logs</h4>
+                    
+                    <div class="log-entry">[11:11:36.680] Starting integration test</div>
+                    
+                    <div class="log-entry">[11:11:36.680] Step 1: Database connection</div>
+                    
+                    <div class="log-entry">[11:11:36.680] ✓ True: Database should be connected</div>
+                    
+                    <div class="log-entry">[11:11:36.680] Step 2: Cache validation</div>
+                    
+                    <div class="log-entry">[11:11:36.680] ✓ True: Cache hit rate should be above 80%</div>
+                    
+                    <div class="log-entry">[11:11:36.680] Step 3: External service check</div>
+                    
+                    <div class="log-entry">[11:11:36.680] ✓ Len: Should have 3 external services</div>
+                    
+                    <div class="log-entry">[11:11:36.680] Checking service: payment-service</div>
+                    
+                    <div class="log-entry">[11:11:36.680] ✓ NotEmpty: Service name should not be empty</div>
+                    
+                    <div class="log-entry">[11:11:36.680] ✓ Contains: Service name should contain &#39;service&#39;</div>
+                    
+                    <div class="log-entry">[11:11:36.680] Checking service: notification-service</div>
+                    
+                    <div class="log-entry">[11:11:36.680] ✓ NotEmpty: Service name should not be empty</div>
+                    
+                    <div class="log-entry">[11:11:36.680] ✓ Contains: Service name should contain &#39;service&#39;</div>
+                    
+                    <div class="log-entry">[11:11:36.680] Checking service: analytics-service</div>
+                    
+                    <div class="log-entry">[11:11:36.680] ✓ NotEmpty: Service name should not be empty</div>
+                    
+                    <div class="log-entry">[11:11:36.680] ✓ Contains: Service name should contain &#39;service&#39;</div>
+                    
+                    <div class="log-entry">[11:11:36.680] Step 4: Final integration validation</div>
+                    
+                    <div class="log-entry">[11:11:36.680] ✓ True: Integration score should be at least 90</div>
+                    
+                    <div class="log-entry">[11:11:36.680] Integration test completed successfully</div>
+                    
+                </div>
+                
+                
+                
+                <div class="assertion-steps">
+                    <h4>Assertion Steps</h4>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">True</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">40ns</span>
+                        </div>
+                        <div class="step-description">Database should be connected</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: true</div>
+                            <div class="actual-value">Actual: true</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">True</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">30ns</span>
+                        </div>
+                        <div class="step-description">Cache hit rate should be above 80%</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: true</div>
+                            <div class="actual-value">Actual: true</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">Len</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">2.204µs</span>
+                        </div>
+                        <div class="step-description">Should have 3 external services</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: 3</div>
+                            <div class="actual-value">Actual: 3</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">NotEmpty</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">2.194µs</span>
+                        </div>
+                        <div class="step-description">Service name should not be empty</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: not empty</div>
+                            <div class="actual-value">Actual: payment-service</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">Contains</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">1.132µs</span>
+                        </div>
+                        <div class="step-description">Service name should contain &#39;service&#39;</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: string containing &#39;service&#39;</div>
+                            <div class="actual-value">Actual: payment-service</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">NotEmpty</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">300ns</span>
+                        </div>
+                        <div class="step-description">Service name should not be empty</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: not empty</div>
+                            <div class="actual-value">Actual: notification-service</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">Contains</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">151ns</span>
+                        </div>
+                        <div class="step-description">Service name should contain &#39;service&#39;</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: string containing &#39;service&#39;</div>
+                            <div class="actual-value">Actual: notification-service</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">NotEmpty</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">70ns</span>
+                        </div>
+                        <div class="step-description">Service name should not be empty</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: not empty</div>
+                            <div class="actual-value">Actual: analytics-service</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">Contains</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">100ns</span>
+                        </div>
+                        <div class="step-description">Service name should contain &#39;service&#39;</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: string containing &#39;service&#39;</div>
+                            <div class="actual-value">Actual: analytics-service</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div class="assertion-step passed">
+                        <div class="step-header">
+                            <span class="step-name">True</span>
+                            <span class="step-status passed">passed</span>
+                            <span class="step-duration">40ns</span>
+                        </div>
+                        <div class="step-description">Integration score should be at least 90</div>
+                        
+                        <div class="step-values">
+                            <div class="expected-value">Expected: true</div>
+                            <div class="actual-value">Actual: true</div>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                </div>
+                
+            </div>
+            
+        </div>
+        
+        <div class="footer">
+            Generated by Gowright Testing Framework on 2025-08-01 11:11:36
+        </div>
+    </div>
+</body>
+</html>
