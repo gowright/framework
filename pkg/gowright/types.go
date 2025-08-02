@@ -254,6 +254,10 @@ type DatabaseStepValidation struct {
 	ExpectedAffected *int64                   `json:"expected_affected,omitempty"`
 }
 
+
+
+
+
 // MarshalJSON implements custom JSON marshaling for TestCaseResult
 func (tcr TestCaseResult) MarshalJSON() ([]byte, error) {
 	type Alias TestCaseResult

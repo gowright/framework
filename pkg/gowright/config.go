@@ -15,10 +15,11 @@ type Config struct {
 	MaxRetries int    `json:"max_retries"`
 
 	// Module-specific configurations
-	BrowserConfig  *BrowserConfig  `json:"browser_config,omitempty"`
-	APIConfig      *APIConfig      `json:"api_config,omitempty"`
-	DatabaseConfig *DatabaseConfig `json:"database_config,omitempty"`
-	ReportConfig   *ReportConfig   `json:"report_config,omitempty"`
+	BrowserConfig       *BrowserConfig       `json:"browser_config,omitempty"`
+	APIConfig           *APIConfig           `json:"api_config,omitempty"`
+	DatabaseConfig      *DatabaseConfig      `json:"database_config,omitempty"`
+	ReportConfig        *ReportConfig        `json:"report_config,omitempty"`
+	ParallelRunnerConfig *ParallelRunnerConfig `json:"parallel_runner_config,omitempty"`
 }
 
 // BrowserConfig holds browser-specific settings for UI testing
@@ -137,6 +138,7 @@ func DefaultConfig() *Config {
 			},
 			RemoteReports: RemoteReportConfig{},
 		},
+		ParallelRunnerConfig: DefaultParallelRunnerConfig(),
 	}
 }
 

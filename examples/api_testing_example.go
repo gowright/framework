@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	gowright "github/gowright/framework/pkg/gowright"
+	"github/gowright/framework/pkg/gowright"
 )
 
 func main() {

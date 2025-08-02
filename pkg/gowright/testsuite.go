@@ -95,26 +95,28 @@ func (tsm *TestSuiteManager) executeTestsSequential() {
 	}
 }
 
-// executeTestsParallel executes tests in parallel
+// executeTestsParallel executes tests in parallel using the enhanced parallel runner
 func (tsm *TestSuiteManager) executeTestsParallel() {
-	var wg sync.WaitGroup
-	resultsChan := make(chan *TestCaseResult, len(tsm.suite.Tests))
+	// Create parallel runner configuration
+	runnerConfig := DefaultParallelRunnerConfig()
 	
-	for _, test := range tsm.suite.Tests {
-		wg.Add(1)
-		go func(t Test) {
-			defer wg.Done()
-			result := tsm.executeTest(t)
-			resultsChan <- result
-		}(test)
+	// Create parallel runner
+	parallelRunner := NewParallelRunner(tsm.config, runnerConfig)
+	defer func() {
+		if err := parallelRunner.Shutdown(); err != nil {
+			fmt.Printf("Warning: parallel runner shutdown failed: %v\n", err)
+		}
+	}()
+	
+	// Execute tests using the parallel runner
+	results, err := parallelRunner.ExecuteTestsParallel(tsm.suite.Tests)
+	if err != nil {
+		fmt.Printf("Warning: parallel execution encountered errors: %v\n", err)
 	}
 	
-	wg.Wait()
-	close(resultsChan)
-	
-	// Collect results
-	for result := range resultsChan {
-		tsm.results.TestCases = append(tsm.results.TestCases, *result)
+	// Merge results
+	if results != nil {
+		tsm.results.TestCases = append(tsm.results.TestCases, results.TestCases...)
 	}
 }
 

@@ -65,6 +65,11 @@ func (m *MockUITester) GetPageSource() (string, error) {
 	return args.String(0), args.Error(1)
 }
 
+func (m *MockUITester) ExecuteTest(test *UITest) *TestCaseResult {
+	args := m.Called(test)
+	return args.Get(0).(*TestCaseResult)
+}
+
 type MockAPITester struct {
 	mock.Mock
 }
@@ -109,6 +114,11 @@ func (m *MockAPITester) SetAuth(auth *AuthConfig) error {
 	return args.Error(0)
 }
 
+func (m *MockAPITester) ExecuteTest(test *APITest) *TestCaseResult {
+	args := m.Called(test)
+	return args.Get(0).(*TestCaseResult)
+}
+
 // MockDatabaseTester is a mock implementation of DatabaseTester
 type MockDatabaseTester struct {
 	mock.Mock
@@ -147,6 +157,11 @@ func (m *MockDatabaseTester) BeginTransaction(connectionName string) (Transactio
 func (m *MockDatabaseTester) ValidateData(connectionName, query string, expected interface{}) error {
 	args := m.Called(connectionName, query, expected)
 	return args.Error(0)
+}
+
+func (m *MockDatabaseTester) ExecuteTest(test *DatabaseTest) *TestCaseResult {
+	args := m.Called(test)
+	return args.Get(0).(*TestCaseResult)
 }
 
 // SimpleTest implements the Test interface for testing in gowright_test.go

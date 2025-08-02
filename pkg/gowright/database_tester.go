@@ -543,3 +543,137 @@ func compareValues(expected, actual interface{}) bool {
 
 	return false
 }
+
+// ExecuteTest executes a database test and returns the result
+func (dt *DatabaseTesterImpl) ExecuteTest(test *DatabaseTest) *TestCaseResult {
+	startTime := time.Now()
+	result := &TestCaseResult{
+		Name:      test.Name,
+		StartTime: startTime,
+		Status:    TestStatusPassed,
+		Logs:      make([]string, 0),
+		Steps:     make([]AssertionStep, 0),
+	}
+
+	// Execute setup queries if any
+	for i, setupQuery := range test.Setup {
+		stepStart := time.Now()
+		_, err := dt.Execute(test.Connection, setupQuery)
+		stepEnd := time.Now()
+
+		step := AssertionStep{
+			Name:        fmt.Sprintf("Setup %d", i+1),
+			Description: fmt.Sprintf("Execute setup query: %s", setupQuery),
+			StartTime:   stepStart,
+			EndTime:     stepEnd,
+			Duration:    stepEnd.Sub(stepStart),
+		}
+
+		if err != nil {
+			step.Status = TestStatusFailed
+			step.Error = err
+			result.Status = TestStatusFailed
+			result.Error = err
+			result.Logs = append(result.Logs, fmt.Sprintf("Setup query %d failed: %v", i+1, err))
+		} else {
+			step.Status = TestStatusPassed
+			result.Logs = append(result.Logs, fmt.Sprintf("Setup query %d completed", i+1))
+		}
+
+		result.Steps = append(result.Steps, step)
+
+		if result.Status == TestStatusFailed {
+			break
+		}
+	}
+
+	// Execute main test query if setup succeeded
+	if result.Status == TestStatusPassed {
+		stepStart := time.Now()
+		queryResult, err := dt.Execute(test.Connection, test.Query)
+		stepEnd := time.Now()
+
+		step := AssertionStep{
+			Name:        "Main Query",
+			Description: fmt.Sprintf("Execute test query: %s", test.Query),
+			StartTime:   stepStart,
+			EndTime:     stepEnd,
+			Duration:    stepEnd.Sub(stepStart),
+		}
+
+		if err != nil {
+			step.Status = TestStatusFailed
+			step.Error = err
+			result.Status = TestStatusFailed
+			result.Error = err
+			result.Logs = append(result.Logs, fmt.Sprintf("Main query failed: %v", err))
+		} else {
+			step.Status = TestStatusPassed
+			result.Logs = append(result.Logs, fmt.Sprintf("Main query completed, returned %d rows", len(queryResult.Rows)))
+
+			// Validate results against expectations if provided
+			if test.Expected != nil {
+				validationStart := time.Now()
+				validationErr := dt.ValidateData(test.Connection, test.Query, test.Expected)
+				validationEnd := time.Now()
+
+				validationStep := AssertionStep{
+					Name:        "Result Validation",
+					Description: "Validate query results against expectations",
+					StartTime:   validationStart,
+					EndTime:     validationEnd,
+					Duration:    validationEnd.Sub(validationStart),
+				}
+
+				if validationErr != nil {
+					validationStep.Status = TestStatusFailed
+					validationStep.Error = validationErr
+					result.Status = TestStatusFailed
+					if result.Error == nil {
+						result.Error = validationErr
+					}
+					result.Logs = append(result.Logs, fmt.Sprintf("Result validation failed: %v", validationErr))
+				} else {
+					validationStep.Status = TestStatusPassed
+					result.Logs = append(result.Logs, "Result validation passed")
+				}
+
+				result.Steps = append(result.Steps, validationStep)
+			}
+		}
+
+		result.Steps = append(result.Steps, step)
+	}
+
+	// Execute teardown queries regardless of test result
+	for i, teardownQuery := range test.Teardown {
+		stepStart := time.Now()
+		_, err := dt.Execute(test.Connection, teardownQuery)
+		stepEnd := time.Now()
+
+		step := AssertionStep{
+			Name:        fmt.Sprintf("Teardown %d", i+1),
+			Description: fmt.Sprintf("Execute teardown query: %s", teardownQuery),
+			StartTime:   stepStart,
+			EndTime:     stepEnd,
+			Duration:    stepEnd.Sub(stepStart),
+		}
+
+		if err != nil {
+			step.Status = TestStatusFailed
+			step.Error = err
+			// Don't fail the overall test for teardown errors, but log them
+			result.Logs = append(result.Logs, fmt.Sprintf("Teardown query %d failed: %v", i+1, err))
+		} else {
+			step.Status = TestStatusPassed
+			result.Logs = append(result.Logs, fmt.Sprintf("Teardown query %d completed", i+1))
+		}
+
+		result.Steps = append(result.Steps, step)
+	}
+
+	result.EndTime = time.Now()
+	result.Duration = result.EndTime.Sub(startTime)
+
+	return result
+}

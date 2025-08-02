@@ -408,3 +408,148 @@ func (r *RodUITester) ScrollToElement(selector string) error {
 
 	return nil
 }
+
+// ExecuteTest executes a UI test and returns the result
+func (r *RodUITester) ExecuteTest(test *UITest) *TestCaseResult {
+	startTime := time.Now()
+	result := &TestCaseResult{
+		Name:      test.Name,
+		StartTime: startTime,
+		Status:    TestStatusPassed,
+		Logs:      make([]string, 0),
+		Steps:     make([]AssertionStep, 0),
+	}
+
+	// Navigate to the test URL
+	if test.URL != "" {
+		if err := r.Navigate(test.URL); err != nil {
+			result.Status = TestStatusFailed
+			result.Error = err
+			result.EndTime = time.Now()
+			result.Duration = result.EndTime.Sub(startTime)
+			return result
+		}
+		result.Logs = append(result.Logs, fmt.Sprintf("Navigated to: %s", test.URL))
+	}
+
+	// Execute UI actions
+	for i, action := range test.Actions {
+		actionStart := time.Now()
+		var err error
+
+		switch action.Type {
+		case "click":
+			err = r.Click(action.Selector)
+		case "type":
+			err = r.Type(action.Selector, action.Value)
+		case "navigate":
+			err = r.Navigate(action.Value)
+		case "wait":
+			if timeout, ok := action.Options.(time.Duration); ok {
+				err = r.WaitForElement(action.Selector, timeout)
+			} else {
+				err = r.WaitForElement(action.Selector, 10*time.Second)
+			}
+		default:
+			err = NewGowrightError(BrowserError, fmt.Sprintf("unsupported action type: %s", action.Type), nil)
+		}
+
+		actionEnd := time.Now()
+		step := AssertionStep{
+			Name:        fmt.Sprintf("Action %d: %s", i+1, action.Type),
+			Description: fmt.Sprintf("Execute %s action", action.Type),
+			StartTime:   actionStart,
+			EndTime:     actionEnd,
+			Duration:    actionEnd.Sub(actionStart),
+		}
+
+		if err != nil {
+			step.Status = TestStatusFailed
+			step.Error = err
+			result.Status = TestStatusFailed
+			result.Error = err
+			result.Logs = append(result.Logs, fmt.Sprintf("Action %d failed: %v", i+1, err))
+		} else {
+			step.Status = TestStatusPassed
+			result.Logs = append(result.Logs, fmt.Sprintf("Action %d completed: %s", i+1, action.Type))
+		}
+
+		result.Steps = append(result.Steps, step)
+
+		if result.Status == TestStatusFailed {
+			break
+		}
+	}
+
+	// Execute UI assertions
+	for i, assertion := range test.Assertions {
+		assertionStart := time.Now()
+		var success bool
+		var err error
+
+		switch assertion.Type {
+		case "text_equals":
+			text, getErr := r.GetText(assertion.Selector)
+			if getErr != nil {
+				err = getErr
+			} else {
+				success = text == assertion.Expected.(string)
+				if !success {
+					err = fmt.Errorf("expected text '%s', got '%s'", assertion.Expected, text)
+				}
+			}
+		case "element_present":
+			present, getErr := r.IsElementPresent(assertion.Selector)
+			if getErr != nil {
+				err = getErr
+			} else {
+				success = present == assertion.Expected.(bool)
+				if !success {
+					err = fmt.Errorf("expected element presence %v, got %v", assertion.Expected, present)
+				}
+			}
+		case "element_visible":
+			visible, getErr := r.IsElementVisible(assertion.Selector)
+			if getErr != nil {
+				err = getErr
+			} else {
+				success = visible == assertion.Expected.(bool)
+				if !success {
+					err = fmt.Errorf("expected element visibility %v, got %v", assertion.Expected, visible)
+				}
+			}
+		default:
+			err = NewGowrightError(AssertionError, fmt.Sprintf("unsupported assertion type: %s", assertion.Type), nil)
+		}
+
+		assertionEnd := time.Now()
+		step := AssertionStep{
+			Name:        fmt.Sprintf("Assertion %d: %s", i+1, assertion.Type),
+			Description: fmt.Sprintf("Verify %s", assertion.Type),
+			StartTime:   assertionStart,
+			EndTime:     assertionEnd,
+			Duration:    assertionEnd.Sub(assertionStart),
+			Expected:    assertion.Expected,
+		}
+
+		if err != nil {
+			step.Status = TestStatusFailed
+			step.Error = err
+			result.Status = TestStatusFailed
+			if result.Error == nil {
+				result.Error = err
+			}
+			result.Logs = append(result.Logs, fmt.Sprintf("Assertion %d failed: %v", i+1, err))
+		} else {
+			step.Status = TestStatusPassed
+			result.Logs = append(result.Logs, fmt.Sprintf("Assertion %d passed: %s", i+1, assertion.Type))
+		}
+
+		result.Steps = append(result.Steps, step)
+	}
+
+	result.EndTime = time.Now()
+	result.Duration = result.EndTime.Sub(startTime)
+
+	return result
+}

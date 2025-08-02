@@ -40,6 +40,9 @@ type UITester interface {
 	
 	// GetPageSource returns the current page source
 	GetPageSource() (string, error)
+	
+	// ExecuteTest executes a UI test and returns the result
+	ExecuteTest(test *UITest) *TestCaseResult
 }
 
 // APITester interface defines methods for API testing capabilities
@@ -60,6 +63,9 @@ type APITester interface {
 	
 	// SetAuth sets authentication for API requests
 	SetAuth(auth *AuthConfig) error
+	
+	// ExecuteTest executes an API test and returns the result
+	ExecuteTest(test *APITest) *TestCaseResult
 }
 
 // DatabaseTester interface defines methods for database testing capabilities
@@ -77,6 +83,9 @@ type DatabaseTester interface {
 	
 	// ValidateData validates data against expected results
 	ValidateData(connectionName, query string, expected interface{}) error
+	
+	// ExecuteTest executes a database test and returns the result
+	ExecuteTest(test *DatabaseTest) *TestCaseResult
 }
 
 // IntegrationTester interface defines methods for integration testing
@@ -91,6 +100,9 @@ type IntegrationTester interface {
 	
 	// Rollback performs rollback operations for failed tests
 	Rollback(steps []IntegrationStep) error
+	
+	// ExecuteTest executes an integration test and returns the result
+	ExecuteTest(test *IntegrationTest) *TestCaseResult
 }
 
 // Reporter interface defines methods for test result reporting
@@ -122,12 +134,14 @@ type APIResponse struct {
 	StatusCode int                    `json:"status_code"`
 	Headers    map[string][]string    `json:"headers"`
 	Body       []byte                 `json:"body"`
+	JSONBody   map[string]interface{} `json:"json_body,omitempty"`
 	Duration   time.Duration          `json:"duration"`
 }
 
 // DatabaseResult represents a database query result
 type DatabaseResult struct {
 	Rows         []map[string]interface{} `json:"rows"`
+	RowCount     int                      `json:"row_count"`
 	RowsAffected int64                    `json:"rows_affected"`
 	Duration     time.Duration            `json:"duration"`
 }

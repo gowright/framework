@@ -43,6 +43,11 @@ func (m *MockIntegrationTester) Rollback(steps []IntegrationStep) error {
 	return args.Error(0)
 }
 
+func (m *MockIntegrationTester) ExecuteTest(test *IntegrationTest) *TestCaseResult {
+	args := m.Called(test)
+	return args.Get(0).(*TestCaseResult)
+}
+
 func TestNewIntegrationTestImpl(t *testing.T) {
 	integrationTest := &IntegrationTest{
 		Name: "Test Integration",

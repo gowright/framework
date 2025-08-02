@@ -379,3 +379,104 @@ func (it *IntegrationTesterImpl) validateDatabaseResult(result *DatabaseResult, 
 	// Additional validation logic can be added here
 	return nil
 }
+
+// ExecuteTest executes an integration test and returns the result
+func (it *IntegrationTesterImpl) ExecuteTest(test *IntegrationTest) *TestCaseResult {
+	startTime := time.Now()
+	result := &TestCaseResult{
+		Name:      test.Name,
+		StartTime: startTime,
+		Status:    TestStatusPassed,
+		Logs:      make([]string, 0),
+		Steps:     make([]AssertionStep, 0),
+	}
+
+	// Execute integration test steps
+	for i, step := range test.Steps {
+		stepStart := time.Now()
+		err := it.ExecuteStep(&step)
+		stepEnd := time.Now()
+
+		assertionStep := AssertionStep{
+			Name:        fmt.Sprintf("Integration Step %d: %s", i+1, step.Name),
+			Description: fmt.Sprintf("Execute %s step", step.Type.String()),
+			StartTime:   stepStart,
+			EndTime:     stepEnd,
+			Duration:    stepEnd.Sub(stepStart),
+		}
+
+		if err != nil {
+			assertionStep.Status = TestStatusFailed
+			assertionStep.Error = err
+			result.Status = TestStatusFailed
+			result.Error = err
+			result.Logs = append(result.Logs, fmt.Sprintf("Integration Step %d failed: %v", i+1, err))
+
+			// Attempt rollback if configured
+			if it.config.RollbackOnError && i > 0 {
+				rollbackSteps := test.Steps[:i]
+				rollbackStart := time.Now()
+				rollbackErr := it.Rollback(rollbackSteps)
+				rollbackEnd := time.Now()
+
+				rollbackStep := AssertionStep{
+					Name:        "Rollback",
+					Description: "Execute rollback operations",
+					StartTime:   rollbackStart,
+					EndTime:     rollbackEnd,
+					Duration:    rollbackEnd.Sub(rollbackStart),
+				}
+
+				if rollbackErr != nil {
+					rollbackStep.Status = TestStatusFailed
+					rollbackStep.Error = rollbackErr
+					result.Logs = append(result.Logs, fmt.Sprintf("Rollback failed: %v", rollbackErr))
+				} else {
+					rollbackStep.Status = TestStatusPassed
+					result.Logs = append(result.Logs, "Rollback completed successfully")
+				}
+
+				result.Steps = append(result.Steps, rollbackStep)
+			}
+
+			break
+		} else {
+			assertionStep.Status = TestStatusPassed
+			result.Logs = append(result.Logs, fmt.Sprintf("Integration Step %d completed: %s", i+1, step.Name))
+		}
+
+		result.Steps = append(result.Steps, assertionStep)
+	}
+
+	// Execute rollback steps if specified and test passed
+	if result.Status == TestStatusPassed && len(test.Rollback) > 0 {
+		rollbackStart := time.Now()
+		rollbackErr := it.Rollback(test.Rollback)
+		rollbackEnd := time.Now()
+
+		rollbackStep := AssertionStep{
+			Name:        "Final Rollback",
+			Description: "Execute final rollback operations",
+			StartTime:   rollbackStart,
+			EndTime:     rollbackEnd,
+			Duration:    rollbackEnd.Sub(rollbackStart),
+		}
+
+		if rollbackErr != nil {
+			rollbackStep.Status = TestStatusFailed
+			rollbackStep.Error = rollbackErr
+			result.Logs = append(result.Logs, fmt.Sprintf("Final rollback failed: %v", rollbackErr))
+			// Don't fail the overall test for final rollback errors
+		} else {
+			rollbackStep.Status = TestStatusPassed
+			result.Logs = append(result.Logs, "Final rollback completed successfully")
+		}
+
+		result.Steps = append(result.Steps, rollbackStep)
+	}
+
+	result.EndTime = time.Now()
+	result.Duration = result.EndTime.Sub(startTime)
+
+	return result
+}

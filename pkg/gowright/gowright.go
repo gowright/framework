@@ -79,6 +79,16 @@ func NewWithDefaults() *Gowright {
 	return New(DefaultConfig())
 }
 
+// NewGowright creates a new Gowright instance with the provided configuration
+// This is an alias for New() to maintain compatibility
+func NewGowright(config *Config) (*Gowright, error) {
+	gowright := New(config)
+	if err := gowright.Initialize(); err != nil {
+		return nil, err
+	}
+	return gowright, nil
+}
+
 // Initialize initializes the framework and all its components
 func (g *Gowright) Initialize() error {
 	g.mutex.Lock()
@@ -268,4 +278,73 @@ func (g *Gowright) SetIntegrationTester(tester IntegrationTester) {
 	g.mutex.Lock()
 	defer g.mutex.Unlock()
 	g.integrationTester = tester
+}
+
+// ExecuteUITest executes a single UI test and returns the result
+func (g *Gowright) ExecuteUITest(test *UITest) *TestCaseResult {
+	g.mutex.RLock()
+	defer g.mutex.RUnlock()
+	
+	if g.uiTester == nil {
+		return &TestCaseResult{
+			Name:   test.Name,
+			Status: TestStatusError,
+			Error:  NewGowrightError(ConfigurationError, "UI tester not configured", nil),
+		}
+	}
+	
+	return g.uiTester.ExecuteTest(test)
+}
+
+// ExecuteAPITest executes a single API test and returns the result
+func (g *Gowright) ExecuteAPITest(test *APITest) *TestCaseResult {
+	g.mutex.RLock()
+	defer g.mutex.RUnlock()
+	
+	if g.apiTester == nil {
+		return &TestCaseResult{
+			Name:   test.Name,
+			Status: TestStatusError,
+			Error:  NewGowrightError(ConfigurationError, "API tester not configured", nil),
+		}
+	}
+	
+	return g.apiTester.ExecuteTest(test)
+}
+
+// ExecuteDatabaseTest executes a single database test and returns the result
+func (g *Gowright) ExecuteDatabaseTest(test *DatabaseTest) *TestCaseResult {
+	g.mutex.RLock()
+	defer g.mutex.RUnlock()
+	
+	if g.databaseTester == nil {
+		return &TestCaseResult{
+			Name:   test.Name,
+			Status: TestStatusError,
+			Error:  NewGowrightError(ConfigurationError, "Database tester not configured", nil),
+		}
+	}
+	
+	return g.databaseTester.ExecuteTest(test)
+}
+
+// ExecuteIntegrationTest executes a single integration test and returns the result
+func (g *Gowright) ExecuteIntegrationTest(test *IntegrationTest) *TestCaseResult {
+	g.mutex.RLock()
+	defer g.mutex.RUnlock()
+	
+	if g.integrationTester == nil {
+		return &TestCaseResult{
+			Name:   test.Name,
+			Status: TestStatusError,
+			Error:  NewGowrightError(ConfigurationError, "Integration tester not configured", nil),
+		}
+	}
+	
+	return g.integrationTester.ExecuteTest(test)
+}
+
+// Close performs cleanup and closes the Gowright instance
+func (g *Gowright) Close() error {
+	return g.Cleanup()
 }
