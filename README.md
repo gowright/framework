@@ -6,6 +6,8 @@
 
 Gowright is a comprehensive testing framework for Go that provides unified testing capabilities across UI (browser, mobile), API, database, and integration testing scenarios. Built with modern Go practices and designed for scalability and maintainability.
 
+DO NOT USE THIS FRAMEWORK FOR PRODUCTION. IT IS A WORK IN PROGRESS.
+
 ## 🚀 Features
 
 - **🖥️ UI Testing**: Browser automation using [go-rod/rod](https://github.com/go-rod/rod) with support for mobile testing
