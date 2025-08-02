@@ -224,8 +224,9 @@ func TestReportManager_GenerateReports(t *testing.T) {
 		rm.AddReporter(mockReporter1)
 		rm.AddReporter(mockReporter2)
 
-		err := rm.GenerateReports(testResults)
-		assert.NoError(t, err)
+		summary := rm.GenerateReports(testResults)
+		assert.Equal(t, 2, summary.SuccessfulReports)
+		assert.Equal(t, 0, summary.FailedReports)
 
 		mockReporter1.AssertExpectations(t)
 		mockReporter2.AssertExpectations(t)
@@ -236,12 +237,15 @@ func TestReportManager_GenerateReports(t *testing.T) {
 		
 		mockReporter := &MockReporter{}
 		mockReporter.On("IsEnabled").Return(false)
+		mockReporter.On("GetName").Return("disabled_mock").Maybe()
 		// GenerateReport should not be called for disabled reporters
 
 		rm.AddReporter(mockReporter)
 
-		err := rm.GenerateReports(testResults)
-		assert.NoError(t, err)
+		summary := rm.GenerateReports(testResults)
+		assert.Equal(t, 1, summary.SuccessfulReports) // Fallback should succeed
+		assert.Equal(t, 1, summary.FailedReports) // Disabled reporter counts as failed
+		assert.True(t, summary.FallbackUsed)
 
 		mockReporter.AssertExpectations(t)
 	})
@@ -262,10 +266,10 @@ func TestReportManager_GenerateReports(t *testing.T) {
 		rm.AddReporter(mockReporter1)
 		rm.AddReporter(mockReporter2)
 
-		err := rm.GenerateReports(testResults)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "reporting errors occurred")
-		assert.Contains(t, err.Error(), "mock1 failed")
+		summary := rm.GenerateReports(testResults)
+		assert.Equal(t, 1, summary.SuccessfulReports)
+		assert.Equal(t, 1, summary.FailedReports)
+		assert.False(t, summary.FallbackUsed) // Should not use fallback since one succeeded
 
 		mockReporter1.AssertExpectations(t)
 		mockReporter2.AssertExpectations(t)
@@ -287,11 +291,10 @@ func TestReportManager_GenerateReports(t *testing.T) {
 		rm.AddReporter(mockReporter1)
 		rm.AddReporter(mockReporter2)
 
-		err := rm.GenerateReports(testResults)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "reporting errors occurred")
-		assert.Contains(t, err.Error(), "mock1 failed")
-		assert.Contains(t, err.Error(), "mock2 failed")
+		summary := rm.GenerateReports(testResults)
+		assert.Equal(t, 1, summary.SuccessfulReports) // Fallback should succeed
+		assert.Equal(t, 2, summary.FailedReports)
+		assert.True(t, summary.FallbackUsed) // Should use fallback since all failed
 
 		mockReporter1.AssertExpectations(t)
 		mockReporter2.AssertExpectations(t)
@@ -884,8 +887,9 @@ func TestLocalReporters_Integration(t *testing.T) {
 		},
 	}
 
-	err := rm.GenerateReports(testResults)
-	assert.NoError(t, err)
+	summary := rm.GenerateReports(testResults)
+	assert.Equal(t, 2, summary.SuccessfulReports)
+	assert.Equal(t, 0, summary.FailedReports)
 
 	// Verify both JSON and HTML files were created
 	files, err := os.ReadDir(tempDir)

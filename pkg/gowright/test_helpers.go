@@ -138,5 +138,18 @@ func (tse *TestSuiteExecutor) GetResults() *TestResults {
 func (tse *TestSuiteExecutor) GenerateReports(config *ReportConfig) error {
 	results := tse.GetResults()
 	reportManager := NewReportManager(config)
-	return reportManager.GenerateReports(results)
+	summary := reportManager.GenerateReports(results)
+	
+	// Return error if no reports were successful
+	if summary.SuccessfulReports == 0 {
+		if summary.FallbackError != nil {
+			return summary.FallbackError
+		}
+		if len(summary.Results) > 0 {
+			return summary.Results[0].Error
+		}
+		return NewGowrightError(ReportingError, "all reporting failed", nil)
+	}
+	
+	return nil
 }

@@ -1,33 +1,75 @@
 package gowright
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"log"
 	"os"
 	"strings"
 	"sync"
 	"time"
 )
 
-// ReportManager coordinates all reporting activities
+// ReportingResult represents the result of a reporting operation
+type ReportingResult struct {
+	ReporterName string
+	Success      bool
+	Error        error
+	Duration     time.Duration
+}
+
+// ReportingSummary contains the overall reporting results
+type ReportingSummary struct {
+	TotalReporters    int
+	SuccessfulReports int
+	FailedReports     int
+	Results           []ReportingResult
+	FallbackUsed      bool
+	FallbackError     error
+}
+
+// ReportManager coordinates all reporting activities with graceful degradation
 type ReportManager struct {
-	config    *ReportConfig
-	reporters []Reporter
-	mutex     sync.RWMutex
+	config           *ReportConfig
+	reporters        []Reporter
+	fallbackReporter Reporter
+	errorRecovery    *ErrorRecoveryManager
+	mutex            sync.RWMutex
+	logger           *log.Logger
 }
 
 // NewReportManager creates a new report manager with the given configuration
 func NewReportManager(config *ReportConfig) *ReportManager {
 	rm := &ReportManager{
-		config:    config,
-		reporters: make([]Reporter, 0),
+		config:        config,
+		reporters:     make([]Reporter, 0),
+		errorRecovery: NewErrorRecoveryManager(),
+		logger:        log.New(os.Stderr, "[ReportManager] ", log.LstdFlags),
 	}
+	
+	// Initialize fallback reporter (always JSON to local filesystem)
+	rm.initializeFallbackReporter()
 	
 	// Initialize reporters based on configuration
 	rm.initializeReporters()
 	
 	return rm
+}
+
+// initializeFallbackReporter initializes the fallback reporter
+func (rm *ReportManager) initializeFallbackReporter() {
+	// Always use JSON reporter as fallback to ensure we have at least one working reporter
+	outputDir := "./reports/fallback"
+	if rm.config != nil && rm.config.LocalReports.OutputDir != "" {
+		outputDir = rm.config.LocalReports.OutputDir + "/fallback"
+	}
+	
+	rm.fallbackReporter = &JSONReporter{
+		OutputDir: outputDir,
+		enabled:   true,
+	}
 }
 
 // initializeReporters initializes reporters based on configuration
@@ -95,26 +137,123 @@ func (rm *ReportManager) RemoveReporter(name string) {
 	}
 }
 
-// GenerateReports generates reports using all enabled reporters
-func (rm *ReportManager) GenerateReports(results *TestResults) error {
+// GenerateReports generates reports using all enabled reporters with graceful degradation
+func (rm *ReportManager) GenerateReports(results *TestResults) *ReportingSummary {
+	return rm.GenerateReportsWithContext(context.Background(), results)
+}
+
+// GenerateReportsWithContext generates reports with context support for cancellation
+func (rm *ReportManager) GenerateReportsWithContext(ctx context.Context, results *TestResults) *ReportingSummary {
 	rm.mutex.RLock()
 	defer rm.mutex.RUnlock()
 
-	var errors []error
+	summary := &ReportingSummary{
+		TotalReporters: len(rm.reporters),
+		Results:        make([]ReportingResult, 0, len(rm.reporters)),
+	}
+
+	// Channel to collect results from concurrent reporting
+	resultChan := make(chan ReportingResult, len(rm.reporters))
 	
+	// Start reporting operations concurrently
 	for _, reporter := range rm.reporters {
 		if reporter.IsEnabled() {
-			if err := reporter.GenerateReport(results); err != nil {
-				errors = append(errors, fmt.Errorf("reporter %s failed: %w", reporter.GetName(), err))
+			go rm.generateReportWithRecovery(ctx, reporter, results, resultChan)
+		} else {
+			// Skip disabled reporters
+			resultChan <- ReportingResult{
+				ReporterName: reporter.GetName(),
+				Success:      false,
+				Error:        NewGowrightError(ReportingError, "reporter is disabled", nil),
+				Duration:     0,
 			}
 		}
 	}
 
-	if len(errors) > 0 {
-		return fmt.Errorf("reporting errors occurred: %v", errors)
+	// Collect results
+	for i := 0; i < len(rm.reporters); i++ {
+		select {
+		case result := <-resultChan:
+			summary.Results = append(summary.Results, result)
+			if result.Success {
+				summary.SuccessfulReports++
+			} else {
+				summary.FailedReports++
+				rm.logger.Printf("Reporter %s failed: %v", result.ReporterName, result.Error)
+			}
+		case <-ctx.Done():
+			// Context cancelled, stop waiting for remaining results
+			rm.logger.Printf("Reporting cancelled due to context: %v", ctx.Err())
+			break
+		}
 	}
 
-	return nil
+	// If all reporters failed, use fallback
+	if summary.SuccessfulReports == 0 && rm.fallbackReporter != nil {
+		rm.logger.Printf("All reporters failed, attempting fallback reporting")
+		summary.FallbackUsed = true
+		
+		fallbackResult := rm.generateReportWithRecovery(ctx, rm.fallbackReporter, results, make(chan ReportingResult, 1))
+		if !fallbackResult.Success {
+			summary.FallbackError = fallbackResult.Error
+			rm.logger.Printf("Fallback reporting also failed: %v", fallbackResult.Error)
+		} else {
+			rm.logger.Printf("Fallback reporting succeeded")
+			summary.SuccessfulReports++
+		}
+	}
+
+	return summary
+}
+
+// generateReportWithRecovery generates a report with error recovery
+func (rm *ReportManager) generateReportWithRecovery(ctx context.Context, reporter Reporter, results *TestResults, resultChan chan<- ReportingResult) ReportingResult {
+	startTime := time.Now()
+	
+	result := ReportingResult{
+		ReporterName: reporter.GetName(),
+		Success:      false,
+	}
+	
+	// Create retry configuration for reporting
+	retryConfig := DefaultRetryConfig()
+	retryConfig.MaxRetries = 2 // Fewer retries for reporting to avoid delays
+	retryConfig.InitialDelay = 500 * time.Millisecond
+	
+	// Attempt to generate report with retry logic
+	err := RetryWithBackoff(ctx, retryConfig, func() error {
+		return reporter.GenerateReport(results)
+	})
+	
+	result.Duration = time.Since(startTime)
+	
+	if err != nil {
+		// Attempt error recovery
+		recoveredErr := rm.errorRecovery.RecoverFromError(ctx, err)
+		result.Error = recoveredErr
+		
+		// Log the error with context
+		if gowrightErr, ok := recoveredErr.(*GowrightError); ok {
+			rm.logger.Printf("Reporter %s failed with error type %s: %v (context: %v)", 
+				reporter.GetName(), gowrightErr.Type.String(), gowrightErr.Message, gowrightErr.Context)
+		} else {
+			rm.logger.Printf("Reporter %s failed: %v", reporter.GetName(), err)
+		}
+	} else {
+		result.Success = true
+		rm.logger.Printf("Reporter %s succeeded in %v", reporter.GetName(), result.Duration)
+	}
+	
+	// Send result to channel if provided
+	if resultChan != nil {
+		select {
+		case resultChan <- result:
+		case <-ctx.Done():
+			// Context cancelled, don't block
+		}
+	}
+	
+	return result
 }
 
 // GetReporters returns a copy of all reporters
@@ -127,6 +266,83 @@ func (rm *ReportManager) GetReporters() []Reporter {
 	return reporters
 }
 
+// GetFallbackReporter returns the fallback reporter
+func (rm *ReportManager) GetFallbackReporter() Reporter {
+	return rm.fallbackReporter
+}
+
+// SetFallbackReporter sets a custom fallback reporter
+func (rm *ReportManager) SetFallbackReporter(reporter Reporter) {
+	rm.fallbackReporter = reporter
+}
+
+// EnableReporter enables a reporter by name
+func (rm *ReportManager) EnableReporter(name string) error {
+	rm.mutex.Lock()
+	defer rm.mutex.Unlock()
+	
+	for _, reporter := range rm.reporters {
+		if reporter.GetName() == name {
+			if enabler, ok := reporter.(interface{ SetEnabled(bool) }); ok {
+				enabler.SetEnabled(true)
+				return nil
+			}
+			return NewGowrightError(ReportingError, "reporter does not support enabling/disabling", nil)
+		}
+	}
+	
+	return NewGowrightError(ReportingError, fmt.Sprintf("reporter '%s' not found", name), nil)
+}
+
+// DisableReporter disables a reporter by name
+func (rm *ReportManager) DisableReporter(name string) error {
+	rm.mutex.Lock()
+	defer rm.mutex.Unlock()
+	
+	for _, reporter := range rm.reporters {
+		if reporter.GetName() == name {
+			if enabler, ok := reporter.(interface{ SetEnabled(bool) }); ok {
+				enabler.SetEnabled(false)
+				return nil
+			}
+			return NewGowrightError(ReportingError, "reporter does not support enabling/disabling", nil)
+		}
+	}
+	
+	return NewGowrightError(ReportingError, fmt.Sprintf("reporter '%s' not found", name), nil)
+}
+
+// GetReportingHealth returns the health status of all reporters
+func (rm *ReportManager) GetReportingHealth() map[string]bool {
+	rm.mutex.RLock()
+	defer rm.mutex.RUnlock()
+	
+	health := make(map[string]bool)
+	
+	for _, reporter := range rm.reporters {
+		// Simple health check - try to create a minimal test result
+		testResult := &TestResults{
+			SuiteName:    "health_check",
+			StartTime:    time.Now(),
+			EndTime:      time.Now(),
+			TotalTests:   0,
+			PassedTests:  0,
+			FailedTests:  0,
+			SkippedTests: 0,
+			TestCases:    []TestCaseResult{},
+		}
+		
+		// Create a temporary context with short timeout
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		
+		result := rm.generateReportWithRecovery(ctx, reporter, testResult, nil)
+		health[reporter.GetName()] = result.Success
+	}
+	
+	return health
+}
+
 // JSONReporter generates JSON reports locally
 type JSONReporter struct {
 	OutputDir string
@@ -136,7 +352,10 @@ type JSONReporter struct {
 // GenerateReport generates a JSON report
 func (jr *JSONReporter) GenerateReport(results *TestResults) error {
 	if err := jr.ensureOutputDir(); err != nil {
-		return fmt.Errorf("failed to create output directory: %w", err)
+		return WrapErrorWithContext(ReportingError, "failed to create output directory", err, map[string]interface{}{
+			"reporter":   "json",
+			"output_dir": jr.OutputDir,
+		})
 	}
 
 	filename := jr.generateFilename(results.SuiteName)
@@ -144,11 +363,19 @@ func (jr *JSONReporter) GenerateReport(results *TestResults) error {
 
 	data, err := json.MarshalIndent(results, "", "  ")
 	if err != nil {
-		return fmt.Errorf("failed to marshal test results to JSON: %w", err)
+		return WrapErrorWithContext(ReportingError, "failed to marshal test results to JSON", err, map[string]interface{}{
+			"reporter":   "json",
+			"suite_name": results.SuiteName,
+			"test_count": results.TotalTests,
+		})
 	}
 
 	if err := os.WriteFile(filepath, data, 0644); err != nil {
-		return fmt.Errorf("failed to write JSON report to file: %w", err)
+		return WrapErrorWithContext(ReportingError, "failed to write JSON report to file", err, map[string]interface{}{
+			"reporter":  "json",
+			"filepath":  filepath,
+			"file_size": len(data),
+		})
 	}
 
 	return nil
@@ -162,6 +389,11 @@ func (jr *JSONReporter) GetName() string {
 // IsEnabled returns whether the reporter is enabled
 func (jr *JSONReporter) IsEnabled() bool {
 	return jr.enabled
+}
+
+// SetEnabled sets the enabled state of the reporter
+func (jr *JSONReporter) SetEnabled(enabled bool) {
+	jr.enabled = enabled
 }
 
 // ensureOutputDir creates the output directory if it doesn't exist
@@ -188,7 +420,10 @@ type HTMLReporter struct {
 // GenerateReport generates an HTML report
 func (hr *HTMLReporter) GenerateReport(results *TestResults) error {
 	if err := hr.ensureOutputDir(); err != nil {
-		return fmt.Errorf("failed to create output directory: %w", err)
+		return WrapErrorWithContext(ReportingError, "failed to create output directory", err, map[string]interface{}{
+			"reporter":   "html",
+			"output_dir": hr.OutputDir,
+		})
 	}
 
 	filename := hr.generateFilename(results.SuiteName)
@@ -196,11 +431,19 @@ func (hr *HTMLReporter) GenerateReport(results *TestResults) error {
 
 	htmlContent, err := hr.generateHTMLContent(results)
 	if err != nil {
-		return fmt.Errorf("failed to generate HTML content: %w", err)
+		return WrapErrorWithContext(ReportingError, "failed to generate HTML content", err, map[string]interface{}{
+			"reporter":   "html",
+			"suite_name": results.SuiteName,
+			"test_count": results.TotalTests,
+		})
 	}
 
 	if err := os.WriteFile(filepath, []byte(htmlContent), 0644); err != nil {
-		return fmt.Errorf("failed to write HTML report to file: %w", err)
+		return WrapErrorWithContext(ReportingError, "failed to write HTML report to file", err, map[string]interface{}{
+			"reporter":     "html",
+			"filepath":     filepath,
+			"content_size": len(htmlContent),
+		})
 	}
 
 	return nil
@@ -214,6 +457,11 @@ func (hr *HTMLReporter) GetName() string {
 // IsEnabled returns whether the reporter is enabled
 func (hr *HTMLReporter) IsEnabled() bool {
 	return hr.enabled
+}
+
+// SetEnabled sets the enabled state of the reporter
+func (hr *HTMLReporter) SetEnabled(enabled bool) {
+	hr.enabled = enabled
 }
 
 // ensureOutputDir creates the output directory if it doesn't exist
@@ -286,7 +534,12 @@ type JiraXrayReporter struct {
 // GenerateReport sends a report to Jira Xray
 func (jxr *JiraXrayReporter) GenerateReport(results *TestResults) error {
 	// Implementation will be added in later tasks
-	return nil
+	// For now, simulate a remote service that might fail
+	return WrapErrorWithContext(ReportingError, "Jira Xray reporter not yet implemented", nil, map[string]interface{}{
+		"reporter":    "jira_xray",
+		"project_key": jxr.config.ProjectKey,
+		"url":         jxr.config.URL,
+	})
 }
 
 // GetName returns the reporter name
@@ -299,6 +552,11 @@ func (jxr *JiraXrayReporter) IsEnabled() bool {
 	return jxr.enabled
 }
 
+// SetEnabled sets the enabled state of the reporter
+func (jxr *JiraXrayReporter) SetEnabled(enabled bool) {
+	jxr.enabled = enabled
+}
+
 // AIOTestReporter sends reports to AIOTest
 type AIOTestReporter struct {
 	config  *AIOTestConfig
@@ -308,7 +566,12 @@ type AIOTestReporter struct {
 // GenerateReport sends a report to AIOTest
 func (atr *AIOTestReporter) GenerateReport(results *TestResults) error {
 	// Implementation will be added in later tasks
-	return nil
+	// For now, simulate a remote service that might fail
+	return WrapErrorWithContext(ReportingError, "AIOTest reporter not yet implemented", nil, map[string]interface{}{
+		"reporter":   "aio_test",
+		"project_id": atr.config.ProjectID,
+		"url":        atr.config.URL,
+	})
 }
 
 // GetName returns the reporter name
@@ -321,6 +584,11 @@ func (atr *AIOTestReporter) IsEnabled() bool {
 	return atr.enabled
 }
 
+// SetEnabled sets the enabled state of the reporter
+func (atr *AIOTestReporter) SetEnabled(enabled bool) {
+	atr.enabled = enabled
+}
+
 // ReportPortalReporter sends reports to Report Portal
 type ReportPortalReporter struct {
 	config  *ReportPortalConfig
@@ -330,7 +598,12 @@ type ReportPortalReporter struct {
 // GenerateReport sends a report to Report Portal
 func (rpr *ReportPortalReporter) GenerateReport(results *TestResults) error {
 	// Implementation will be added in later tasks
-	return nil
+	// For now, simulate a remote service that might fail
+	return WrapErrorWithContext(ReportingError, "Report Portal reporter not yet implemented", nil, map[string]interface{}{
+		"reporter": "report_portal",
+		"project":  rpr.config.Project,
+		"url":      rpr.config.URL,
+	})
 }
 
 // GetName returns the reporter name
@@ -341,6 +614,11 @@ func (rpr *ReportPortalReporter) GetName() string {
 // IsEnabled returns whether the reporter is enabled
 func (rpr *ReportPortalReporter) IsEnabled() bool {
 	return rpr.enabled
+}
+
+// SetEnabled sets the enabled state of the reporter
+func (rpr *ReportPortalReporter) SetEnabled(enabled bool) {
+	rpr.enabled = enabled
 }
 
 // htmlTemplate is the HTML template for generating reports
