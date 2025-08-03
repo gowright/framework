@@ -1,6 +1,8 @@
-module github/gowright/framework
+module github.com/gowright/framework
 
-go 1.22.2
+go 1.22
+
+// Version: v1.0.0
 
 require (
 	github.com/go-resty/resty/v2 v2.16.5

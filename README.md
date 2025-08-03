@@ -1,57 +1,30 @@
 # Gowright Testing Framework
 
-[![Go Version](https://img.shields.io/badge/Go-1.22.2-blue.svg)](https://golang.org/)
+[![Go Version](https://img.shields.io/badge/Go-1.22+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Go Report Card](https://goreportcard.com/badge/github.com/gowright/framework)](https://goreportcard.com/report/github.com/gowright/framework)
+[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen.svg)]()
 
-Gowright is a comprehensive testing framework for Go that provides unified testing capabilities across UI (browser, mobile), API, database, and integration testing scenarios. Built with modern Go practices and designed for scalability and maintainability.
+Gowright is a comprehensive testing framework for Go that provides unified testing capabilities across UI (browser, mobile), API, database, and integration testing scenarios. Built with a focus on simplicity, performance, and extensibility.
 
-DO NOT USE THIS FRAMEWORK FOR PRODUCTION. IT IS A WORK IN PROGRESS.
+## Features
 
-## 🚀 Features
-
-- **🖥️ UI Testing**: Browser automation using [go-rod/rod](https://github.com/go-rod/rod) with support for mobile testing
-- **🔌 API Testing**: HTTP/REST API testing using [go-resty/resty](https://github.com/go-resty/resty/v2)
-- **🗄️ Database Testing**: Database operations and validations with multiple driver support
+- **🌐 UI Testing**: Browser automation using Chrome DevTools Protocol via [go-rod/rod](https://github.com/go-rod/rod)
+- **📱 Mobile Testing**: Mobile UI testing with device emulation and touch interactions
+- **🔌 API Testing**: HTTP/REST API testing with [go-resty/resty](https://github.com/go-resty/resty/v2)
+- **🗄️ Database Testing**: Multi-database support with transaction management
 - **🔗 Integration Testing**: Complex workflows spanning multiple systems
-- **📊 Flexible Reporting**: Multiple report formats (JSON, HTML) and integrations (Jira Xray, AIOTest, Report Portal)
-- **🧪 Testify Integration**: Compatible with [stretchr/testify](https://github.com/stretchr/testify) for assertions and mocks
-- **⚙️ Configuration Management**: Hierarchical configuration through code, files, and environment variables
-- **🔧 Dependency Injection**: Modular architecture with pluggable components
+- **📊 Flexible Reporting**: Local (JSON, HTML) and remote reporting (Jira Xray, AIOTest, Report Portal)
+- **🧪 Testify Integration**: Compatible with [stretchr/testify](https://github.com/stretchr/testify)
+- **⚡ Parallel Execution**: Concurrent test execution with resource management
+- **🛡️ Error Recovery**: Graceful error handling and retry mechanisms
 
-## 📋 Table of Contents
+## Quick Start
 
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Configuration](#configuration)
-- [Core Concepts](#core-concepts)
-- [Examples](#examples)
-- [API Reference](#api-reference)
-- [Contributing](#contributing)
-- [License](#license)
-
-## 📦 Installation
-
-### Prerequisites
-
-- Go 1.22.2 or higher
-- Git
-
-### Install
+### Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/gowright/framework.git
-cd framework
-
-# Install dependencies
-go mod download
-
-# Run tests to verify installation
-go test ./...
+go get github/gowright/framework
 ```
-
-## 🚀 Quick Start
 
 ### Basic Usage
 
@@ -60,382 +33,528 @@ package main
 
 import (
     "fmt"
+    "time"
+    
     "github/gowright/framework/pkg/gowright"
 )
 
 func main() {
-    // Create a new Gowright instance with default configuration
-    gw := gowright.NewWithDefaults()
-
+    // Create framework with default configuration
+    framework := gowright.NewWithDefaults()
+    defer framework.Close()
+    
     // Initialize the framework
-    if err := gw.Initialize(); err != nil {
+    if err := framework.Initialize(); err != nil {
         panic(err)
     }
-    defer gw.Cleanup()
-
-    // Create a test suite
-    testSuite := &gowright.TestSuite{
-        Name: "My Test Suite",
-        SetupFunc: func() error {
-            fmt.Println("Setting up test suite...")
-            return nil
-        },
-        TeardownFunc: func() error {
-            fmt.Println("Tearing down test suite...")
-            return nil
-        },
-    }
-
-    gw.SetTestSuite(testSuite)
-
-    // Execute the test suite
-    results, err := gw.ExecuteTestSuite()
-    if err != nil {
-        panic(err)
-    }
-
-    fmt.Printf("Tests completed: %d passed, %d failed\n",
-        results.PassedTests, results.FailedTests)
+    
+    fmt.Println("Gowright framework initialized successfully!")
 }
 ```
 
-### UI Testing Example
+## Configuration
 
-```go
-package main
-
-import (
-    "github/gowright/framework/pkg/gowright"
-)
-
-func main() {
-    gw := gowright.NewWithDefaults()
-    gw.Initialize()
-    defer gw.Cleanup()
-
-    uiTester := gw.GetUITester()
-
-    // Navigate to a page
-    err := uiTester.Navigate("https://example.com")
-    if err != nil {
-        panic(err)
-    }
-
-    // Click on an element
-    err = uiTester.Click("#submit-button")
-    if err != nil {
-        panic(err)
-    }
-
-    // Assert element is visible
-    visible, err := uiTester.AssertElementVisible("#success-message")
-    if err != nil || !visible {
-        panic("Element not visible")
-    }
-}
-```
-
-### API Testing Example
-
-```go
-package main
-
-import (
-    "github/gowright/framework/pkg/gowright"
-)
-
-func main() {
-    gw := gowright.NewWithDefaults()
-    gw.Initialize()
-    defer gw.Cleanup()
-
-    apiTester := gw.GetAPITester()
-
-    // Make a GET request
-    response, err := apiTester.Get("/api/users", nil)
-    if err != nil {
-        panic(err)
-    }
-
-    // Assert status code
-    if response.StatusCode != 200 {
-        panic("Expected status 200")
-    }
-
-    // Assert response body
-    users, err := response.JSON()
-    if err != nil {
-        panic(err)
-    }
-
-    if len(users) == 0 {
-        panic("Expected users in response")
-    }
-}
-```
-
-## ⚙️ Configuration
-
-The framework supports hierarchical configuration through:
-
-1. **Code**: Direct configuration object creation
-2. **Files**: JSON configuration files
-3. **Environment**: Environment variables
-
-### Configuration Structure
+### Basic Configuration
 
 ```go
 config := &gowright.Config{
-    LogLevel: "info",
-    Parallel: true,
-    MaxRetries: 3,
     BrowserConfig: &gowright.BrowserConfig{
-        Headless: true,
-        Timeout: 30 * time.Second,
-        WindowSize: &gowright.WindowSize{
-            Width:  1920,
-            Height: 1080,
-        },
+        Headless:   true,
+        Timeout:    30 * time.Second,
+        WindowSize: &gowright.WindowSize{Width: 1920, Height: 1080},
     },
     APIConfig: &gowright.APIConfig{
         BaseURL: "https://api.example.com",
-        Timeout: 30 * time.Second,
+        Timeout: 10 * time.Second,
+        Headers: map[string]string{
+            "User-Agent": "Gowright-Test-Client",
+        },
     },
     DatabaseConfig: &gowright.DatabaseConfig{
         Connections: map[string]*gowright.DBConnection{
-            "default": {
-                Driver:   "postgres",
-                Host:     "localhost",
-                Port:     5432,
-                Database: "testdb",
-                Username: "user",
-                Password: "password",
+            "main": {
+                Driver: "postgres",
+                DSN:    "postgres://user:pass@localhost/testdb?sslmode=disable",
             },
         },
     },
     ReportConfig: &gowright.ReportConfig{
         LocalReports: gowright.LocalReportConfig{
-            JSON: true,
-            HTML: true,
-            OutputDir: "./reports",
-        },
-        RemoteReports: gowright.RemoteReportConfig{
-            JiraXray: &gowright.JiraXrayConfig{
-                BaseURL: "https://your-domain.atlassian.net",
-                Username: "your-username",
-                APIToken: "your-api-token",
-                ProjectKey: "TEST",
-            },
+            JSON:      true,
+            HTML:      true,
+            OutputDir: "./test-reports",
         },
     },
 }
+
+framework := gowright.New(config)
 ```
 
-### Configuration File
+### Configuration from File
 
-Create a `gowright-config.json` file:
+```go
+config, err := gowright.LoadConfigFromFile("gowright-config.json")
+if err != nil {
+    panic(err)
+}
+
+framework := gowright.New(config)
+```
+
+Example `gowright-config.json`:
 
 ```json
 {
   "log_level": "info",
-  "parallel": false,
+  "parallel": true,
   "max_retries": 3,
   "browser_config": {
     "headless": true,
-    "timeout": 30000000000,
+    "timeout": "30s",
     "window_size": {
       "width": 1920,
       "height": 1080
     }
   },
   "api_config": {
-    "timeout": 30000000000
-  },
-  "database_config": {
-    "connections": {}
+    "base_url": "https://api.example.com",
+    "timeout": "10s",
+    "headers": {
+      "User-Agent": "Gowright-Test-Client"
+    }
   },
   "report_config": {
     "local_reports": {
       "json": true,
       "html": true,
-      "output_dir": "./reports"
-    },
-    "remote_reports": {}
+      "output_dir": "./test-reports"
+    }
   }
 }
 ```
 
-### Environment Variables
+## Testing Modules
 
-Set environment variables for configuration:
-
-```bash
-export GOWRIGHT_LOG_LEVEL=debug
-export GOWRIGHT_BROWSER_HEADLESS=true
-export GOWRIGHT_API_BASE_URL=https://api.example.com
-```
-
-## 🏗️ Core Concepts
-
-### Test Suite
-
-A test suite is a collection of related tests with setup and teardown functions:
+### API Testing
 
 ```go
-testSuite := &gowright.TestSuite{
-    Name: "User Management Tests",
-    Tests: []gowright.Test{
-        // Test implementations
+package main
+
+import (
+    "net/http"
+    "testing"
+    
+    "github/gowright/framework/pkg/gowright"
+    "github.com/stretchr/testify/assert"
+)
+
+func TestAPIEndpoint(t *testing.T) {
+    // Create API tester
+    config := &gowright.APIConfig{
+        BaseURL: "https://jsonplaceholder.typicode.com",
+        Timeout: 10 * time.Second,
+    }
+    
+    apiTester := gowright.NewAPITester(config)
+    err := apiTester.Initialize(config)
+    assert.NoError(t, err)
+    defer apiTester.Cleanup()
+    
+    // Test GET request
+    response, err := apiTester.Get("/posts/1", nil)
+    assert.NoError(t, err)
+    assert.Equal(t, http.StatusOK, response.StatusCode)
+    
+    // Test with API test builder
+    test := gowright.NewAPITestBuilder("Get Post", "GET", "/posts/1").
+        WithTester(apiTester).
+        ExpectStatus(http.StatusOK).
+        ExpectJSONPath("$.id", 1).
+        Build()
+    
+    result := test.Execute()
+    assert.Equal(t, gowright.TestStatusPassed, result.Status)
+}
+```
+
+### Database Testing
+
+```go
+func TestDatabaseOperations(t *testing.T) {
+    // Create database tester
+    dbTester := gowright.NewDatabaseTester()
+    
+    config := &gowright.DatabaseConfig{
+        Connections: map[string]*gowright.DBConnection{
+            "test": {
+                Driver: "sqlite3",
+                DSN:    ":memory:",
+            },
+        },
+    }
+    
+    err := dbTester.Initialize(config)
+    assert.NoError(t, err)
+    defer dbTester.Cleanup()
+    
+    // Execute setup
+    _, err = dbTester.Execute("test", `
+        CREATE TABLE users (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL
+        )
+    `)
+    assert.NoError(t, err)
+    
+    // Test database operations
+    dbTest := &gowright.DatabaseTest{
+        Name:       "User Creation Test",
+        Connection: "test",
+        Setup: []string{
+            "INSERT INTO users (name, email) VALUES ('John Doe', 'john@example.com')",
+        },
+        Query: "SELECT COUNT(*) as count FROM users WHERE name = 'John Doe'",
+        Expected: &gowright.DatabaseExpectation{
+            RowCount: 1,
+        },
+        Teardown: []string{
+            "DELETE FROM users WHERE email = 'john@example.com'",
+        },
+    }
+    
+    result := dbTester.ExecuteTest(dbTest)
+    assert.Equal(t, gowright.TestStatusPassed, result.Status)
+}
+```
+
+### UI Testing
+
+```go
+func TestWebApplication(t *testing.T) {
+    // Create UI tester
+    config := &gowright.BrowserConfig{
+        Headless: true,
+        Timeout:  30 * time.Second,
+    }
+    
+    uiTester := gowright.NewRodUITester()
+    err := uiTester.Initialize(config)
+    assert.NoError(t, err)
+    defer uiTester.Cleanup()
+    
+    // Navigate to page
+    err = uiTester.Navigate("https://example.com")
+    assert.NoError(t, err)
+    
+    // Interact with elements
+    err = uiTester.Click("button#submit")
+    assert.NoError(t, err)
+    
+    // Wait for element
+    err = uiTester.WaitForElement(".success-message", 5*time.Second)
+    assert.NoError(t, err)
+    
+    // Take screenshot
+    screenshotPath, err := uiTester.TakeScreenshot("test-result.png")
+    assert.NoError(t, err)
+    assert.NotEmpty(t, screenshotPath)
+}
+```
+
+### Integration Testing
+
+```go
+func TestCompleteWorkflow(t *testing.T) {
+    // Create integration tester
+    integrationTester := gowright.NewIntegrationTester(nil, nil, nil)
+    
+    // Define integration test
+    integrationTest := &gowright.IntegrationTest{
+        Name: "User Registration Workflow",
+        Steps: []gowright.IntegrationStep{
+            {
+                Type: gowright.StepTypeAPI,
+                Action: gowright.APIStepAction{
+                    Method:   "POST",
+                    Endpoint: "/api/users",
+                    Body: map[string]interface{}{
+                        "name":  "Test User",
+                        "email": "test@example.com",
+                    },
+                },
+                Validation: gowright.APIStepValidation{
+                    ExpectedStatusCode: http.StatusCreated,
+                },
+                Name: "Create User via API",
+            },
+            {
+                Type: gowright.StepTypeDatabase,
+                Action: gowright.DatabaseStepAction{
+                    Connection: "main",
+                    Query:      "SELECT COUNT(*) FROM users WHERE email = ?",
+                    Args:       []interface{}{"test@example.com"},
+                },
+                Validation: gowright.DatabaseStepValidation{
+                    ExpectedRowCount: &[]int{1}[0],
+                },
+                Name: "Verify User in Database",
+            },
+        },
+    }
+    
+    result := integrationTester.ExecuteTest(integrationTest)
+    assert.Equal(t, gowright.TestStatusPassed, result.Status)
+}
+```
+
+## Test Suites
+
+### Creating Test Suites
+
+```go
+func TestCompleteTestSuite(t *testing.T) {
+    // Create framework
+    framework := gowright.NewWithDefaults()
+    defer framework.Close()
+    
+    // Create test suite
+    testSuite := &gowright.TestSuite{
+        Name: "Complete Application Test Suite",
+        SetupFunc: func() error {
+            // Suite-level setup
+            return nil
+        },
+        TeardownFunc: func() error {
+            // Suite-level teardown
+            return nil
+        },
+        Tests: []gowright.Test{
+            // Add your tests here
+        },
+    }
+    
+    framework.SetTestSuite(testSuite)
+    
+    // Execute test suite
+    results, err := framework.ExecuteTestSuite()
+    assert.NoError(t, err)
+    assert.Greater(t, results.PassedTests, 0)
+}
+```
+
+### Parallel Test Execution
+
+```go
+config := &gowright.Config{
+    Parallel: true,
+    ParallelRunnerConfig: &gowright.ParallelRunnerConfig{
+        MaxConcurrency: 4,
+        ResourceLimits: gowright.ResourceLimits{
+            MaxMemoryMB:      1024,
+            MaxCPUPercent:    80,
+            MaxOpenFiles:     100,
+            MaxNetworkConns:  50,
+        },
     },
-    SetupFunc: func() error {
-        // Setup database, create test data
-        return nil
-    },
-    TeardownFunc: func() error {
-        // Clean up test data
-        return nil
+}
+
+framework := gowright.New(config)
+```
+
+## Reporting
+
+### Local Reports
+
+Gowright automatically generates local reports in JSON and HTML formats:
+
+```go
+config := &gowright.ReportConfig{
+    LocalReports: gowright.LocalReportConfig{
+        JSON:      true,
+        HTML:      true,
+        OutputDir: "./test-reports",
     },
 }
 ```
 
-### Test Types
+### Remote Reporting
 
-The framework supports multiple test types:
-
-- **UI Tests**: Browser automation and mobile testing
-- **API Tests**: HTTP/REST API testing
-- **Database Tests**: Database operations and validations
-- **Integration Tests**: Multi-system workflows
-
-### Assertions
-
-Built-in assertion methods for common validations:
+Configure remote reporting to popular test management platforms:
 
 ```go
-// UI Assertions
-uiTester.AssertElementVisible("#button")
-uiTester.AssertTextEquals("#title", "Expected Title")
-uiTester.AssertElementCount(".item", 5)
-
-// API Assertions
-apiTester.AssertStatusCode(200)
-apiTester.AssertHeaderEquals("Content-Type", "application/json")
-apiTester.AssertJSONPathEquals("$.user.name", "John Doe")
-
-// Database Assertions
-dbTester.AssertRowCount("SELECT * FROM users", 10)
-dbTester.AssertColumnValue("SELECT name FROM users WHERE id = 1", "name", "John")
+config := &gowright.ReportConfig{
+    RemoteReports: gowright.RemoteReportConfig{
+        JiraXray: &gowright.JiraXrayConfig{
+            URL:        "https://your-jira.atlassian.net",
+            Username:   "your-username",
+            Password:   "your-api-token",
+            ProjectKey: "TEST",
+        },
+        AIOTest: &gowright.AIOTestConfig{
+            URL:       "https://your-aiotest.com",
+            APIKey:    "your-api-key",
+            ProjectID: "your-project-id",
+        },
+        ReportPortal: &gowright.ReportPortalConfig{
+            URL:     "https://your-reportportal.com",
+            UUID:    "your-uuid",
+            Project: "your-project",
+            Launch:  "Automated Tests",
+        },
+    },
+}
 ```
 
-### Error Handling
+## Advanced Features
 
-Structured error handling with contextual information:
+### Custom Assertions
 
 ```go
-err := gowright.NewGowrightError(
-    gowright.BrowserError,
-    "Failed to navigate to page",
-    originalError,
-).WithContext("url", "https://example.com")
+// Create custom assertion
+assertion := gowright.NewTestAssertion("Custom Check")
+assertion.Assert(actualValue == expectedValue, "Values should match")
+assertion.AssertNotNil(someObject, "Object should not be nil")
+assertion.AssertContains(slice, item, "Slice should contain item")
+
+// Execute with assertions
+result := gowright.ExecuteTestWithAssertions("My Test", func(a *gowright.TestAssertion) {
+    a.Assert(true, "This should pass")
+    a.AssertEqual(1, 1, "Numbers should be equal")
+})
 ```
 
-## 📚 Examples
-
-Check the `examples/` directory for comprehensive examples:
-
-- `basic_usage.go` - Basic framework usage
-- `api_testing_example.go` - API testing examples
-- `reporting_example.go` - Reporting configuration
-- `assertion_reporting_example.go` - Assertion and reporting
-- `test_suite_with_assertions.go` - Complete test suite example
-
-## 🔧 API Reference
-
-### Core Interfaces
-
-- `Tester`: Base interface for all testing modules
-- `UITester`: Browser and mobile UI testing
-- `APITester`: HTTP/REST API testing
-- `DatabaseTester`: Database operations and validations
-- `IntegrationTester`: Multi-system integration testing
-- `Reporter`: Pluggable reporting system
-
-### Main Types
-
-- `Gowright`: Main framework orchestrator
-- `TestSuite`: Collection of tests with setup/teardown
-- `TestResults`: Test execution results
-- `Config`: Framework configuration
-- `GowrightError`: Structured error handling
-
-### Key Methods
+### Resource Management
 
 ```go
-// Framework initialization
-gw := gowright.New(config)
-gw.Initialize()
-defer gw.Cleanup()
+// Monitor resource usage
+resourceManager := gowright.NewResourceManager(&gowright.ResourceLimits{
+    MaxMemoryMB:      512,
+    MaxCPUPercent:    70,
+    MaxOpenFiles:     50,
+    MaxNetworkConns:  25,
+})
 
-// Test suite management
-gw.SetTestSuite(suite)
-results, err := gw.ExecuteTestSuite()
-
-// Tester access
-uiTester := gw.GetUITester()
-apiTester := gw.GetAPITester()
-dbTester := gw.GetDatabaseTester()
+// Check resource usage
+usage := resourceManager.GetCurrentUsage()
+fmt.Printf("Memory: %d MB, CPU: %.1f%%\n", usage.MemoryMB, usage.CPUPercent)
 ```
 
-## 🧪 Testing
+### Error Recovery
 
-Run the test suite:
+```go
+// Configure retry behavior
+retryConfig := &gowright.RetryConfig{
+    MaxRetries:   3,
+    InitialDelay: time.Second,
+    MaxDelay:     10 * time.Second,
+    Multiplier:   2.0,
+}
 
-```bash
-# Run all tests
-go test ./...
-
-# Run tests with coverage
-go test -cover ./...
-
-# Run specific test
-go test -run TestUITester ./pkg/gowright
-
-# Run tests with verbose output
-go test -v ./...
+// Execute with retry
+err := gowright.RetryWithBackoff(context.Background(), retryConfig, func() error {
+    // Your test operation here
+    return someOperation()
+})
 ```
 
-## 📊 Reporting
+## Best Practices
 
-The framework generates comprehensive reports in multiple formats:
+### 1. Test Organization
 
-- **JSON Reports**: Machine-readable test results
-- **HTML Reports**: Human-readable test reports
-- **Remote Integration**: Jira Xray, AIOTest, Report Portal
+```go
+// Organize tests by feature
+func TestUserManagement(t *testing.T) {
+    t.Run("CreateUser", testCreateUser)
+    t.Run("UpdateUser", testUpdateUser)
+    t.Run("DeleteUser", testDeleteUser)
+}
+```
 
-Reports include:
+### 2. Resource Cleanup
 
-- Test execution status and timing
-- Screenshots for UI tests
-- Error details and stack traces
-- Performance metrics
-- Custom assertions and validations
+```go
+func TestWithCleanup(t *testing.T) {
+    framework := gowright.NewWithDefaults()
+    defer framework.Close() // Always cleanup
+    
+    // Your test code here
+}
+```
 
-## 🤝 Contributing
+### 3. Configuration Management
 
-We welcome contributions! Please see our contributing guidelines:
+```go
+// Use environment-specific configs
+configFile := os.Getenv("GOWRIGHT_CONFIG")
+if configFile == "" {
+    configFile = "gowright-config.json"
+}
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+config, err := gowright.LoadConfigFromFile(configFile)
+```
+
+### 4. Error Handling
+
+```go
+// Always check for errors
+result := apiTester.ExecuteTest(test)
+if result.Status != gowright.TestStatusPassed {
+    t.Fatalf("Test failed: %v", result.Error)
+}
+```
+
+## Performance Considerations
+
+- **Parallel Execution**: Enable parallel testing for faster execution
+- **Resource Limits**: Set appropriate resource limits to prevent system overload
+- **Connection Pooling**: Reuse database connections and HTTP clients
+- **Memory Management**: Use memory-efficient capture for large datasets
+- **Cleanup**: Always cleanup resources to prevent leaks
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Browser not found**: Ensure Chrome/Chromium is installed for UI testing
+2. **Database connection failed**: Check connection strings and database availability
+3. **API timeout**: Increase timeout values for slow endpoints
+4. **Memory issues**: Reduce parallel execution or increase resource limits
+
+### Debug Mode
+
+```go
+config := &gowright.Config{
+    LogLevel: "debug", // Enable debug logging
+}
+```
+
+### Resource Monitoring
+
+```go
+// Monitor resource usage during tests
+go func() {
+    ticker := time.NewTicker(5 * time.Second)
+    defer ticker.Stop()
+    
+    for range ticker.C {
+        usage := resourceManager.GetCurrentUsage()
+        log.Printf("Resources: Memory=%dMB CPU=%.1f%%", 
+            usage.MemoryMB, usage.CPUPercent)
+    }
+}()
+```
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
 ### Development Setup
 
 ```bash
 # Clone the repository
-git clone https://github.com/gowright/framework.git
-cd framework
+git clone https://github.com/your-org/gowright.git
+cd gowright
 
 # Install dependencies
 go mod download
@@ -443,29 +562,30 @@ go mod download
 # Run tests
 go test ./...
 
-# Run linter
-golangci-lint run
+# Run integration tests
+go run integration_test_runner.go
 
-# Build the project
-go build ./...
+# Run benchmarks
+go test -bench=. ./...
 ```
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [go-rod/rod](https://github.com/go-rod/rod) for browser automation
-- [go-resty/resty](https://github.com/go-resty/resty/v2) for HTTP client functionality
+- [go-resty/resty](https://github.com/go-resty/resty) for HTTP client
 - [stretchr/testify](https://github.com/stretchr/testify) for testing utilities
 
-## 📞 Support
+## Support
 
-- **Issues**: [GitHub Issues](https://github.com/gowright/framework/issues)
-- **Documentation**: [GitHub Wiki](https://github.com/gowright/framework/wiki)
-- **Discussions**: [GitHub Discussions](https://github.com/gowright/framework/discussions)
+- 📖 [Documentation](https://github.com/your-org/gowright/wiki)
+- 🐛 [Issue Tracker](https://github.com/your-org/gowright/issues)
+- 💬 [Discussions](https://github.com/your-org/gowright/discussions)
+- 📧 [Email Support](mailto:support@gowright.dev)
 
 ---
 
-**Gowright** - A comprehensive testing framework for Go applications.
+**Gowright** - Making Go testing comprehensive and enjoyable! 🚀

@@ -1,27 +1,81 @@
 {
   "log_level": "info",
-  "parallel": false,
+  "parallel": true,
   "max_retries": 3,
   "browser_config": {
     "headless": true,
-    "timeout": 30000000000,
+    "timeout": "30s",
+    "user_agent": "Gowright-Test-Agent/1.0",
     "window_size": {
       "width": 1920,
       "height": 1080
     }
   },
   "api_config": {
-    "timeout": 30000000000
+    "base_url": "https://api.example.com",
+    "timeout": "10s",
+    "headers": {
+      "User-Agent": "Gowright-API-Client/1.0",
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+    },
+    "auth_config": {
+      "type": "bearer",
+      "token": "${API_TOKEN}"
+    }
   },
   "database_config": {
-    "connections": {}
+    "connections": {
+      "main": {
+        "driver": "postgres",
+        "dsn": "postgres://user:password@localhost:5432/testdb?sslmode=disable",
+        "max_open_conns": 10,
+        "max_idle_conns": 5
+      },
+      "cache": {
+        "driver": "sqlite3",
+        "dsn": ":memory:",
+        "max_open_conns": 1,
+        "max_idle_conns": 1
+      }
+    }
   },
   "report_config": {
     "local_reports": {
       "json": true,
       "html": true,
-      "output_dir": "./reports"
+      "output_dir": "./test-reports"
     },
-    "remote_reports": {}
+    "remote_reports": {
+      "jira_xray": {
+        "url": "https://your-jira.atlassian.net",
+        "username": "${JIRA_USERNAME}",
+        "password": "${JIRA_API_TOKEN}",
+        "project_key": "TEST"
+      },
+      "aio_test": {
+        "url": "https://your-aiotest.com",
+        "api_key": "${AIOTEST_API_KEY}",
+        "project_id": "your-project-id"
+      },
+      "report_portal": {
+        "url": "https://your-reportportal.com",
+        "uuid": "${REPORT_PORTAL_UUID}",
+        "project": "your-project",
+        "launch": "Automated Tests"
+      }
+    }
+  },
+  "parallel_runner_config": {
+    "max_concurrency": 4,
+    "resource_limits": {
+      "max_memory_mb": 1024,
+      "max_cpu_percent": 80,
+      "max_open_files": 100,
+      "max_network_conns": 50
+    },
+    "timeout": "30m",
+    "retry_failed_tests": true,
+    "fail_fast": false
   }
 }
