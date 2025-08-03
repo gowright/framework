@@ -1,4 +1,7 @@
-# Changelog
+---
+title: Changelog
+description: Version history and changes for Gowright
+---
 
 All notable changes to the Gowright testing framework will be documented in this file.
 
@@ -154,7 +157,7 @@ This is the first major release of the Gowright testing framework, providing a c
 - [stretchr/testify](https://github.com/stretchr/testify) v1.10.0 - Testing utilities
 
 #### Community
-- 📖 [Documentation](https://github.com/your-org/gowright/wiki)
+- 📖 [Documentation](https://your-org.github.io/gowright/)
 - 🐛 [Issue Tracker](https://github.com/your-org/gowright/issues)
 - 💬 [Discussions](https://github.com/your-org/gowright/discussions)
 

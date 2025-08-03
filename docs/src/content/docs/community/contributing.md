@@ -1,21 +1,9 @@
-# Contributing to Gowright
+---
+title: Contributing
+description: How to contribute to the Gowright testing framework
+---
 
 Thank you for your interest in contributing to Gowright! This document provides guidelines and information for contributors.
-
-## Table of Contents
-
-- [Code of Conduct](#code-of-conduct)
-- [Getting Started](#getting-started)
-- [Development Setup](#development-setup)
-- [Contributing Guidelines](#contributing-guidelines)
-- [Pull Request Process](#pull-request-process)
-- [Testing](#testing)
-- [Documentation](#documentation)
-- [Release Process](#release-process)
-
-## Code of Conduct
-
-This project adheres to a code of conduct that we expect all contributors to follow. Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Getting Started
 
@@ -76,16 +64,16 @@ We welcome several types of contributions:
 2. **Create an issue**: For significant changes, create an issue to discuss the approach
 3. **Get feedback**: Engage with maintainers and community members
 
-### Coding Standards
+## Coding Standards
 
-#### Go Style Guide
+### Go Style Guide
 
 - Follow the [Go Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments)
 - Use `gofmt` to format your code
 - Use `golint` and `go vet` to check for issues
 - Write clear, self-documenting code
 
-#### Code Organization
+### Code Organization
 
 ```
 pkg/gowright/
@@ -98,15 +86,7 @@ pkg/gowright/
 └── utils/          # Utility functions
 ```
 
-#### Naming Conventions
-
-- **Packages**: Use lowercase, single words when possible
-- **Types**: Use PascalCase (e.g., `APITester`, `DatabaseConfig`)
-- **Functions**: Use PascalCase for exported, camelCase for unexported
-- **Variables**: Use camelCase
-- **Constants**: Use PascalCase or UPPER_CASE for package-level constants
-
-#### Documentation
+### Documentation
 
 - Add godoc comments for all exported types, functions, and methods
 - Use complete sentences in comments
@@ -123,56 +103,6 @@ pkg/gowright/
 type APITester interface {
     // Get performs a GET request to the specified endpoint.
     Get(endpoint string, headers map[string]string) (*APIResponse, error)
-}
-```
-
-#### Error Handling
-
-- Use the `GowrightError` type for framework-specific errors
-- Provide context information in errors
-- Handle errors gracefully with appropriate fallbacks
-
-```go
-if err != nil {
-    return NewGowrightError(APIError, "failed to execute request", err).
-        WithContext("endpoint", endpoint).
-        WithContext("method", "GET")
-}
-```
-
-#### Testing
-
-- Write tests for all new functionality
-- Maintain or improve test coverage
-- Use table-driven tests when appropriate
-- Mock external dependencies
-
-```go
-func TestAPITester_Get(t *testing.T) {
-    tests := []struct {
-        name           string
-        endpoint       string
-        expectedStatus int
-        expectError    bool
-    }{
-        {
-            name:           "successful request",
-            endpoint:       "/users",
-            expectedStatus: 200,
-            expectError:    false,
-        },
-        {
-            name:        "invalid endpoint",
-            endpoint:    "/invalid",
-            expectError: true,
-        },
-    }
-    
-    for _, tt := range tests {
-        t.Run(tt.name, func(t *testing.T) {
-            // Test implementation
-        })
-    }
 }
 ```
 
@@ -231,35 +161,6 @@ Your pull request should:
 - **Pass all CI checks**
 - **Be reviewed** by at least one maintainer
 
-### PR Template
-
-```markdown
-## Description
-Brief description of changes made.
-
-## Type of Change
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Documentation update
-- [ ] Performance improvement
-- [ ] Other (please describe)
-
-## Testing
-- [ ] Unit tests added/updated
-- [ ] Integration tests added/updated
-- [ ] Manual testing performed
-
-## Checklist
-- [ ] Code follows project style guidelines
-- [ ] Self-review completed
-- [ ] Documentation updated
-- [ ] Tests pass locally
-- [ ] No breaking changes (or clearly documented)
-
-## Related Issues
-Fixes #(issue number)
-```
-
 ## Testing
 
 ### Running Tests
@@ -283,14 +184,6 @@ go test -bench=. ./...
 # Run tests with race detection
 go test -race ./...
 ```
-
-### Test Categories
-
-1. **Unit Tests**: Test individual functions and methods
-2. **Integration Tests**: Test module interactions
-3. **End-to-End Tests**: Test complete workflows
-4. **Performance Tests**: Benchmark critical paths
-5. **Regression Tests**: Prevent known issues from reoccurring
 
 ### Writing Tests
 
@@ -331,22 +224,6 @@ func TestAPITesterIntegration(t *testing.T) {
 }
 ```
 
-#### Benchmark Tests
-
-```go
-func BenchmarkAPITester_Get(b *testing.B) {
-    tester := setupAPITester()
-    
-    b.ResetTimer()
-    for i := 0; i < b.N; i++ {
-        _, err := tester.Get("/benchmark", nil)
-        if err != nil {
-            b.Fatal(err)
-        }
-    }
-}
-```
-
 ## Documentation
 
 ### Types of Documentation
@@ -363,44 +240,6 @@ func BenchmarkAPITester_Get(b *testing.B) {
 - Provide practical examples
 - Keep documentation up-to-date with code changes
 - Use proper markdown formatting
-
-### Generating Documentation
-
-```bash
-# Generate godoc documentation
-godoc -http=:6060
-
-# View documentation at http://localhost:6060/pkg/github.com/your-org/gowright/
-```
-
-## Release Process
-
-### Versioning
-
-We follow [Semantic Versioning](https://semver.org/):
-
-- **MAJOR**: Incompatible API changes
-- **MINOR**: New functionality (backward compatible)
-- **PATCH**: Bug fixes (backward compatible)
-
-### Release Checklist
-
-1. **Update version numbers**
-2. **Update CHANGELOG.md**
-3. **Run full test suite**
-4. **Update documentation**
-5. **Create release tag**
-6. **Publish release notes**
-
-### Creating a Release
-
-```bash
-# Create and push tag
-git tag -a v1.2.3 -m "Release version 1.2.3"
-git push origin v1.2.3
-
-# Create release on GitHub with release notes
-```
 
 ## Getting Help
 
