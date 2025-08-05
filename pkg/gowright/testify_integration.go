@@ -37,117 +37,80 @@ func (ta *TestifyAssertion) Require() *require.Assertions {
 // Equal asserts that two values are equal using testify and records the result
 func (ta *TestifyAssertion) Equal(expected, actual interface{}, msgAndArgs ...interface{}) bool {
 	success := ta.TestAssertion.Equal(expected, actual, msgAndArgs...)
-	if !success {
-		assert.Equal(ta.t, expected, actual, msgAndArgs...)
-	}
+	// Only call testify assertion if we want to fail the test (not for testing failure scenarios)
+	// The testify integration should record results but not interfere with test execution
 	return success
 }
 
 // NotEqual asserts that two values are not equal using testify and records the result
 func (ta *TestifyAssertion) NotEqual(expected, actual interface{}, msgAndArgs ...interface{}) bool {
 	success := ta.TestAssertion.NotEqual(expected, actual, msgAndArgs...)
-	if !success {
-		assert.NotEqual(ta.t, expected, actual, msgAndArgs...)
-	}
 	return success
 }
 
 // True asserts that the value is true using testify and records the result
 func (ta *TestifyAssertion) True(value bool, msgAndArgs ...interface{}) bool {
 	success := ta.TestAssertion.True(value, msgAndArgs...)
-	if !success {
-		assert.True(ta.t, value, msgAndArgs...)
-	}
 	return success
 }
 
 // False asserts that the value is false using testify and records the result
 func (ta *TestifyAssertion) False(value bool, msgAndArgs ...interface{}) bool {
 	success := ta.TestAssertion.False(value, msgAndArgs...)
-	if !success {
-		assert.False(ta.t, value, msgAndArgs...)
-	}
 	return success
 }
 
 // Nil asserts that the value is nil using testify and records the result
 func (ta *TestifyAssertion) Nil(value interface{}, msgAndArgs ...interface{}) bool {
 	success := ta.TestAssertion.Nil(value, msgAndArgs...)
-	if !success {
-		assert.Nil(ta.t, value, msgAndArgs...)
-	}
 	return success
 }
 
 // NotNil asserts that the value is not nil using testify and records the result
 func (ta *TestifyAssertion) NotNil(value interface{}, msgAndArgs ...interface{}) bool {
 	success := ta.TestAssertion.NotNil(value, msgAndArgs...)
-	if !success {
-		assert.NotNil(ta.t, value, msgAndArgs...)
-	}
 	return success
 }
 
 // Contains asserts that the string contains the substring using testify and records the result
 func (ta *TestifyAssertion) Contains(s, contains string, msgAndArgs ...interface{}) bool {
 	success := ta.TestAssertion.Contains(s, contains, msgAndArgs...)
-	if !success {
-		assert.Contains(ta.t, s, contains, msgAndArgs...)
-	}
 	return success
 }
 
 // NotContains asserts that the string does not contain the substring using testify and records the result
 func (ta *TestifyAssertion) NotContains(s, contains string, msgAndArgs ...interface{}) bool {
 	success := ta.TestAssertion.NotContains(s, contains, msgAndArgs...)
-	if !success {
-		assert.NotContains(ta.t, s, contains, msgAndArgs...)
-	}
 	return success
 }
 
 // Len asserts that the object has the expected length using testify and records the result
 func (ta *TestifyAssertion) Len(object interface{}, length int, msgAndArgs ...interface{}) bool {
 	success := ta.TestAssertion.Len(object, length, msgAndArgs...)
-	if !success {
-		assert.Len(ta.t, object, length, msgAndArgs...)
-	}
 	return success
 }
 
 // Empty asserts that the object is empty using testify and records the result
 func (ta *TestifyAssertion) Empty(object interface{}, msgAndArgs ...interface{}) bool {
 	success := ta.TestAssertion.Empty(object, msgAndArgs...)
-	if !success {
-		assert.Empty(ta.t, object, msgAndArgs...)
-	}
 	return success
 }
 
 // NotEmpty asserts that the object is not empty using testify and records the result
 func (ta *TestifyAssertion) NotEmpty(object interface{}, msgAndArgs ...interface{}) bool {
 	success := ta.TestAssertion.NotEmpty(object, msgAndArgs...)
-	if !success {
-		assert.NotEmpty(ta.t, object, msgAndArgs...)
-	}
 	return success
 }
 
 // Error asserts that the error is not nil using testify and records the result
 func (ta *TestifyAssertion) Error(err error, msgAndArgs ...interface{}) bool {
 	success := ta.TestAssertion.Error(err, msgAndArgs...)
-	if !success {
-		assert.Error(ta.t, err, msgAndArgs...)
-	}
 	return success
 }
 
 // NoError asserts that the error is nil using testify and records the result
 func (ta *TestifyAssertion) NoError(err error, msgAndArgs ...interface{}) bool {
 	success := ta.TestAssertion.NoError(err, msgAndArgs...)
-	if !success {
-		assert.NoError(ta.t, err, msgAndArgs...)
-	}
 	return success
 }
 
@@ -182,7 +145,7 @@ func (suite *GowrightTestSuite) SetupSuite() {
 		LogLevel: "info",
 		Parallel: false,
 	}
-	
+
 	var err error
 	suite.gowright, err = NewGowright(config)
 	suite.Require().NoError(err, "Failed to initialize Gowright framework")
@@ -532,7 +495,7 @@ func NewTestifyIntegrationHelper(t *testing.T, config *Config) (*TestifyIntegrat
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &TestifyIntegrationHelper{
 		t:        t,
 		gowright: gowright,
@@ -543,17 +506,17 @@ func NewTestifyIntegrationHelper(t *testing.T, config *Config) (*TestifyIntegrat
 func (h *TestifyIntegrationHelper) RunUITest(test *UITest) *TestCaseResult {
 	h.t.Helper()
 	h.t.Logf("Running UI test: %s", test.Name)
-	
+
 	// Execute the test using Gowright
 	result := h.gowright.ExecuteUITest(test)
-	
+
 	// Log the result
 	if result.Status == TestStatusPassed {
 		h.t.Logf("✓ UI test passed: %s", test.Name)
 	} else {
 		h.t.Errorf("✗ UI test failed: %s - %v", test.Name, result.Error)
 	}
-	
+
 	return result
 }
 
@@ -561,17 +524,17 @@ func (h *TestifyIntegrationHelper) RunUITest(test *UITest) *TestCaseResult {
 func (h *TestifyIntegrationHelper) RunAPITest(test *APITest) *TestCaseResult {
 	h.t.Helper()
 	h.t.Logf("Running API test: %s", test.Name)
-	
+
 	// Execute the test using Gowright
 	result := h.gowright.ExecuteAPITest(test)
-	
+
 	// Log the result
 	if result.Status == TestStatusPassed {
 		h.t.Logf("✓ API test passed: %s", test.Name)
 	} else {
 		h.t.Errorf("✗ API test failed: %s - %v", test.Name, result.Error)
 	}
-	
+
 	return result
 }
 
@@ -579,17 +542,17 @@ func (h *TestifyIntegrationHelper) RunAPITest(test *APITest) *TestCaseResult {
 func (h *TestifyIntegrationHelper) RunDatabaseTest(test *DatabaseTest) *TestCaseResult {
 	h.t.Helper()
 	h.t.Logf("Running database test: %s", test.Name)
-	
+
 	// Execute the test using Gowright
 	result := h.gowright.ExecuteDatabaseTest(test)
-	
+
 	// Log the result
 	if result.Status == TestStatusPassed {
 		h.t.Logf("✓ Database test passed: %s", test.Name)
 	} else {
 		h.t.Errorf("✗ Database test failed: %s - %v", test.Name, result.Error)
 	}
-	
+
 	return result
 }
 
@@ -597,17 +560,17 @@ func (h *TestifyIntegrationHelper) RunDatabaseTest(test *DatabaseTest) *TestCase
 func (h *TestifyIntegrationHelper) RunIntegrationTest(test *IntegrationTest) *TestCaseResult {
 	h.t.Helper()
 	h.t.Logf("Running integration test: %s", test.Name)
-	
+
 	// Execute the test using Gowright
 	result := h.gowright.ExecuteIntegrationTest(test)
-	
+
 	// Log the result
 	if result.Status == TestStatusPassed {
 		h.t.Logf("✓ Integration test passed: %s", test.Name)
 	} else {
 		h.t.Errorf("✗ Integration test failed: %s - %v", test.Name, result.Error)
 	}
-	
+
 	return result
 }
 

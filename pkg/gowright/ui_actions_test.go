@@ -41,9 +41,9 @@ func (suite *UIActionsTestSuite) TestExecuteClickAction() {
 		Type:     string(ActionClick),
 		Selector: "#button",
 	}
-	
+
 	suite.mockTester.On("Click", "#button").Return(nil)
-	
+
 	err := suite.executor.ExecuteAction(action)
 	suite.NoError(err)
 }
@@ -53,10 +53,10 @@ func (suite *UIActionsTestSuite) TestExecuteClickActionWithoutSelector() {
 	action := UIAction{
 		Type: string(ActionClick),
 	}
-	
+
 	err := suite.executor.ExecuteAction(action)
 	suite.Error(err)
-	
+
 	gowrightErr, ok := err.(*GowrightError)
 	suite.True(ok)
 	suite.Equal(BrowserError, gowrightErr.Type)
@@ -70,9 +70,9 @@ func (suite *UIActionsTestSuite) TestExecuteTypeAction() {
 		Selector: "#input",
 		Value:    "test text",
 	}
-	
+
 	suite.mockTester.On("Type", "#input", "test text").Return(nil)
-	
+
 	err := suite.executor.ExecuteAction(action)
 	suite.NoError(err)
 }
@@ -83,10 +83,10 @@ func (suite *UIActionsTestSuite) TestExecuteTypeActionWithoutSelector() {
 		Type:  string(ActionType),
 		Value: "test text",
 	}
-	
+
 	err := suite.executor.ExecuteAction(action)
 	suite.Error(err)
-	
+
 	gowrightErr, ok := err.(*GowrightError)
 	suite.True(ok)
 	suite.Equal(BrowserError, gowrightErr.Type)
@@ -99,9 +99,9 @@ func (suite *UIActionsTestSuite) TestExecuteNavigateAction() {
 		Type:  string(ActionNavigate),
 		Value: "https://example.com",
 	}
-	
+
 	suite.mockTester.On("Navigate", "https://example.com").Return(nil)
-	
+
 	err := suite.executor.ExecuteAction(action)
 	suite.NoError(err)
 }
@@ -111,10 +111,10 @@ func (suite *UIActionsTestSuite) TestExecuteNavigateActionWithoutURL() {
 	action := UIAction{
 		Type: string(ActionNavigate),
 	}
-	
+
 	err := suite.executor.ExecuteAction(action)
 	suite.Error(err)
-	
+
 	gowrightErr, ok := err.(*GowrightError)
 	suite.True(ok)
 	suite.Equal(BrowserError, gowrightErr.Type)
@@ -127,9 +127,9 @@ func (suite *UIActionsTestSuite) TestExecuteWaitActionWithSelector() {
 		Type:     string(ActionWait),
 		Selector: "#element",
 	}
-	
+
 	suite.mockTester.On("WaitForElement", "#element", 30*time.Second).Return(nil)
-	
+
 	err := suite.executor.ExecuteAction(action)
 	suite.NoError(err)
 }
@@ -139,7 +139,7 @@ func (suite *UIActionsTestSuite) TestExecuteWaitActionWithoutSelector() {
 	action := UIAction{
 		Type: string(ActionWait),
 	}
-	
+
 	// This should not call any mock methods, just sleep
 	err := suite.executor.ExecuteAction(action)
 	suite.NoError(err)
@@ -151,9 +151,9 @@ func (suite *UIActionsTestSuite) TestExecuteClearAction() {
 		Type:     string(ActionClear),
 		Selector: "#input",
 	}
-	
+
 	suite.mockTester.On("Type", "#input", "").Return(nil)
-	
+
 	err := suite.executor.ExecuteAction(action)
 	suite.NoError(err)
 }
@@ -164,9 +164,9 @@ func (suite *UIActionsTestSuite) TestExecuteSubmitAction() {
 		Type:     string(ActionSubmit),
 		Selector: "#submit-button",
 	}
-	
+
 	suite.mockTester.On("Click", "#submit-button").Return(nil)
-	
+
 	err := suite.executor.ExecuteAction(action)
 	suite.NoError(err)
 }
@@ -176,10 +176,10 @@ func (suite *UIActionsTestSuite) TestExecuteUnsupportedAction() {
 	action := UIAction{
 		Type: "unsupported_action",
 	}
-	
+
 	err := suite.executor.ExecuteAction(action)
 	suite.Error(err)
-	
+
 	gowrightErr, ok := err.(*GowrightError)
 	suite.True(ok)
 	suite.Equal(BrowserError, gowrightErr.Type)
@@ -203,11 +203,11 @@ func (suite *UIActionsTestSuite) TestExecuteActions() {
 			Value:    "test",
 		},
 	}
-	
+
 	suite.mockTester.On("Navigate", "https://example.com").Return(nil)
 	suite.mockTester.On("Click", "#button").Return(nil)
 	suite.mockTester.On("Type", "#input", "test").Return(nil)
-	
+
 	err := suite.executor.ExecuteActions(actions)
 	suite.NoError(err)
 }
@@ -224,13 +224,13 @@ func (suite *UIActionsTestSuite) TestExecuteActionsWithFailure() {
 			Selector: "#button",
 		},
 	}
-	
+
 	suite.mockTester.On("Navigate", "https://example.com").Return(nil)
 	suite.mockTester.On("Click", "#button").Return(NewGowrightError(BrowserError, "element not found", nil))
-	
+
 	err := suite.executor.ExecuteActions(actions)
 	suite.Error(err)
-	
+
 	gowrightErr, ok := err.(*GowrightError)
 	suite.True(ok)
 	suite.Equal(BrowserError, gowrightErr.Type)

@@ -3,7 +3,6 @@ package gowright
 import (
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -12,21 +11,21 @@ import (
 type UIAssertionType string
 
 const (
-	AssertElementPresent    UIAssertionType = "element_present"
-	AssertElementNotPresent UIAssertionType = "element_not_present"
-	AssertElementVisible    UIAssertionType = "element_visible"
-	AssertElementNotVisible UIAssertionType = "element_not_visible"
-	AssertTextEquals        UIAssertionType = "text_equals"
-	AssertTextContains      UIAssertionType = "text_contains"
-	AssertTextNotContains   UIAssertionType = "text_not_contains"
-	AssertTextMatches       UIAssertionType = "text_matches"
-	AssertAttributeEquals   UIAssertionType = "attribute_equals"
-	AssertAttributeContains UIAssertionType = "attribute_contains"
-	AssertURLEquals         UIAssertionType = "url_equals"
-	AssertURLContains       UIAssertionType = "url_contains"
-	AssertTitleEquals       UIAssertionType = "title_equals"
-	AssertTitleContains     UIAssertionType = "title_contains"
-	AssertElementCount      UIAssertionType = "element_count"
+	AssertElementPresent     UIAssertionType = "element_present"
+	AssertElementNotPresent  UIAssertionType = "element_not_present"
+	AssertElementVisible     UIAssertionType = "element_visible"
+	AssertElementNotVisible  UIAssertionType = "element_not_visible"
+	AssertTextEquals         UIAssertionType = "text_equals"
+	AssertTextContains       UIAssertionType = "text_contains"
+	AssertTextNotContains    UIAssertionType = "text_not_contains"
+	AssertTextMatches        UIAssertionType = "text_matches"
+	AssertAttributeEquals    UIAssertionType = "attribute_equals"
+	AssertAttributeContains  UIAssertionType = "attribute_contains"
+	AssertURLEquals          UIAssertionType = "url_equals"
+	AssertURLContains        UIAssertionType = "url_contains"
+	AssertTitleEquals        UIAssertionType = "title_equals"
+	AssertTitleContains      UIAssertionType = "title_contains"
+	AssertElementCount       UIAssertionType = "element_count"
 	AssertPageSourceContains UIAssertionType = "page_source_contains"
 )
 
@@ -54,7 +53,7 @@ func NewUIAssertionExecutor(tester UITester) *UIAssertionExecutor {
 // ExecuteAssertion executes a UI assertion
 func (e *UIAssertionExecutor) ExecuteAssertion(assertion UIAssertion) error {
 	assertionType := UIAssertionType(assertion.Type)
-	
+
 	switch assertionType {
 	case AssertElementPresent:
 		return e.assertElementPresent(assertion)
@@ -394,7 +393,7 @@ func (e *UIAssertionExecutor) assertPageSourceContains(assertion UIAssertion) er
 // getTimeout extracts timeout from assertion options
 func (e *UIAssertionExecutor) getTimeout(assertion UIAssertion) time.Duration {
 	defaultTimeout := 30 * time.Second
-	
+
 	if assertion.Options != nil {
 		if optsMap, ok := assertion.Options.(map[string]interface{}); ok {
 			if timeoutVal, exists := optsMap["timeout"]; exists {
@@ -408,7 +407,7 @@ func (e *UIAssertionExecutor) getTimeout(assertion UIAssertion) time.Duration {
 			}
 		}
 	}
-	
+
 	return defaultTimeout
 }
 
@@ -448,20 +447,6 @@ func (e *UIAssertionExecutor) getAttribute(assertion UIAssertion) string {
 	return ""
 }
 
-// getExpectedInt extracts expected integer value from assertion
-func (e *UIAssertionExecutor) getExpectedInt(assertion UIAssertion) (int, error) {
-	if intVal, ok := assertion.Expected.(int); ok {
-		return intVal, nil
-	}
-	if strVal, ok := assertion.Expected.(string); ok {
-		return strconv.Atoi(strVal)
-	}
-	if floatVal, ok := assertion.Expected.(float64); ok {
-		return int(floatVal), nil
-	}
-	return 0, fmt.Errorf("expected value is not a valid integer: %v", assertion.Expected)
-}
-
 // ExecuteAssertions executes a sequence of UI assertions
 func (e *UIAssertionExecutor) ExecuteAssertions(assertions []UIAssertion) error {
 	for i, assertion := range assertions {
@@ -479,7 +464,7 @@ func ValidateAssertion(assertion UIAssertion) error {
 	}
 
 	assertionType := UIAssertionType(assertion.Type)
-	
+
 	switch assertionType {
 	case AssertElementPresent, AssertElementNotPresent, AssertElementVisible, AssertElementNotVisible:
 		if assertion.Selector == "" {

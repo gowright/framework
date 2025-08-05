@@ -47,13 +47,13 @@ func (rc *RetryConfig) CalculateDelay(attempt int) time.Duration {
 	if attempt <= 0 {
 		return rc.InitialDelay
 	}
-	
+
 	delay := float64(rc.InitialDelay) * math.Pow(rc.BackoffFactor, float64(attempt-1))
-	
+
 	if delay > float64(rc.MaxDelay) {
 		return rc.MaxDelay
 	}
-	
+
 	return time.Duration(delay)
 }
 
@@ -63,31 +63,31 @@ type RetryableOperation func() error
 // RetryWithBackoff executes an operation with exponential backoff retry logic
 func RetryWithBackoff(ctx context.Context, config *RetryConfig, operation RetryableOperation) error {
 	var lastErr error
-	
+
 	for attempt := 0; attempt <= config.MaxRetries; attempt++ {
 		// Execute the operation
 		err := operation()
 		if err == nil {
 			return nil // Success
 		}
-		
+
 		lastErr = err
-		
+
 		// Check if this is the last attempt
 		if attempt == config.MaxRetries {
 			break
 		}
-		
+
 		// Check if the error is retryable
 		if gowrightErr, ok := err.(*GowrightError); ok {
 			if !config.IsRetryable(gowrightErr.Type) {
 				return err // Not retryable, return immediately
 			}
 		}
-		
+
 		// Calculate delay for next attempt
 		delay := config.CalculateDelay(attempt + 1)
-		
+
 		// Wait with context cancellation support
 		select {
 		case <-ctx.Done():
@@ -96,7 +96,7 @@ func RetryWithBackoff(ctx context.Context, config *RetryConfig, operation Retrya
 			// Continue to next attempt
 		}
 	}
-	
+
 	// All retries exhausted, return the last error
 	return NewGowrightError(
 		ConfigurationError,
@@ -138,11 +138,11 @@ func (ber *BrowserErrorRecovery) Recover(ctx context.Context, err error) error {
 	if !ok {
 		return err
 	}
-	
+
 	// Add recovery context
-	gowrightErr.WithContext("recovery_attempted", true)
-	gowrightErr.WithContext("recovery_strategy", "browser_restart")
-	
+	gowrightErr = gowrightErr.WithContext("recovery_attempted", true)
+	gowrightErr = gowrightErr.WithContext("recovery_strategy", "browser_restart")
+
 	// For browser errors, we typically need to restart the browser instance
 	// This would be handled by the UITester when it detects a recovery error
 	return gowrightErr
@@ -175,11 +175,11 @@ func (aer *APIErrorRecovery) Recover(ctx context.Context, err error) error {
 	if !ok {
 		return err
 	}
-	
+
 	// Add recovery context
-	gowrightErr.WithContext("recovery_attempted", true)
-	gowrightErr.WithContext("recovery_strategy", "api_retry")
-	
+	gowrightErr = gowrightErr.WithContext("recovery_attempted", true)
+	gowrightErr = gowrightErr.WithContext("recovery_strategy", "api_retry")
+
 	// For API errors, recovery usually involves retrying the request
 	// The actual retry logic would be handled by the APITester
 	return gowrightErr
@@ -212,11 +212,11 @@ func (der *DatabaseErrorRecovery) Recover(ctx context.Context, err error) error 
 	if !ok {
 		return err
 	}
-	
+
 	// Add recovery context
-	gowrightErr.WithContext("recovery_attempted", true)
-	gowrightErr.WithContext("recovery_strategy", "database_reconnect")
-	
+	gowrightErr = gowrightErr.WithContext("recovery_attempted", true)
+	gowrightErr = gowrightErr.WithContext("recovery_strategy", "database_reconnect")
+
 	// For database errors, recovery might involve reconnecting or retrying transactions
 	// The actual recovery logic would be handled by the DatabaseTester
 	return gowrightErr
@@ -250,14 +250,14 @@ func (erm *ErrorRecoveryManager) RecoverFromError(ctx context.Context, err error
 			return strategy.Recover(ctx, err)
 		}
 	}
-	
+
 	// No recovery strategy found
 	if gowrightErr, ok := err.(*GowrightError); ok {
-		gowrightErr.WithContext("recovery_attempted", false)
-		gowrightErr.WithContext("recovery_reason", "no_strategy_found")
+		gowrightErr = gowrightErr.WithContext("recovery_attempted", false)
+		gowrightErr = gowrightErr.WithContext("recovery_reason", "no_strategy_found")
 		return gowrightErr
 	}
-	
+
 	return err
 }
 
@@ -270,7 +270,7 @@ func WrapError(errorType ErrorType, message string, cause error) *GowrightError 
 func WrapErrorWithContext(errorType ErrorType, message string, cause error, context map[string]interface{}) *GowrightError {
 	err := NewGowrightError(errorType, message, cause)
 	for key, value := range context {
-		err.WithContext(key, value)
+		err = err.WithContext(key, value)
 	}
 	return err
 }

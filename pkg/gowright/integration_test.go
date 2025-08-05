@@ -16,15 +16,15 @@ type IntegrationTestImpl struct {
 
 // FailureContext holds detailed information about test failures across systems
 type FailureContext struct {
-	FailedStep      *IntegrationStep          `json:"failed_step"`
-	StepIndex       int                       `json:"step_index"`
-	Error           error                     `json:"error"`
-	SystemStates    map[string]interface{}    `json:"system_states"`
-	Screenshots     []string                  `json:"screenshots"`
-	APIResponses    []*APIResponse            `json:"api_responses"`
-	DatabaseResults []*DatabaseResult         `json:"database_results"`
-	Logs            []string                  `json:"logs"`
-	Timestamp       time.Time                 `json:"timestamp"`
+	FailedStep      *IntegrationStep       `json:"failed_step"`
+	StepIndex       int                    `json:"step_index"`
+	Error           error                  `json:"error"`
+	SystemStates    map[string]interface{} `json:"system_states"`
+	Screenshots     []string               `json:"screenshots"`
+	APIResponses    []*APIResponse         `json:"api_responses"`
+	DatabaseResults []*DatabaseResult      `json:"database_results"`
+	Logs            []string               `json:"logs"`
+	Timestamp       time.Time              `json:"timestamp"`
 }
 
 // TestDataSetup represents setup operations for test data across systems
@@ -92,7 +92,7 @@ func NewIntegrationTestImpl(integrationTest *IntegrationTest, tester Integration
 		tester:          tester,
 		setupData:       make(map[string]interface{}),
 		teardownData:    make(map[string]interface{}),
-		failureContext:  &FailureContext{
+		failureContext: &FailureContext{
 			SystemStates:    make(map[string]interface{}),
 			Screenshots:     make([]string, 0),
 			APIResponses:    make([]*APIResponse, 0),
@@ -131,14 +131,14 @@ func (it *IntegrationTestImpl) Execute() *TestCaseResult {
 		result.Error = err
 		result.Screenshots = it.failureContext.Screenshots
 		result.Logs = it.failureContext.Logs
-		
+
 		// Attempt teardown even if test failed
 		if teardownErr := it.executeTeardown(); teardownErr != nil {
-			result.Error = NewGowrightError(AssertionError, 
-				"test failed and teardown also failed", 
+			result.Error = NewGowrightError(AssertionError,
+				"test failed and teardown also failed",
 				fmt.Errorf("test error: %w, teardown error: %w", err, teardownErr))
 		}
-		
+
 		result.EndTime = time.Now()
 		result.Duration = result.EndTime.Sub(result.StartTime)
 		return result
@@ -174,21 +174,21 @@ func (it *IntegrationTestImpl) executeSetup() error {
 func (it *IntegrationTestImpl) executeSteps() error {
 	for i, step := range it.integrationTest.Steps {
 		it.addLog(fmt.Sprintf("Executing step %d: %s", i+1, step.Name))
-		
+
 		if err := it.tester.ExecuteStep(&step); err != nil {
 			// Collect failure context
 			it.failureContext.FailedStep = &step
 			it.failureContext.StepIndex = i
 			it.failureContext.Error = err
 			it.failureContext.Timestamp = time.Now()
-			
+
 			// Collect system states for debugging
 			it.collectSystemStates(&step)
-			
-			return NewGowrightError(AssertionError, 
+
+			return NewGowrightError(AssertionError,
 				fmt.Sprintf("integration test failed at step %d: %s", i+1, step.Name), err)
 		}
-		
+
 		// Collect successful step data for context
 		it.collectStepData(&step)
 	}
@@ -234,12 +234,12 @@ func (it *IntegrationTestImpl) collectUIState() {
 	if uiTester, ok := it.tester.(*IntegrationTesterImpl); ok && uiTester.uiTester != nil {
 		timestamp := time.Now().Format("20060102_150405")
 		filename := fmt.Sprintf("failure_%s_%s.png", it.integrationTest.Name, timestamp)
-		
+
 		if screenshotPath, err := uiTester.uiTester.TakeScreenshot(filename); err == nil {
 			it.failureContext.Screenshots = append(it.failureContext.Screenshots, screenshotPath)
 			it.addLog(fmt.Sprintf("Screenshot captured: %s", screenshotPath))
 		}
-		
+
 		// Try to capture page source
 		if pageSource, err := uiTester.uiTester.GetPageSource(); err == nil {
 			it.failureContext.SystemStates["ui_page_source"] = pageSource
@@ -356,16 +356,16 @@ func (it *IntegrationTestImpl) ExecuteWithSetupAndTeardown(setup *TestDataSetup,
 		result.Error = err
 		result.Screenshots = it.failureContext.Screenshots
 		result.Logs = it.failureContext.Logs
-		
+
 		// Attempt custom teardown even if test failed
 		if teardown != nil {
 			if teardownErr := it.executeCustomTeardown(teardown); teardownErr != nil {
-				result.Error = NewGowrightError(AssertionError, 
-					"test failed and custom teardown also failed", 
+				result.Error = NewGowrightError(AssertionError,
+					"test failed and custom teardown also failed",
 					fmt.Errorf("test error: %w, teardown error: %w", err, teardownErr))
 			}
 		}
-		
+
 		result.EndTime = time.Now()
 		result.Duration = result.EndTime.Sub(result.StartTime)
 		return result
@@ -385,16 +385,6 @@ func (it *IntegrationTestImpl) ExecuteWithSetupAndTeardown(setup *TestDataSetup,
 	result.EndTime = time.Now()
 	result.Duration = result.EndTime.Sub(result.StartTime)
 	return result
-}
-
-// executeCustomSetup runs custom setup operations across systems
-func (it *IntegrationTestImpl) executeCustomSetup(setup *TestDataSetup) error {
-	// Initialize tester first
-	if err := it.tester.Initialize(nil); err != nil {
-		return NewGowrightError(ConfigurationError, "failed to initialize integration tester", err)
-	}
-
-	return it.executeCustomSetupSteps(setup)
 }
 
 // executeCustomSetupSteps runs custom setup operations without initializing the tester
@@ -489,7 +479,7 @@ func (it *IntegrationTestImpl) executeAPISetup(setup *APISetupAction) error {
 			Body:     setup.Body,
 		},
 	}
-	
+
 	if err := it.tester.ExecuteStep(step); err != nil {
 		return err
 	}
@@ -516,7 +506,7 @@ func (it *IntegrationTestImpl) executeDatabaseSetup(setup *DatabaseSetupAction) 
 			Args:       setup.Args,
 		},
 	}
-	
+
 	if err := it.tester.ExecuteStep(step); err != nil {
 		return err
 	}

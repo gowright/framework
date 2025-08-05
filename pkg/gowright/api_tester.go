@@ -26,7 +26,7 @@ func NewAPITester(config *APIConfig) *APITesterImpl {
 	}
 
 	client := resty.New()
-	
+
 	return &APITesterImpl{
 		client: client,
 		config: config,
@@ -46,26 +46,26 @@ func (at *APITesterImpl) Initialize(config interface{}) error {
 	}
 
 	at.config = apiConfig
-	
+
 	// Configure the resty client
 	at.client.SetTimeout(apiConfig.Timeout)
-	
+
 	if apiConfig.BaseURL != "" {
 		at.client.SetBaseURL(apiConfig.BaseURL)
 	}
-	
+
 	// Set default headers
 	if apiConfig.Headers != nil {
 		at.client.SetHeaders(apiConfig.Headers)
 	}
-	
+
 	// Configure authentication if provided
 	if apiConfig.AuthConfig != nil {
 		if err := at.SetAuth(apiConfig.AuthConfig); err != nil {
 			return NewGowrightError(ConfigurationError, "failed to configure authentication", err)
 		}
 	}
-	
+
 	// Configure retry mechanism
 	at.client.SetRetryCount(3).
 		SetRetryWaitTime(1 * time.Second).
@@ -163,24 +163,24 @@ func (at *APITesterImpl) SetAuth(auth *AuthConfig) error {
 // executeRequest is a helper method that executes HTTP requests
 func (at *APITesterImpl) executeRequest(method, endpoint string, body interface{}, headers map[string]string) (*APIResponse, error) {
 	startTime := time.Now()
-	
+
 	// Create request
 	req := at.client.R()
-	
+
 	// Set request headers
 	if headers != nil {
 		req.SetHeaders(headers)
 	}
-	
+
 	// Set request body if provided
 	if body != nil {
 		req.SetBody(body)
 	}
-	
+
 	// Execute request based on method
 	var resp *resty.Response
 	var err error
-	
+
 	switch strings.ToUpper(method) {
 	case "GET":
 		resp, err = req.Get(endpoint)
@@ -199,16 +199,16 @@ func (at *APITesterImpl) executeRequest(method, endpoint string, body interface{
 	default:
 		return nil, NewGowrightError(APIError, fmt.Sprintf("unsupported HTTP method: %s", method), nil)
 	}
-	
+
 	duration := time.Since(startTime)
-	
+
 	if err != nil {
 		return nil, NewGowrightError(APIError, fmt.Sprintf("HTTP request failed: %s %s", method, endpoint), err).
 			WithContext("method", method).
 			WithContext("endpoint", endpoint).
 			WithContext("duration", duration)
 	}
-	
+
 	// Convert resty response to APIResponse
 	apiResponse := &APIResponse{
 		StatusCode: resp.StatusCode(),
@@ -216,7 +216,7 @@ func (at *APITesterImpl) executeRequest(method, endpoint string, body interface{
 		Body:       resp.Body(),
 		Duration:   duration,
 	}
-	
+
 	return apiResponse, nil
 }
 
@@ -272,13 +272,13 @@ func (at *APITesterImpl) ValidateJSONResponse(response *APIResponse) error {
 	if response == nil {
 		return NewGowrightError(APIError, "response cannot be nil", nil)
 	}
-	
+
 	var jsonData interface{}
 	if err := json.Unmarshal(response.Body, &jsonData); err != nil {
 		return NewGowrightError(APIError, "response body is not valid JSON", err).
 			WithContext("body", string(response.Body))
 	}
-	
+
 	return nil
 }
 
@@ -287,13 +287,13 @@ func (at *APITesterImpl) GetJSONResponse(response *APIResponse) (interface{}, er
 	if response == nil {
 		return nil, NewGowrightError(APIError, "response cannot be nil", nil)
 	}
-	
+
 	var jsonData interface{}
 	if err := json.Unmarshal(response.Body, &jsonData); err != nil {
 		return nil, NewGowrightError(APIError, "failed to parse JSON response", err).
 			WithContext("body", string(response.Body))
 	}
-	
+
 	return jsonData, nil
 }
 

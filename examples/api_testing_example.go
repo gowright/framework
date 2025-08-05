@@ -1,3 +1,6 @@
+//go:build ignore
+// +build ignore
+
 package main
 
 import (
@@ -5,7 +8,7 @@ import (
 	"log"
 	"time"
 
-	"github/gowright/framework/pkg/gowright"
+	"github.com/gowright/framework/pkg/gowright"
 )
 
 func main() {
@@ -110,17 +113,17 @@ func printTestResult(result *gowright.TestCaseResult) {
 	fmt.Printf("Test: %s\n", result.Name)
 	fmt.Printf("Status: %s\n", result.Status.String())
 	fmt.Printf("Duration: %v\n", result.Duration)
-	
+
 	if result.Error != nil {
 		fmt.Printf("Error: %v\n", result.Error)
 	}
-	
+
 	if len(result.Logs) > 0 {
 		fmt.Println("Logs:")
 		for _, log := range result.Logs {
 			fmt.Printf("  - %s\n", log)
 		}
 	}
-	
+
 	fmt.Println("---")
 }

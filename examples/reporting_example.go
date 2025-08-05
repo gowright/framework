@@ -1,3 +1,6 @@
+//go:build ignore
+// +build ignore
+
 package main
 
 import (
@@ -5,7 +8,7 @@ import (
 	"log"
 	"time"
 
-	"github/gowright/framework/pkg/gowright"
+	"github.com/gowright/framework/pkg/gowright"
 )
 
 func main() {
@@ -82,7 +85,7 @@ func main() {
 	fmt.Println("Reports generated successfully!")
 	fmt.Printf("- JSON report: %s\n", config.ReportConfig.LocalReports.OutputDir)
 	fmt.Printf("- HTML report: %s\n", config.ReportConfig.LocalReports.OutputDir)
-	
+
 	// Display summary
 	fmt.Printf("\nTest Summary:\n")
 	fmt.Printf("Suite: %s\n", testResults.SuiteName)

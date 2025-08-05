@@ -8,27 +8,27 @@ import (
 
 // HTTPTransportConfig holds configuration for HTTP transport
 type HTTPTransportConfig struct {
-	MaxIdleConns        int
-	MaxIdleConnsPerHost int
-	IdleConnTimeout     time.Duration
-	DialTimeout         time.Duration
-	TLSHandshakeTimeout time.Duration
+	MaxIdleConns          int
+	MaxIdleConnsPerHost   int
+	IdleConnTimeout       time.Duration
+	DialTimeout           time.Duration
+	TLSHandshakeTimeout   time.Duration
 	ResponseHeaderTimeout time.Duration
 }
 
 // Build creates an HTTP transport with the specified configuration
 func (config *HTTPTransportConfig) Build() *http.Transport {
 	transport := &http.Transport{
-		MaxIdleConns:        config.MaxIdleConns,
-		MaxIdleConnsPerHost: config.MaxIdleConnsPerHost,
-		IdleConnTimeout:     config.IdleConnTimeout,
-		TLSHandshakeTimeout: config.TLSHandshakeTimeout,
+		MaxIdleConns:          config.MaxIdleConns,
+		MaxIdleConnsPerHost:   config.MaxIdleConnsPerHost,
+		IdleConnTimeout:       config.IdleConnTimeout,
+		TLSHandshakeTimeout:   config.TLSHandshakeTimeout,
 		ResponseHeaderTimeout: config.ResponseHeaderTimeout,
 		DialContext: (&net.Dialer{
 			Timeout: config.DialTimeout,
 		}).DialContext,
 	}
-	
+
 	// Set defaults if not specified
 	if transport.MaxIdleConns == 0 {
 		transport.MaxIdleConns = 100
@@ -50,7 +50,7 @@ func (config *HTTPTransportConfig) Build() *http.Transport {
 			Timeout: 30 * time.Second,
 		}).DialContext
 	}
-	
+
 	return transport
 }
 

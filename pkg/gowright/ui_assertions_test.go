@@ -39,9 +39,9 @@ func (suite *UIAssertionsTestSuite) TestExecuteElementPresentAssertion() {
 		Type:     string(AssertElementPresent),
 		Selector: "#element",
 	}
-	
+
 	suite.mockTester.On("WaitForElement", "#element", 30*time.Second).Return(nil)
-	
+
 	err := suite.executor.ExecuteAssertion(assertion)
 	suite.NoError(err)
 }
@@ -51,10 +51,10 @@ func (suite *UIAssertionsTestSuite) TestExecuteElementPresentAssertionWithoutSel
 	assertion := UIAssertion{
 		Type: string(AssertElementPresent),
 	}
-	
+
 	err := suite.executor.ExecuteAssertion(assertion)
 	suite.Error(err)
-	
+
 	gowrightErr, ok := err.(*GowrightError)
 	suite.True(ok)
 	suite.Equal(AssertionError, gowrightErr.Type)
@@ -68,9 +68,9 @@ func (suite *UIAssertionsTestSuite) TestExecuteTextEqualsAssertion() {
 		Selector: "#element",
 		Expected: "expected text",
 	}
-	
+
 	suite.mockTester.On("GetText", "#element").Return("expected text", nil)
-	
+
 	err := suite.executor.ExecuteAssertion(assertion)
 	suite.NoError(err)
 }
@@ -82,12 +82,12 @@ func (suite *UIAssertionsTestSuite) TestExecuteTextEqualsAssertionMismatch() {
 		Selector: "#element",
 		Expected: "expected text",
 	}
-	
+
 	suite.mockTester.On("GetText", "#element").Return("actual text", nil)
-	
+
 	err := suite.executor.ExecuteAssertion(assertion)
 	suite.Error(err)
-	
+
 	gowrightErr, ok := err.(*GowrightError)
 	suite.True(ok)
 	suite.Equal(AssertionError, gowrightErr.Type)
@@ -101,9 +101,9 @@ func (suite *UIAssertionsTestSuite) TestExecuteTextContainsAssertion() {
 		Selector: "#element",
 		Expected: "partial",
 	}
-	
+
 	suite.mockTester.On("GetText", "#element").Return("this is partial text", nil)
-	
+
 	err := suite.executor.ExecuteAssertion(assertion)
 	suite.NoError(err)
 }
@@ -115,12 +115,12 @@ func (suite *UIAssertionsTestSuite) TestExecuteTextContainsAssertionNotFound() {
 		Selector: "#element",
 		Expected: "missing",
 	}
-	
+
 	suite.mockTester.On("GetText", "#element").Return("this is some text", nil)
-	
+
 	err := suite.executor.ExecuteAssertion(assertion)
 	suite.Error(err)
-	
+
 	gowrightErr, ok := err.(*GowrightError)
 	suite.True(ok)
 	suite.Equal(AssertionError, gowrightErr.Type)
@@ -134,9 +134,9 @@ func (suite *UIAssertionsTestSuite) TestExecuteTextNotContainsAssertion() {
 		Selector: "#element",
 		Expected: "forbidden",
 	}
-	
+
 	suite.mockTester.On("GetText", "#element").Return("this is allowed text", nil)
-	
+
 	err := suite.executor.ExecuteAssertion(assertion)
 	suite.NoError(err)
 }
@@ -148,12 +148,12 @@ func (suite *UIAssertionsTestSuite) TestExecuteTextNotContainsAssertionFound() {
 		Selector: "#element",
 		Expected: "forbidden",
 	}
-	
+
 	suite.mockTester.On("GetText", "#element").Return("this contains forbidden text", nil)
-	
+
 	err := suite.executor.ExecuteAssertion(assertion)
 	suite.Error(err)
-	
+
 	gowrightErr, ok := err.(*GowrightError)
 	suite.True(ok)
 	suite.Equal(AssertionError, gowrightErr.Type)
@@ -167,9 +167,9 @@ func (suite *UIAssertionsTestSuite) TestExecuteTextMatchesAssertion() {
 		Selector: "#element",
 		Expected: `^\d{3}-\d{3}-\d{4}$`, // Phone number pattern
 	}
-	
+
 	suite.mockTester.On("GetText", "#element").Return("123-456-7890", nil)
-	
+
 	err := suite.executor.ExecuteAssertion(assertion)
 	suite.NoError(err)
 }
@@ -181,12 +181,12 @@ func (suite *UIAssertionsTestSuite) TestExecuteTextMatchesAssertionNoMatch() {
 		Selector: "#element",
 		Expected: `^\d{3}-\d{3}-\d{4}$`, // Phone number pattern
 	}
-	
+
 	suite.mockTester.On("GetText", "#element").Return("not a phone number", nil)
-	
+
 	err := suite.executor.ExecuteAssertion(assertion)
 	suite.Error(err)
-	
+
 	gowrightErr, ok := err.(*GowrightError)
 	suite.True(ok)
 	suite.Equal(AssertionError, gowrightErr.Type)
@@ -200,12 +200,12 @@ func (suite *UIAssertionsTestSuite) TestExecuteTextMatchesAssertionInvalidRegex(
 		Selector: "#element",
 		Expected: `[invalid regex`, // Invalid regex
 	}
-	
+
 	suite.mockTester.On("GetText", "#element").Return("some text", nil)
-	
+
 	err := suite.executor.ExecuteAssertion(assertion)
 	suite.Error(err)
-	
+
 	gowrightErr, ok := err.(*GowrightError)
 	suite.True(ok)
 	suite.Equal(AssertionError, gowrightErr.Type)
@@ -218,9 +218,9 @@ func (suite *UIAssertionsTestSuite) TestExecutePageSourceContainsAssertion() {
 		Type:     string(AssertPageSourceContains),
 		Expected: "<title>Test Page</title>",
 	}
-	
+
 	suite.mockTester.On("GetPageSource").Return("<html><head><title>Test Page</title></head><body></body></html>", nil)
-	
+
 	err := suite.executor.ExecuteAssertion(assertion)
 	suite.NoError(err)
 }
@@ -231,12 +231,12 @@ func (suite *UIAssertionsTestSuite) TestExecutePageSourceContainsAssertionNotFou
 		Type:     string(AssertPageSourceContains),
 		Expected: "<title>Missing Page</title>",
 	}
-	
+
 	suite.mockTester.On("GetPageSource").Return("<html><head><title>Test Page</title></head><body></body></html>", nil)
-	
+
 	err := suite.executor.ExecuteAssertion(assertion)
 	suite.Error(err)
-	
+
 	gowrightErr, ok := err.(*GowrightError)
 	suite.True(ok)
 	suite.Equal(AssertionError, gowrightErr.Type)
@@ -248,10 +248,10 @@ func (suite *UIAssertionsTestSuite) TestExecuteUnsupportedAssertion() {
 	assertion := UIAssertion{
 		Type: "unsupported_assertion",
 	}
-	
+
 	err := suite.executor.ExecuteAssertion(assertion)
 	suite.Error(err)
-	
+
 	gowrightErr, ok := err.(*GowrightError)
 	suite.True(ok)
 	suite.Equal(AssertionError, gowrightErr.Type)
@@ -271,10 +271,10 @@ func (suite *UIAssertionsTestSuite) TestExecuteAssertions() {
 			Expected: "test text",
 		},
 	}
-	
+
 	suite.mockTester.On("WaitForElement", "#element1", 30*time.Second).Return(nil)
 	suite.mockTester.On("GetText", "#element2").Return("test text", nil)
-	
+
 	err := suite.executor.ExecuteAssertions(assertions)
 	suite.NoError(err)
 }
@@ -292,13 +292,13 @@ func (suite *UIAssertionsTestSuite) TestExecuteAssertionsWithFailure() {
 			Expected: "expected text",
 		},
 	}
-	
+
 	suite.mockTester.On("WaitForElement", "#element1", 30*time.Second).Return(nil)
 	suite.mockTester.On("GetText", "#element2").Return("actual text", nil)
-	
+
 	err := suite.executor.ExecuteAssertions(assertions)
 	suite.Error(err)
-	
+
 	gowrightErr, ok := err.(*GowrightError)
 	suite.True(ok)
 	suite.Equal(AssertionError, gowrightErr.Type)
@@ -316,9 +316,9 @@ func (suite *UIAssertionsTestSuite) TestCaseSensitiveOption() {
 			"case_sensitive": false,
 		},
 	}
-	
+
 	suite.mockTester.On("GetText", "#element").Return("expected text", nil)
-	
+
 	err := suite.executor.ExecuteAssertion(assertion)
 	suite.NoError(err)
 }
@@ -479,16 +479,16 @@ func TestAssertionTypes(t *testing.T) {
 func TestHelperMethods(t *testing.T) {
 	mockTester := new(MockUITester)
 	executor := NewUIAssertionExecutor(mockTester)
-	
+
 	// Test getExpectedString
 	assertion1 := UIAssertion{Expected: "test string"}
 	result1 := executor.getExpectedString(assertion1)
 	assert.Equal(t, "test string", result1)
-	
+
 	assertion2 := UIAssertion{Expected: 123}
 	result2 := executor.getExpectedString(assertion2)
 	assert.Equal(t, "123", result2)
-	
+
 	// Test isCaseSensitive
 	assertion3 := UIAssertion{
 		Options: map[string]interface{}{
@@ -497,11 +497,11 @@ func TestHelperMethods(t *testing.T) {
 	}
 	result3 := executor.isCaseSensitive(assertion3)
 	assert.False(t, result3)
-	
+
 	assertion4 := UIAssertion{} // No options, should default to true
 	result4 := executor.isCaseSensitive(assertion4)
 	assert.True(t, result4)
-	
+
 	// Test getTimeout
 	assertion5 := UIAssertion{
 		Options: map[string]interface{}{
@@ -510,7 +510,7 @@ func TestHelperMethods(t *testing.T) {
 	}
 	result5 := executor.getTimeout(assertion5)
 	assert.Equal(t, 10*time.Second, result5)
-	
+
 	assertion6 := UIAssertion{} // No options, should use default
 	result6 := executor.getTimeout(assertion6)
 	assert.Equal(t, 30*time.Second, result6)

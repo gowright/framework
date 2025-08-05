@@ -23,21 +23,21 @@ type UICaptureTestSuite struct {
 // SetupTest runs before each test
 func (suite *UICaptureTestSuite) SetupTest() {
 	suite.mockTester = new(MockUITester)
-	
+
 	// Create temporary directory for testing
 	var err error
 	suite.tempDir, err = os.MkdirTemp("", "gowright_capture_test")
 	suite.Require().NoError(err)
-	
+
 	suite.captureManager = NewUICaptureManager(suite.mockTester, suite.tempDir)
 }
 
 // TearDownTest runs after each test
 func (suite *UICaptureTestSuite) TearDownTest() {
 	suite.mockTester.AssertExpectations(suite.T())
-	
+
 	// Clean up temporary directory
-	os.RemoveAll(suite.tempDir)
+	_ = os.RemoveAll(suite.tempDir)
 }
 
 // TestNewUICaptureManager tests the constructor
@@ -47,7 +47,7 @@ func (suite *UICaptureTestSuite) TestNewUICaptureManager() {
 	suite.NotNil(manager)
 	suite.Equal(suite.mockTester, manager.tester)
 	suite.Equal("/custom/path", manager.outputDir)
-	
+
 	// Test with empty output directory (should use default)
 	manager2 := NewUICaptureManager(suite.mockTester, "")
 	suite.Equal("./captures", manager2.outputDir)
@@ -57,13 +57,13 @@ func (suite *UICaptureTestSuite) TestNewUICaptureManager() {
 func (suite *UICaptureTestSuite) TestCaptureScreenshot() {
 	// Use a more flexible mock that accepts any path containing the test name
 	suite.mockTester.On("TakeScreenshot", mock.MatchedBy(func(path string) bool {
-		return filepath.Base(path) != "" && 
-			   filepath.Ext(path) == ".png" &&
-			   strings.Contains(path, "test_screenshot")
+		return filepath.Base(path) != "" &&
+			filepath.Ext(path) == ".png" &&
+			strings.Contains(path, "test_screenshot")
 	})).Return("screenshot_path", nil)
-	
+
 	actualPath, err := suite.captureManager.CaptureScreenshot("test_screenshot")
-	
+
 	suite.NoError(err)
 	suite.Equal("screenshot_path", actualPath)
 }
@@ -71,11 +71,11 @@ func (suite *UICaptureTestSuite) TestCaptureScreenshot() {
 // TestCaptureScreenshotWithName tests screenshot capture with specific filename
 func (suite *UICaptureTestSuite) TestCaptureScreenshotWithName() {
 	expectedPath := filepath.Join(suite.tempDir, "screenshots", "custom_screenshot.png")
-	
+
 	suite.mockTester.On("TakeScreenshot", expectedPath).Return(expectedPath, nil)
-	
+
 	actualPath, err := suite.captureManager.CaptureScreenshotWithName("custom_screenshot.png")
-	
+
 	suite.NoError(err)
 	suite.Equal(expectedPath, actualPath)
 }
@@ -83,11 +83,11 @@ func (suite *UICaptureTestSuite) TestCaptureScreenshotWithName() {
 // TestCaptureScreenshotWithAbsolutePath tests screenshot capture with absolute path
 func (suite *UICaptureTestSuite) TestCaptureScreenshotWithAbsolutePath() {
 	absolutePath := filepath.Join(suite.tempDir, "absolute_screenshot.png")
-	
+
 	suite.mockTester.On("TakeScreenshot", absolutePath).Return(absolutePath, nil)
-	
+
 	actualPath, err := suite.captureManager.CaptureScreenshotWithName(absolutePath)
-	
+
 	suite.NoError(err)
 	suite.Equal(absolutePath, actualPath)
 }
@@ -95,15 +95,15 @@ func (suite *UICaptureTestSuite) TestCaptureScreenshotWithAbsolutePath() {
 // TestCapturePageSource tests page source capture with automatic filename
 func (suite *UICaptureTestSuite) TestCapturePageSource() {
 	htmlContent := "<html><head><title>Test</title></head><body>Test content</body></html>"
-	
+
 	suite.mockTester.On("GetPageSource").Return(htmlContent, nil)
-	
+
 	actualPath, err := suite.captureManager.CapturePageSource("test_page")
-	
+
 	suite.NoError(err)
 	suite.Contains(actualPath, "test_page")
 	suite.Contains(actualPath, ".html")
-	
+
 	// Verify file was created and contains correct content
 	content, err := os.ReadFile(actualPath)
 	suite.NoError(err)
@@ -114,14 +114,14 @@ func (suite *UICaptureTestSuite) TestCapturePageSource() {
 func (suite *UICaptureTestSuite) TestCapturePageSourceWithName() {
 	htmlContent := "<html><head><title>Test</title></head><body>Test content</body></html>"
 	expectedPath := filepath.Join(suite.tempDir, "page_sources", "custom_page.html")
-	
+
 	suite.mockTester.On("GetPageSource").Return(htmlContent, nil)
-	
+
 	actualPath, err := suite.captureManager.CapturePageSourceWithName("custom_page.html")
-	
+
 	suite.NoError(err)
 	suite.Equal(expectedPath, actualPath)
-	
+
 	// Verify file was created and contains correct content
 	content, err := os.ReadFile(actualPath)
 	suite.NoError(err)
@@ -132,14 +132,14 @@ func (suite *UICaptureTestSuite) TestCapturePageSourceWithName() {
 func (suite *UICaptureTestSuite) TestCapturePageSourceWithAbsolutePath() {
 	htmlContent := "<html><head><title>Test</title></head><body>Test content</body></html>"
 	absolutePath := filepath.Join(suite.tempDir, "absolute_page.html")
-	
+
 	suite.mockTester.On("GetPageSource").Return(htmlContent, nil)
-	
+
 	actualPath, err := suite.captureManager.CapturePageSourceWithName(absolutePath)
-	
+
 	suite.NoError(err)
 	suite.Equal(absolutePath, actualPath)
-	
+
 	// Verify file was created and contains correct content
 	content, err := os.ReadFile(actualPath)
 	suite.NoError(err)
@@ -150,13 +150,13 @@ func (suite *UICaptureTestSuite) TestCapturePageSourceWithAbsolutePath() {
 func (suite *UICaptureTestSuite) TestCaptureOnFailure() {
 	htmlContent := "<html><head><title>Test</title></head><body>Test content</body></html>"
 	testError := NewGowrightError(BrowserError, "test error", nil)
-	
+
 	// Mock both screenshot and page source capture
 	suite.mockTester.On("TakeScreenshot", mock.AnythingOfType("string")).Return("screenshot_path", nil)
 	suite.mockTester.On("GetPageSource").Return(htmlContent, nil)
-	
+
 	capture, err := suite.captureManager.CaptureOnFailure("test_failure", testError)
-	
+
 	suite.NoError(err)
 	suite.NotNil(capture)
 	suite.Equal("test_failure", capture.TestName)
@@ -171,13 +171,13 @@ func (suite *UICaptureTestSuite) TestCaptureOnFailureWithErrors() {
 	testError := NewGowrightError(BrowserError, "test error", nil)
 	screenshotError := NewGowrightError(BrowserError, "screenshot failed", nil)
 	pageSourceError := NewGowrightError(BrowserError, "page source failed", nil)
-	
+
 	// Mock both captures to fail
 	suite.mockTester.On("TakeScreenshot", mock.AnythingOfType("string")).Return("", screenshotError)
 	suite.mockTester.On("GetPageSource").Return("", pageSourceError)
-	
+
 	capture, err := suite.captureManager.CaptureOnFailure("test_failure", testError)
-	
+
 	suite.NoError(err)
 	suite.NotNil(capture)
 	suite.Equal("test_failure", capture.TestName)
@@ -193,10 +193,10 @@ func (suite *UICaptureTestSuite) TestCaptureOnFailureWithErrors() {
 func (suite *UICaptureTestSuite) TestSetAndGetOutputDirectory() {
 	originalDir := suite.captureManager.GetOutputDirectory()
 	suite.Equal(suite.tempDir, originalDir)
-	
+
 	newDir := "/new/output/dir"
 	suite.captureManager.SetOutputDirectory(newDir)
-	
+
 	updatedDir := suite.captureManager.GetOutputDirectory()
 	suite.Equal(newDir, updatedDir)
 }
@@ -208,11 +208,11 @@ func (suite *UICaptureTestSuite) TestAdvancedCaptureScreenshot() {
 		CustomPrefix:     "custom_prefix",
 		Format:           "png",
 	}
-	
+
 	suite.mockTester.On("TakeScreenshot", mock.AnythingOfType("string")).Return("screenshot_path", nil)
-	
+
 	actualPath, err := suite.captureManager.AdvancedCaptureScreenshot("test", options)
-	
+
 	suite.NoError(err)
 	suite.NotEmpty(actualPath)
 }
@@ -220,9 +220,9 @@ func (suite *UICaptureTestSuite) TestAdvancedCaptureScreenshot() {
 // TestAdvancedCaptureScreenshotWithNilOptions tests advanced screenshot capture with nil options
 func (suite *UICaptureTestSuite) TestAdvancedCaptureScreenshotWithNilOptions() {
 	suite.mockTester.On("TakeScreenshot", mock.AnythingOfType("string")).Return("screenshot_path", nil)
-	
+
 	actualPath, err := suite.captureManager.AdvancedCaptureScreenshot("test", nil)
-	
+
 	suite.NoError(err)
 	suite.NotEmpty(actualPath)
 }
@@ -237,52 +237,52 @@ func TestCleanupOldCaptures(t *testing.T) {
 	// Create temporary directory
 	tempDir, err := os.MkdirTemp("", "gowright_cleanup_test")
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
-	
+	defer func() { _ = os.RemoveAll(tempDir) }()
+
 	mockTester := new(MockUITester)
 	manager := NewUICaptureManager(mockTester, tempDir)
-	
+
 	// Create test directories
 	screenshotDir := filepath.Join(tempDir, "screenshots")
 	pageSourceDir := filepath.Join(tempDir, "page_sources")
 	assert.NoError(t, os.MkdirAll(screenshotDir, 0755))
 	assert.NoError(t, os.MkdirAll(pageSourceDir, 0755))
-	
+
 	// Create old and new files
 	oldTime := time.Now().Add(-2 * time.Hour)
 	newTime := time.Now().Add(-30 * time.Minute)
-	
+
 	oldScreenshot := filepath.Join(screenshotDir, "old_screenshot.png")
 	newScreenshot := filepath.Join(screenshotDir, "new_screenshot.png")
 	oldPageSource := filepath.Join(pageSourceDir, "old_page.html")
 	newPageSource := filepath.Join(pageSourceDir, "new_page.html")
-	
+
 	// Create files
 	assert.NoError(t, os.WriteFile(oldScreenshot, []byte("old screenshot"), 0644))
 	assert.NoError(t, os.WriteFile(newScreenshot, []byte("new screenshot"), 0644))
 	assert.NoError(t, os.WriteFile(oldPageSource, []byte("old page"), 0644))
 	assert.NoError(t, os.WriteFile(newPageSource, []byte("new page"), 0644))
-	
+
 	// Set file modification times
 	assert.NoError(t, os.Chtimes(oldScreenshot, oldTime, oldTime))
 	assert.NoError(t, os.Chtimes(oldPageSource, oldTime, oldTime))
 	assert.NoError(t, os.Chtimes(newScreenshot, newTime, newTime))
 	assert.NoError(t, os.Chtimes(newPageSource, newTime, newTime))
-	
+
 	// Cleanup files older than 1 hour
 	err = manager.CleanupOldCaptures(1 * time.Hour)
 	assert.NoError(t, err)
-	
+
 	// Check that old files are removed and new files remain
 	_, err = os.Stat(oldScreenshot)
 	assert.True(t, os.IsNotExist(err))
-	
+
 	_, err = os.Stat(oldPageSource)
 	assert.True(t, os.IsNotExist(err))
-	
+
 	_, err = os.Stat(newScreenshot)
 	assert.NoError(t, err)
-	
+
 	_, err = os.Stat(newPageSource)
 	assert.NoError(t, err)
 }
@@ -292,31 +292,31 @@ func TestGetCaptureStats(t *testing.T) {
 	// Create temporary directory
 	tempDir, err := os.MkdirTemp("", "gowright_stats_test")
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
-	
+	defer func() { _ = os.RemoveAll(tempDir) }()
+
 	mockTester := new(MockUITester)
 	manager := NewUICaptureManager(mockTester, tempDir)
-	
+
 	// Create test directories
 	screenshotDir := filepath.Join(tempDir, "screenshots")
 	pageSourceDir := filepath.Join(tempDir, "page_sources")
 	assert.NoError(t, os.MkdirAll(screenshotDir, 0755))
 	assert.NoError(t, os.MkdirAll(pageSourceDir, 0755))
-	
+
 	// Create test files
 	screenshot1 := filepath.Join(screenshotDir, "screenshot1.png")
 	screenshot2 := filepath.Join(screenshotDir, "screenshot2.png")
 	pageSource1 := filepath.Join(pageSourceDir, "page1.html")
-	
+
 	assert.NoError(t, os.WriteFile(screenshot1, []byte("screenshot1 content"), 0644))
 	assert.NoError(t, os.WriteFile(screenshot2, []byte("screenshot2 content longer"), 0644))
 	assert.NoError(t, os.WriteFile(pageSource1, []byte("page source content"), 0644))
-	
+
 	// Get stats
 	stats, err := manager.GetCaptureStats()
 	assert.NoError(t, err)
 	assert.NotNil(t, stats)
-	
+
 	assert.Equal(t, 2, stats.ScreenshotCount)
 	assert.Equal(t, 1, stats.PageSourceCount)
 	assert.Equal(t, 3, stats.TotalFiles)
@@ -330,16 +330,16 @@ func TestGetCaptureStatsEmptyDirectories(t *testing.T) {
 	// Create temporary directory
 	tempDir, err := os.MkdirTemp("", "gowright_empty_stats_test")
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
-	
+	defer func() { _ = os.RemoveAll(tempDir) }()
+
 	mockTester := new(MockUITester)
 	manager := NewUICaptureManager(mockTester, tempDir)
-	
+
 	// Get stats without creating any files
 	stats, err := manager.GetCaptureStats()
 	assert.NoError(t, err)
 	assert.NotNil(t, stats)
-	
+
 	assert.Equal(t, 0, stats.ScreenshotCount)
 	assert.Equal(t, 0, stats.PageSourceCount)
 	assert.Equal(t, 0, stats.TotalFiles)

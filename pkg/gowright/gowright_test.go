@@ -192,32 +192,32 @@ func (st *SimpleTest) Execute() *TestCaseResult {
 
 func TestNewWithDefaults(t *testing.T) {
 	gw := NewWithDefaults()
-	
+
 	require.NotNil(t, gw)
 	assert.NotNil(t, gw.GetConfig())
 	assert.NotNil(t, gw.GetReporter())
 	assert.False(t, gw.IsInitialized())
-	
+
 	config := gw.GetConfig()
 	assert.Equal(t, "info", config.LogLevel)
 	assert.Equal(t, false, config.Parallel)
 	assert.Equal(t, 3, config.MaxRetries)
-	
+
 	// Test browser config defaults
 	assert.NotNil(t, config.BrowserConfig)
 	assert.True(t, config.BrowserConfig.Headless)
 	assert.NotNil(t, config.BrowserConfig.WindowSize)
 	assert.Equal(t, 1920, config.BrowserConfig.WindowSize.Width)
 	assert.Equal(t, 1080, config.BrowserConfig.WindowSize.Height)
-	
+
 	// Test API config defaults
 	assert.NotNil(t, config.APIConfig)
 	assert.NotNil(t, config.APIConfig.Headers)
-	
+
 	// Test database config defaults
 	assert.NotNil(t, config.DatabaseConfig)
 	assert.NotNil(t, config.DatabaseConfig.Connections)
-	
+
 	// Test report config defaults
 	assert.NotNil(t, config.ReportConfig)
 	assert.True(t, config.ReportConfig.LocalReports.JSON)
@@ -231,9 +231,9 @@ func TestNew(t *testing.T) {
 		Parallel:   true,
 		MaxRetries: 5,
 	}
-	
+
 	gw := New(config)
-	
+
 	require.NotNil(t, gw)
 	assert.Equal(t, config, gw.GetConfig())
 	assert.NotNil(t, gw.GetReporter())
@@ -242,7 +242,7 @@ func TestNew(t *testing.T) {
 
 func TestNewWithNilConfig(t *testing.T) {
 	gw := New(nil)
-	
+
 	require.NotNil(t, gw)
 	assert.NotNil(t, gw.GetConfig())
 	assert.NotNil(t, gw.GetReporter())
@@ -255,18 +255,18 @@ func TestNewWithOptions(t *testing.T) {
 		Parallel:   true,
 		MaxRetries: 5,
 	}
-	
+
 	mockUITester := &MockUITester{}
 	mockAPITester := &MockAPITester{}
-	
+
 	options := &GowrightOptions{
 		Config:    config,
 		UITester:  mockUITester,
 		APITester: mockAPITester,
 	}
-	
+
 	gw := NewWithOptions(options)
-	
+
 	require.NotNil(t, gw)
 	assert.Equal(t, config, gw.GetConfig())
 	assert.Equal(t, mockUITester, gw.GetUITester())
@@ -276,7 +276,7 @@ func TestNewWithOptions(t *testing.T) {
 
 func TestNewWithOptionsNil(t *testing.T) {
 	gw := NewWithOptions(nil)
-	
+
 	require.NotNil(t, gw)
 	assert.NotNil(t, gw.GetConfig())
 	assert.NotNil(t, gw.GetReporter())
@@ -286,26 +286,26 @@ func TestNewWithOptionsNil(t *testing.T) {
 func TestInitialize(t *testing.T) {
 	mockUITester := &MockUITester{}
 	mockAPITester := &MockAPITester{}
-	
+
 	mockUITester.On("Initialize", mock.Anything).Return(nil)
 	mockAPITester.On("Initialize", mock.Anything).Return(nil)
-	
+
 	options := &GowrightOptions{
 		UITester:  mockUITester,
 		APITester: mockAPITester,
 	}
-	
+
 	gw := NewWithOptions(options)
-	
+
 	err := gw.Initialize()
 	assert.NoError(t, err)
 	assert.True(t, gw.IsInitialized())
-	
+
 	// Test that calling Initialize again doesn't cause issues
 	err = gw.Initialize()
 	assert.NoError(t, err)
 	assert.True(t, gw.IsInitialized())
-	
+
 	mockUITester.AssertExpectations(t)
 	mockAPITester.AssertExpectations(t)
 }
@@ -313,53 +313,53 @@ func TestInitialize(t *testing.T) {
 func TestInitializeWithError(t *testing.T) {
 	mockUITester := &MockUITester{}
 	expectedError := errors.New("initialization failed")
-	
+
 	mockUITester.On("Initialize", mock.Anything).Return(expectedError)
-	
+
 	options := &GowrightOptions{
 		UITester: mockUITester,
 	}
-	
+
 	gw := NewWithOptions(options)
-	
+
 	err := gw.Initialize()
 	assert.Error(t, err)
 	assert.False(t, gw.IsInitialized())
-	
+
 	// Check that it's a GowrightError
 	var gowrightErr *GowrightError
 	assert.True(t, errors.As(err, &gowrightErr))
 	assert.Equal(t, ConfigurationError, gowrightErr.Type)
-	
+
 	mockUITester.AssertExpectations(t)
 }
 
 func TestCleanup(t *testing.T) {
 	mockUITester := &MockUITester{}
 	mockAPITester := &MockAPITester{}
-	
+
 	mockUITester.On("Initialize", mock.Anything).Return(nil)
 	mockAPITester.On("Initialize", mock.Anything).Return(nil)
 	mockUITester.On("Cleanup").Return(nil)
 	mockAPITester.On("Cleanup").Return(nil)
-	
+
 	options := &GowrightOptions{
 		UITester:  mockUITester,
 		APITester: mockAPITester,
 	}
-	
+
 	gw := NewWithOptions(options)
-	
+
 	// Initialize first
 	err := gw.Initialize()
 	require.NoError(t, err)
 	assert.True(t, gw.IsInitialized())
-	
+
 	// Then cleanup
 	err = gw.Cleanup()
 	assert.NoError(t, err)
 	assert.False(t, gw.IsInitialized())
-	
+
 	mockUITester.AssertExpectations(t)
 	mockAPITester.AssertExpectations(t)
 }
@@ -367,50 +367,50 @@ func TestCleanup(t *testing.T) {
 func TestCleanupWithError(t *testing.T) {
 	mockUITester := &MockUITester{}
 	expectedError := errors.New("cleanup failed")
-	
+
 	mockUITester.On("Initialize", mock.Anything).Return(nil)
 	mockUITester.On("Cleanup").Return(expectedError)
-	
+
 	options := &GowrightOptions{
 		UITester: mockUITester,
 	}
-	
+
 	gw := NewWithOptions(options)
-	
+
 	// Initialize first
 	err := gw.Initialize()
 	require.NoError(t, err)
-	
+
 	// Then cleanup with error
 	err = gw.Cleanup()
 	assert.Error(t, err)
 	assert.False(t, gw.IsInitialized())
-	
+
 	mockUITester.AssertExpectations(t)
 }
 
 func TestSetTestSuite(t *testing.T) {
 	gw := NewWithDefaults()
-	
+
 	testSuite := &TestSuite{
 		Name:  "Test Suite",
 		Tests: make([]Test, 0),
 	}
-	
+
 	gw.SetTestSuite(testSuite)
 	assert.Equal(t, testSuite, gw.GetTestSuite())
 }
 
 func TestTesterSettersAndGetters(t *testing.T) {
 	gw := NewWithDefaults()
-	
+
 	mockUITester := &MockUITester{}
 	mockAPITester := &MockAPITester{}
-	
+
 	// Test setters
 	gw.SetUITester(mockUITester)
 	gw.SetAPITester(mockAPITester)
-	
+
 	// Test getters
 	assert.Equal(t, mockUITester, gw.GetUITester())
 	assert.Equal(t, mockAPITester, gw.GetAPITester())
@@ -420,19 +420,19 @@ func TestTesterSettersAndGetters(t *testing.T) {
 
 func TestCreateTestSuiteManager(t *testing.T) {
 	gw := NewWithDefaults()
-	
+
 	// Test with no test suite set
 	tsm := gw.CreateTestSuiteManager()
 	require.NotNil(t, tsm)
 	assert.Equal(t, "Default Test Suite", tsm.GetTestSuite().Name)
-	
+
 	// Test with existing test suite
 	customSuite := &TestSuite{
 		Name:  "Custom Suite",
 		Tests: make([]Test, 0),
 	}
 	gw.SetTestSuite(customSuite)
-	
+
 	tsm2 := gw.CreateTestSuiteManager()
 	require.NotNil(t, tsm2)
 	assert.Equal(t, "Custom Suite", tsm2.GetTestSuite().Name)
@@ -440,21 +440,21 @@ func TestCreateTestSuiteManager(t *testing.T) {
 
 func TestExecuteTestSuiteIntegration(t *testing.T) {
 	gw := NewWithDefaults()
-	
+
 	// Create a test suite with mock tests
 	suite := &TestSuite{
-		Name:  "Integration Test Suite",
+		Name: "Integration Test Suite",
 		Tests: []Test{
 			NewSimpleTest("test1", TestStatusPassed, nil),
 			NewSimpleTest("test2", TestStatusPassed, nil),
 		},
 	}
 	gw.SetTestSuite(suite)
-	
+
 	results, err := gw.ExecuteTestSuite()
 	require.NoError(t, err)
 	require.NotNil(t, results)
-	
+
 	assert.Equal(t, "Integration Test Suite", results.SuiteName)
 	assert.Equal(t, 2, results.TotalTests)
 	assert.Equal(t, 2, results.PassedTests)
@@ -462,10 +462,10 @@ func TestExecuteTestSuiteIntegration(t *testing.T) {
 
 func TestConcurrentAccess(t *testing.T) {
 	gw := NewWithDefaults()
-	
+
 	// Test concurrent access to getters and setters
 	done := make(chan bool, 2)
-	
+
 	go func() {
 		for i := 0; i < 100; i++ {
 			gw.SetUITester(&MockUITester{})
@@ -473,7 +473,7 @@ func TestConcurrentAccess(t *testing.T) {
 		}
 		done <- true
 	}()
-	
+
 	go func() {
 		for i := 0; i < 100; i++ {
 			_ = gw.IsInitialized()
@@ -481,11 +481,11 @@ func TestConcurrentAccess(t *testing.T) {
 		}
 		done <- true
 	}()
-	
+
 	// Wait for both goroutines to complete
 	<-done
 	<-done
-	
+
 	// If we get here without deadlock, the test passes
 	assert.True(t, true)
 }

@@ -8,11 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-
-
 func TestNewDatabaseTester(t *testing.T) {
 	tester := NewDatabaseTester()
-	
+
 	assert.NotNil(t, tester)
 	assert.NotNil(t, tester.connections)
 	assert.False(t, tester.initialized)
@@ -151,7 +149,7 @@ func TestDatabaseTester_Connect(t *testing.T) {
 func TestDatabaseTester_Connect_NotInitialized(t *testing.T) {
 	tester := NewDatabaseTester()
 	err := tester.Connect("test")
-	
+
 	assert.Error(t, err)
 	gowrightErr, ok := err.(*GowrightError)
 	assert.True(t, ok)
@@ -172,7 +170,7 @@ func TestDatabaseTester_Execute_SQLite(t *testing.T) {
 			},
 		},
 	}
-	
+
 	err := tester.Initialize(config)
 	require.NoError(t, err)
 
@@ -225,7 +223,7 @@ func TestDatabaseTester_BeginTransaction(t *testing.T) {
 			},
 		},
 	}
-	
+
 	err := tester.Initialize(config)
 	require.NoError(t, err)
 
@@ -269,7 +267,7 @@ func TestDatabaseTester_TransactionRollback(t *testing.T) {
 			},
 		},
 	}
-	
+
 	err := tester.Initialize(config)
 	require.NoError(t, err)
 
@@ -316,17 +314,17 @@ func TestDatabaseTester_ValidateData(t *testing.T) {
 			},
 		},
 	}
-	
+
 	err := tester.Initialize(config)
 	require.NoError(t, err)
 
 	// Setup test data
 	_, err = tester.Execute("test", "CREATE TABLE validation_test (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)")
 	require.NoError(t, err)
-	
+
 	_, err = tester.Execute("test", "INSERT INTO validation_test (name, age) VALUES (?, ?)", "Alice", 30)
 	require.NoError(t, err)
-	
+
 	_, err = tester.Execute("test", "INSERT INTO validation_test (name, age) VALUES (?, ?)", "Bob", 25)
 	require.NoError(t, err)
 
@@ -377,7 +375,7 @@ func TestDatabaseTester_ValidateData(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tester.ValidateData("test", tt.query, tt.expected)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				if gowrightErr, ok := err.(*GowrightError); ok {
@@ -412,14 +410,14 @@ func TestDatabaseTester_Cleanup(t *testing.T) {
 			},
 		},
 	}
-	
+
 	err := tester.Initialize(config)
 	require.NoError(t, err)
 
 	// Connect to both databases
 	err = tester.Connect("test1")
 	require.NoError(t, err)
-	
+
 	err = tester.Connect("test2")
 	require.NoError(t, err)
 
@@ -523,7 +521,7 @@ func TestDatabaseTester_ErrorScenarios(t *testing.T) {
 		config := &DatabaseConfig{
 			Connections: map[string]*DBConnection{},
 		}
-		
+
 		err := tester.Initialize(config)
 		require.NoError(t, err)
 
@@ -539,7 +537,7 @@ func TestDatabaseTester_ErrorScenarios(t *testing.T) {
 		config := &DatabaseConfig{
 			Connections: map[string]*DBConnection{},
 		}
-		
+
 		err := tester.Initialize(config)
 		require.NoError(t, err)
 
@@ -560,7 +558,7 @@ func TestDatabaseTester_ErrorScenarios(t *testing.T) {
 				},
 			},
 		}
-		
+
 		err := tester.Initialize(config)
 		require.NoError(t, err)
 
@@ -585,7 +583,7 @@ func BenchmarkDatabaseTester_Execute(b *testing.B) {
 			},
 		},
 	}
-	
+
 	err := tester.Initialize(config)
 	require.NoError(b, err)
 
@@ -594,7 +592,7 @@ func BenchmarkDatabaseTester_Execute(b *testing.B) {
 	require.NoError(b, err)
 
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		_, err := tester.Execute("test", "INSERT INTO bench_test (value) VALUES (?)", fmt.Sprintf("value_%d", i))
 		if err != nil {
@@ -603,5 +601,5 @@ func BenchmarkDatabaseTester_Execute(b *testing.B) {
 	}
 
 	// Cleanup
-	tester.Cleanup()
+	_ = tester.Cleanup()
 }

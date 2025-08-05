@@ -63,14 +63,14 @@ func (dt *DatabaseTesterImpl) Connect(connectionName string) error {
 	// Get connection configuration
 	connConfig, exists := dt.config.Connections[connectionName]
 	if !exists {
-		return NewGowrightError(ConfigurationError, 
+		return NewGowrightError(ConfigurationError,
 			fmt.Sprintf("connection configuration not found: %s", connectionName), nil).
 			WithContext("connection_name", connectionName)
 	}
 
 	// Validate connection configuration
 	if err := connConfig.Validate(); err != nil {
-		return NewGowrightError(ConfigurationError, 
+		return NewGowrightError(ConfigurationError,
 			fmt.Sprintf("invalid connection configuration for %s", connectionName), err).
 			WithContext("connection_name", connectionName)
 	}
@@ -78,7 +78,7 @@ func (dt *DatabaseTesterImpl) Connect(connectionName string) error {
 	// Open database connection
 	db, err := sql.Open(connConfig.Driver, connConfig.DSN)
 	if err != nil {
-		return NewGowrightError(DatabaseError, 
+		return NewGowrightError(DatabaseError,
 			fmt.Sprintf("failed to open database connection %s", connectionName), err).
 			WithContext("connection_name", connectionName).
 			WithContext("driver", connConfig.Driver)
@@ -94,8 +94,8 @@ func (dt *DatabaseTesterImpl) Connect(connectionName string) error {
 
 	// Test the connection
 	if err := db.Ping(); err != nil {
-		db.Close()
-		return NewGowrightError(DatabaseError, 
+		_ = db.Close()
+		return NewGowrightError(DatabaseError,
 			fmt.Sprintf("failed to ping database connection %s", connectionName), err).
 			WithContext("connection_name", connectionName).
 			WithContext("driver", connConfig.Driver)
@@ -122,7 +122,7 @@ func (dt *DatabaseTesterImpl) Execute(connectionName, query string, args ...inte
 	}
 
 	startTime := time.Now()
-	
+
 	// Determine if this is a SELECT query or a modification query
 	if isSelectQuery(query) {
 		return dt.executeQuery(db, query, args, startTime)
@@ -139,7 +139,7 @@ func (dt *DatabaseTesterImpl) executeQuery(db *sql.DB, query string, args []inte
 			WithContext("query", query).
 			WithContext("args", args)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	// Get column names
 	columns, err := rows.Columns()
@@ -148,12 +148,12 @@ func (dt *DatabaseTesterImpl) executeQuery(db *sql.DB, query string, args []inte
 	}
 
 	var result []map[string]interface{}
-	
+
 	for rows.Next() {
 		// Create a slice of interface{} to hold the values
 		values := make([]interface{}, len(columns))
 		valuePtrs := make([]interface{}, len(columns))
-		
+
 		for i := range values {
 			valuePtrs[i] = &values[i]
 		}
@@ -167,15 +167,15 @@ func (dt *DatabaseTesterImpl) executeQuery(db *sql.DB, query string, args []inte
 		rowMap := make(map[string]interface{})
 		for i, col := range columns {
 			val := values[i]
-			
+
 			// Convert []byte to string for better JSON serialization
 			if b, ok := val.([]byte); ok {
 				val = string(b)
 			}
-			
+
 			rowMap[col] = val
 		}
-		
+
 		result = append(result, rowMap)
 	}
 
@@ -231,7 +231,7 @@ func (dt *DatabaseTesterImpl) BeginTransaction(connectionName string) (Transacti
 
 	tx, err := db.Begin()
 	if err != nil {
-		return nil, NewGowrightError(DatabaseError, 
+		return nil, NewGowrightError(DatabaseError,
 			fmt.Sprintf("failed to begin transaction on connection %s", connectionName), err).
 			WithContext("connection_name", connectionName)
 	}
@@ -257,7 +257,7 @@ func (dt *DatabaseTesterImpl) ValidateData(connectionName, query string, expecte
 	// Validate row count if specified
 	if expectedResult.RowCount > 0 {
 		if len(result.Rows) != expectedResult.RowCount {
-			return NewGowrightError(AssertionError, 
+			return NewGowrightError(AssertionError,
 				fmt.Sprintf("expected %d rows, got %d", expectedResult.RowCount, len(result.Rows)), nil).
 				WithContext("expected_rows", expectedResult.RowCount).
 				WithContext("actual_rows", len(result.Rows))
@@ -267,7 +267,7 @@ func (dt *DatabaseTesterImpl) ValidateData(connectionName, query string, expecte
 	// Validate rows affected if specified
 	if expectedResult.RowsAffected > 0 {
 		if result.RowsAffected != expectedResult.RowsAffected {
-			return NewGowrightError(AssertionError, 
+			return NewGowrightError(AssertionError,
 				fmt.Sprintf("expected %d rows affected, got %d", expectedResult.RowsAffected, result.RowsAffected), nil).
 				WithContext("expected_rows_affected", expectedResult.RowsAffected).
 				WithContext("actual_rows_affected", result.RowsAffected)
@@ -275,15 +275,15 @@ func (dt *DatabaseTesterImpl) ValidateData(connectionName, query string, expecte
 	}
 
 	// Validate specific rows if specified
-	if expectedResult.Rows != nil && len(expectedResult.Rows) > 0 {
+	if len(expectedResult.Rows) > 0 {
 		if len(result.Rows) != len(expectedResult.Rows) {
-			return NewGowrightError(AssertionError, 
+			return NewGowrightError(AssertionError,
 				fmt.Sprintf("expected %d rows, got %d", len(expectedResult.Rows), len(result.Rows)), nil)
 		}
 
 		for i, expectedRow := range expectedResult.Rows {
 			if i >= len(result.Rows) {
-				return NewGowrightError(AssertionError, 
+				return NewGowrightError(AssertionError,
 					fmt.Sprintf("missing row at index %d", i), nil)
 			}
 
@@ -291,15 +291,15 @@ func (dt *DatabaseTesterImpl) ValidateData(connectionName, query string, expecte
 			for key, expectedValue := range expectedRow {
 				actualValue, exists := actualRow[key]
 				if !exists {
-					return NewGowrightError(AssertionError, 
+					return NewGowrightError(AssertionError,
 						fmt.Sprintf("missing column '%s' in row %d", key, i), nil).
 						WithContext("row_index", i).
 						WithContext("column", key)
 				}
 
 				if !compareValues(expectedValue, actualValue) {
-					return NewGowrightError(AssertionError, 
-						fmt.Sprintf("value mismatch in row %d, column '%s': expected %v, got %v", 
+					return NewGowrightError(AssertionError,
+						fmt.Sprintf("value mismatch in row %d, column '%s': expected %v, got %v",
 							i, key, expectedValue, actualValue), nil).
 						WithContext("row_index", i).
 						WithContext("column", key).
@@ -319,10 +319,10 @@ func (dt *DatabaseTesterImpl) Cleanup() error {
 	defer dt.mutex.Unlock()
 
 	var errors []error
-	
+
 	for name, db := range dt.connections {
 		if err := db.Close(); err != nil {
-			errors = append(errors, NewGowrightError(DatabaseError, 
+			errors = append(errors, NewGowrightError(DatabaseError,
 				fmt.Sprintf("failed to close connection %s", name), err).
 				WithContext("connection_name", name))
 		}
@@ -332,7 +332,7 @@ func (dt *DatabaseTesterImpl) Cleanup() error {
 	dt.initialized = false
 
 	if len(errors) > 0 {
-		return NewGowrightError(DatabaseError, 
+		return NewGowrightError(DatabaseError,
 			fmt.Sprintf("failed to cleanup %d connections", len(errors)), nil).
 			WithContext("errors", errors)
 	}
@@ -354,7 +354,7 @@ type TransactionImpl struct {
 // Commit commits the transaction
 func (t *TransactionImpl) Commit() error {
 	if err := t.tx.Commit(); err != nil {
-		return NewGowrightError(DatabaseError, 
+		return NewGowrightError(DatabaseError,
 			fmt.Sprintf("failed to commit transaction on connection %s", t.connectionName), err).
 			WithContext("connection_name", t.connectionName)
 	}
@@ -364,7 +364,7 @@ func (t *TransactionImpl) Commit() error {
 // Rollback rolls back the transaction
 func (t *TransactionImpl) Rollback() error {
 	if err := t.tx.Rollback(); err != nil {
-		return NewGowrightError(DatabaseError, 
+		return NewGowrightError(DatabaseError,
 			fmt.Sprintf("failed to rollback transaction on connection %s", t.connectionName), err).
 			WithContext("connection_name", t.connectionName)
 	}
@@ -374,7 +374,7 @@ func (t *TransactionImpl) Rollback() error {
 // Execute executes a query within the transaction
 func (t *TransactionImpl) Execute(query string, args ...interface{}) (*DatabaseResult, error) {
 	startTime := time.Now()
-	
+
 	if isSelectQuery(query) {
 		return t.executeQuery(query, args, startTime)
 	} else {
@@ -390,7 +390,7 @@ func (t *TransactionImpl) executeQuery(query string, args []interface{}, startTi
 			WithContext("query", query).
 			WithContext("args", args)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	// Get column names
 	columns, err := rows.Columns()
@@ -399,12 +399,12 @@ func (t *TransactionImpl) executeQuery(query string, args []interface{}, startTi
 	}
 
 	var result []map[string]interface{}
-	
+
 	for rows.Next() {
 		// Create a slice of interface{} to hold the values
 		values := make([]interface{}, len(columns))
 		valuePtrs := make([]interface{}, len(columns))
-		
+
 		for i := range values {
 			valuePtrs[i] = &values[i]
 		}
@@ -418,15 +418,15 @@ func (t *TransactionImpl) executeQuery(query string, args []interface{}, startTi
 		rowMap := make(map[string]interface{})
 		for i, col := range columns {
 			val := values[i]
-			
+
 			// Convert []byte to string for better JSON serialization
 			if b, ok := val.([]byte); ok {
 				val = string(b)
 			}
-			
+
 			rowMap[col] = val
 		}
-		
+
 		result = append(result, rowMap)
 	}
 
@@ -473,7 +473,7 @@ func isSelectQuery(query string) bool {
 	if len(trimmed) < 6 {
 		return false
 	}
-	
+
 	prefix := trimmed[:6]
 	return prefix == "SELECT" || prefix == "select" || prefix == "Select"
 }

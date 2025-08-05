@@ -123,7 +123,7 @@ func TestNewReportManager(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rm := NewReportManager(tt.config)
-			
+
 			assert.NotNil(t, rm)
 			assert.Equal(t, tt.config, rm.config)
 			assert.Len(t, rm.reporters, tt.expected)
@@ -149,18 +149,18 @@ func TestReportManager_AddReporter(t *testing.T) {
 	mockReporter2 := &MockReporter{}
 	mockReporter2.On("GetName").Return("mock2")
 	mockReporter2.On("IsEnabled").Return(true)
-	
+
 	rm.AddReporter(mockReporter2)
 	assert.Len(t, rm.reporters, 2)
 }
 
 func TestReportManager_RemoveReporter(t *testing.T) {
 	rm := NewReportManager(nil)
-	
+
 	mockReporter1 := &MockReporter{}
 	mockReporter1.On("GetName").Return("mock1")
 	mockReporter1.On("IsEnabled").Return(true)
-	
+
 	mockReporter2 := &MockReporter{}
 	mockReporter2.On("GetName").Return("mock2")
 	mockReporter2.On("IsEnabled").Return(true)
@@ -210,12 +210,12 @@ func TestReportManager_GenerateReports(t *testing.T) {
 
 	t.Run("successful generation", func(t *testing.T) {
 		rm := NewReportManager(nil)
-		
+
 		mockReporter1 := &MockReporter{}
 		mockReporter1.On("IsEnabled").Return(true)
 		mockReporter1.On("GenerateReport", testResults).Return(nil)
 		mockReporter1.On("GetName").Return("mock1").Maybe()
-		
+
 		mockReporter2 := &MockReporter{}
 		mockReporter2.On("IsEnabled").Return(true)
 		mockReporter2.On("GenerateReport", testResults).Return(nil)
@@ -234,7 +234,7 @@ func TestReportManager_GenerateReports(t *testing.T) {
 
 	t.Run("disabled reporter skipped", func(t *testing.T) {
 		rm := NewReportManager(nil)
-		
+
 		mockReporter := &MockReporter{}
 		mockReporter.On("IsEnabled").Return(false)
 		mockReporter.On("GetName").Return("disabled_mock").Maybe()
@@ -244,7 +244,7 @@ func TestReportManager_GenerateReports(t *testing.T) {
 
 		summary := rm.GenerateReports(testResults)
 		assert.Equal(t, 1, summary.SuccessfulReports) // Fallback should succeed
-		assert.Equal(t, 1, summary.FailedReports) // Disabled reporter counts as failed
+		assert.Equal(t, 1, summary.FailedReports)     // Disabled reporter counts as failed
 		assert.True(t, summary.FallbackUsed)
 
 		mockReporter.AssertExpectations(t)
@@ -252,12 +252,12 @@ func TestReportManager_GenerateReports(t *testing.T) {
 
 	t.Run("reporter failure", func(t *testing.T) {
 		rm := NewReportManager(nil)
-		
+
 		mockReporter1 := &MockReporter{}
 		mockReporter1.On("IsEnabled").Return(true)
 		mockReporter1.On("GenerateReport", testResults).Return(errors.New("reporter 1 failed"))
 		mockReporter1.On("GetName").Return("mock1").Maybe()
-		
+
 		mockReporter2 := &MockReporter{}
 		mockReporter2.On("IsEnabled").Return(true)
 		mockReporter2.On("GenerateReport", testResults).Return(nil)
@@ -277,12 +277,12 @@ func TestReportManager_GenerateReports(t *testing.T) {
 
 	t.Run("multiple reporter failures", func(t *testing.T) {
 		rm := NewReportManager(nil)
-		
+
 		mockReporter1 := &MockReporter{}
 		mockReporter1.On("IsEnabled").Return(true)
 		mockReporter1.On("GenerateReport", testResults).Return(errors.New("reporter 1 failed"))
 		mockReporter1.On("GetName").Return("mock1").Maybe()
-		
+
 		mockReporter2 := &MockReporter{}
 		mockReporter2.On("IsEnabled").Return(true)
 		mockReporter2.On("GenerateReport", testResults).Return(errors.New("reporter 2 failed"))
@@ -303,11 +303,11 @@ func TestReportManager_GenerateReports(t *testing.T) {
 
 func TestReportManager_GetReporters(t *testing.T) {
 	rm := NewReportManager(nil)
-	
+
 	mockReporter1 := &MockReporter{}
 	mockReporter1.On("GetName").Return("mock1")
 	mockReporter1.On("IsEnabled").Return(true)
-	
+
 	mockReporter2 := &MockReporter{}
 	mockReporter2.On("GetName").Return("mock2")
 	mockReporter2.On("IsEnabled").Return(true)
@@ -317,7 +317,7 @@ func TestReportManager_GetReporters(t *testing.T) {
 
 	reporters := rm.GetReporters()
 	assert.Len(t, reporters, 2)
-	
+
 	// Verify it's a copy (modifying returned slice shouldn't affect original)
 	reporters[0] = nil
 	assert.NotNil(t, rm.reporters[0])
@@ -415,10 +415,10 @@ func TestReportPortalReporter(t *testing.T) {
 
 func TestReportManager_ConcurrentAccess(t *testing.T) {
 	rm := NewReportManager(nil)
-	
+
 	// Test concurrent add/remove operations
 	done := make(chan bool, 2)
-	
+
 	// Goroutine 1: Add reporters
 	go func() {
 		for i := 0; i < 10; i++ {
@@ -429,7 +429,7 @@ func TestReportManager_ConcurrentAccess(t *testing.T) {
 		}
 		done <- true
 	}()
-	
+
 	// Goroutine 2: Remove reporters
 	go func() {
 		for i := 0; i < 5; i++ {
@@ -437,11 +437,11 @@ func TestReportManager_ConcurrentAccess(t *testing.T) {
 		}
 		done <- true
 	}()
-	
+
 	// Wait for both goroutines to complete
 	<-done
 	<-done
-	
+
 	// Should not panic and should have some reporters
 	reporters := rm.GetReporters()
 	assert.True(t, len(reporters) >= 0) // Could be 0 to 10 depending on timing
@@ -450,7 +450,7 @@ func TestReportManager_ConcurrentAccess(t *testing.T) {
 func TestTestResults_Structure(t *testing.T) {
 	startTime := time.Now()
 	endTime := startTime.Add(time.Minute)
-	
+
 	results := &TestResults{
 		SuiteName:    "Integration Test Suite",
 		StartTime:    startTime,
@@ -521,7 +521,7 @@ func TestTestResults_Structure(t *testing.T) {
 func TestJSONReporter_GenerateReport(t *testing.T) {
 	// Create a temporary directory for testing
 	tempDir := t.TempDir()
-	
+
 	reporter := &JSONReporter{
 		OutputDir: tempDir,
 		enabled:   true,
@@ -588,7 +588,7 @@ func TestJSONReporter_GenerateReport(t *testing.T) {
 func TestJSONReporter_EnsureOutputDir(t *testing.T) {
 	tempDir := t.TempDir()
 	subDir := filepath.Join(tempDir, "reports", "json")
-	
+
 	reporter := &JSONReporter{
 		OutputDir: subDir,
 		enabled:   true,
@@ -629,7 +629,7 @@ func TestJSONReporter_DefaultOutputDir(t *testing.T) {
 func TestHTMLReporter_GenerateReport(t *testing.T) {
 	// Create a temporary directory for testing
 	tempDir := t.TempDir()
-	
+
 	reporter := &HTMLReporter{
 		OutputDir: tempDir,
 		enabled:   true,
@@ -646,13 +646,13 @@ func TestHTMLReporter_GenerateReport(t *testing.T) {
 		ErrorTests:   0,
 		TestCases: []TestCaseResult{
 			{
-				Name:      "UI Test",
-				Status:    TestStatusPassed,
-				Duration:  time.Second * 5,
-				StartTime: time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC),
-				EndTime:   time.Date(2024, 1, 1, 10, 0, 5, 0, time.UTC),
+				Name:        "UI Test",
+				Status:      TestStatusPassed,
+				Duration:    time.Second * 5,
+				StartTime:   time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC),
+				EndTime:     time.Date(2024, 1, 1, 10, 0, 5, 0, time.UTC),
 				Screenshots: []string{"ui_test_screenshot.png"},
-				Logs:      []string{"UI test completed successfully"},
+				Logs:        []string{"UI test completed successfully"},
 			},
 			{
 				Name:      "API Test",
@@ -672,13 +672,13 @@ func TestHTMLReporter_GenerateReport(t *testing.T) {
 				Logs:      []string{"Test skipped due to missing database connection"},
 			},
 			{
-				Name:      "Integration Test",
-				Status:    TestStatusPassed,
-				Duration:  time.Second * 10,
-				StartTime: time.Date(2024, 1, 1, 10, 0, 8, 0, time.UTC),
-				EndTime:   time.Date(2024, 1, 1, 10, 0, 18, 0, time.UTC),
+				Name:        "Integration Test",
+				Status:      TestStatusPassed,
+				Duration:    time.Second * 10,
+				StartTime:   time.Date(2024, 1, 1, 10, 0, 8, 0, time.UTC),
+				EndTime:     time.Date(2024, 1, 1, 10, 0, 18, 0, time.UTC),
 				Screenshots: []string{"integration_before.png", "integration_after.png"},
-				Logs:      []string{"Integration test started", "All systems verified", "Test completed"},
+				Logs:        []string{"Integration test started", "All systems verified", "Test completed"},
 			},
 		},
 	}
@@ -700,7 +700,7 @@ func TestHTMLReporter_GenerateReport(t *testing.T) {
 	assert.NoError(t, err)
 
 	htmlContent := string(content)
-	
+
 	// Verify HTML structure and content
 	assert.Contains(t, htmlContent, "<!DOCTYPE html>")
 	assert.Contains(t, htmlContent, "<title>Gowright Test Report - Integration Test Suite</title>")
@@ -713,13 +713,13 @@ func TestHTMLReporter_GenerateReport(t *testing.T) {
 	assert.Contains(t, htmlContent, "ui_test_screenshot.png")
 	assert.Contains(t, htmlContent, "integration_before.png")
 	assert.Contains(t, htmlContent, "integration_after.png")
-	
+
 	// Verify summary statistics
 	assert.Contains(t, htmlContent, "4") // Total tests
 	assert.Contains(t, htmlContent, "2") // Passed tests
 	assert.Contains(t, htmlContent, "1") // Failed tests
 	assert.Contains(t, htmlContent, "1") // Skipped tests
-	
+
 	// Verify CSS classes are present
 	assert.Contains(t, htmlContent, "test-status passed")
 	assert.Contains(t, htmlContent, "test-status failed")
@@ -729,7 +729,7 @@ func TestHTMLReporter_GenerateReport(t *testing.T) {
 func TestHTMLReporter_EnsureOutputDir(t *testing.T) {
 	tempDir := t.TempDir()
 	subDir := filepath.Join(tempDir, "reports", "html")
-	
+
 	reporter := &HTMLReporter{
 		OutputDir: subDir,
 		enabled:   true,
@@ -769,7 +769,7 @@ func TestHTMLReporter_DefaultOutputDir(t *testing.T) {
 
 func TestHTMLReporter_GenerateFilename(t *testing.T) {
 	reporter := &HTMLReporter{}
-	
+
 	tests := []struct {
 		suiteName string
 		expected  string
@@ -792,7 +792,7 @@ func TestHTMLReporter_GenerateFilename(t *testing.T) {
 
 func TestJSONReporter_GenerateFilename(t *testing.T) {
 	reporter := &JSONReporter{}
-	
+
 	tests := []struct {
 		suiteName string
 		expected  string
@@ -851,7 +851,7 @@ func TestLocalReporters_ErrorHandling(t *testing.T) {
 
 func TestLocalReporters_Integration(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	config := &ReportConfig{
 		LocalReports: LocalReportConfig{
 			JSON:      true,
@@ -862,7 +862,7 @@ func TestLocalReporters_Integration(t *testing.T) {
 	}
 
 	rm := NewReportManager(config)
-	
+
 	testResults := &TestResults{
 		SuiteName:    "Integration Test",
 		StartTime:    time.Now(),
@@ -911,7 +911,7 @@ func TestLocalReporters_Integration(t *testing.T) {
 	// Verify JSON content
 	jsonContent, err := os.ReadFile(filepath.Join(tempDir, jsonFile))
 	assert.NoError(t, err)
-	
+
 	var parsedResults TestResults
 	err = json.Unmarshal(jsonContent, &parsedResults)
 	assert.NoError(t, err)

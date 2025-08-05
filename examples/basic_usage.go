@@ -1,10 +1,13 @@
+//go:build ignore
+// +build ignore
+
 package main
 
 import (
 	"fmt"
 	"log"
 
-	"github/gowright/framework/pkg/gowright"
+	"github.com/gowright/framework/pkg/gowright"
 )
 
 func main() {

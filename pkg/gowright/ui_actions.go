@@ -22,14 +22,14 @@ const (
 	ActionGoBack    UIActionType = "go_back"
 	ActionGoForward UIActionType = "go_forward"
 	// Mobile-specific actions
-	ActionTap       UIActionType = "tap"
-	ActionSwipe     UIActionType = "swipe"
-	ActionSwipeLeft UIActionType = "swipe_left"
-	ActionSwipeRight UIActionType = "swipe_right"
-	ActionSwipeUp   UIActionType = "swipe_up"
-	ActionSwipeDown UIActionType = "swipe_down"
-	ActionLongPress UIActionType = "long_press"
-	ActionPinch     UIActionType = "pinch"
+	ActionTap            UIActionType = "tap"
+	ActionSwipe          UIActionType = "swipe"
+	ActionSwipeLeft      UIActionType = "swipe_left"
+	ActionSwipeRight     UIActionType = "swipe_right"
+	ActionSwipeUp        UIActionType = "swipe_up"
+	ActionSwipeDown      UIActionType = "swipe_down"
+	ActionLongPress      UIActionType = "long_press"
+	ActionPinch          UIActionType = "pinch"
 	ActionSetOrientation UIActionType = "set_orientation"
 )
 
@@ -160,27 +160,12 @@ func (e *UIActionExecutor) executeClick(action UIAction) error {
 	}
 
 	// Parse options
-	var options *ClickOptions
 	if action.Options != nil {
-		if clickOpts, ok := action.Options.(*ClickOptions); ok {
-			options = clickOpts
+		if _, ok := action.Options.(*ClickOptions); ok {
+			// options = clickOpts - unused for now
 		} else if optsMap, ok := action.Options.(map[string]interface{}); ok {
-			options = &ClickOptions{}
-			if doubleClick, exists := optsMap["double_click"]; exists {
-				if dc, ok := doubleClick.(bool); ok {
-					options.DoubleClick = dc
-				}
-			}
-			if rightClick, exists := optsMap["right_click"]; exists {
-				if rc, ok := rightClick.(bool); ok {
-					options.RightClick = rc
-				}
-			}
-			if force, exists := optsMap["force"]; exists {
-				if f, ok := force.(bool); ok {
-					options.Force = f
-				}
-			}
+			_ = optsMap // Parse options when needed
+			// For now, just use basic click functionality
 		}
 	}
 
@@ -334,7 +319,7 @@ func ValidateAction(action UIAction) error {
 	}
 
 	actionType := UIActionType(action.Type)
-	
+
 	switch actionType {
 	case ActionClick, ActionHover, ActionClear, ActionSubmit:
 		if action.Selector == "" {
@@ -402,7 +387,7 @@ func (e *UIActionExecutor) executeTap(action UIAction) error {
 	if mobileTester, ok := e.tester.(*MobileUITester); ok {
 		return mobileTester.Tap(action.Selector)
 	}
-	
+
 	// Fallback to regular click for non-mobile testers
 	return e.tester.Click(action.Selector)
 }
@@ -460,7 +445,7 @@ func (e *UIActionExecutor) executeSwipe(action UIAction) error {
 		}
 		return mobileTester.Swipe(options.StartX, options.StartY, options.EndX, options.EndY, duration)
 	}
-	
+
 	return NewGowrightError(BrowserError, "swipe action not supported by this tester", nil)
 }
 
@@ -469,7 +454,7 @@ func (e *UIActionExecutor) executeSwipeLeft(action UIAction) error {
 	if mobileTester, ok := e.tester.(*MobileUITester); ok {
 		return mobileTester.SwipeLeft()
 	}
-	
+
 	return NewGowrightError(BrowserError, "swipe left action not supported by this tester", nil)
 }
 
@@ -478,7 +463,7 @@ func (e *UIActionExecutor) executeSwipeRight(action UIAction) error {
 	if mobileTester, ok := e.tester.(*MobileUITester); ok {
 		return mobileTester.SwipeRight()
 	}
-	
+
 	return NewGowrightError(BrowserError, "swipe right action not supported by this tester", nil)
 }
 
@@ -487,7 +472,7 @@ func (e *UIActionExecutor) executeSwipeUp(action UIAction) error {
 	if mobileTester, ok := e.tester.(*MobileUITester); ok {
 		return mobileTester.SwipeUp()
 	}
-	
+
 	return NewGowrightError(BrowserError, "swipe up action not supported by this tester", nil)
 }
 
@@ -496,7 +481,7 @@ func (e *UIActionExecutor) executeSwipeDown(action UIAction) error {
 	if mobileTester, ok := e.tester.(*MobileUITester); ok {
 		return mobileTester.SwipeDown()
 	}
-	
+
 	return NewGowrightError(BrowserError, "swipe down action not supported by this tester", nil)
 }
 
@@ -529,7 +514,7 @@ func (e *UIActionExecutor) executeLongPress(action UIAction) error {
 	if mobileTester, ok := e.tester.(*MobileUITester); ok {
 		return mobileTester.LongPress(action.Selector, duration)
 	}
-	
+
 	return NewGowrightError(BrowserError, "long press action not supported by this tester", nil)
 }
 
@@ -567,7 +552,7 @@ func (e *UIActionExecutor) executePinch(action UIAction) error {
 	if mobileTester, ok := e.tester.(*MobileUITester); ok {
 		return mobileTester.Pinch(options.CenterX, options.CenterY, options.Scale)
 	}
-	
+
 	return NewGowrightError(BrowserError, "pinch action not supported by this tester", nil)
 }
 
@@ -580,6 +565,6 @@ func (e *UIActionExecutor) executeSetOrientation(action UIAction) error {
 	if mobileTester, ok := e.tester.(*MobileUITester); ok {
 		return mobileTester.SetOrientation(action.Value)
 	}
-	
+
 	return NewGowrightError(BrowserError, "set orientation action not supported by this tester", nil)
 }

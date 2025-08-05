@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"sync"
 	"time"
-	
+
 	"github.com/go-resty/resty/v2"
 )
 
@@ -42,7 +42,7 @@ func NewHTTPClientPool(maxSize int, timeout time.Duration) (*HTTPClientPool, err
 	if maxSize <= 0 {
 		return nil, fmt.Errorf("HTTP client pool max size must be positive")
 	}
-	
+
 	pool := &HTTPClientPool{
 		clients: make(chan *HTTPClientInstance, maxSize),
 		maxSize: maxSize,
@@ -52,7 +52,7 @@ func NewHTTPClientPool(maxSize int, timeout time.Duration) (*HTTPClientPool, err
 		},
 		initialized: true,
 	}
-	
+
 	return pool, nil
 }
 
@@ -60,13 +60,20 @@ func NewHTTPClientPool(maxSize int, timeout time.Duration) (*HTTPClientPool, err
 func (hcp *HTTPClientPool) Acquire(ctx context.Context) (*resty.Client, error) {
 	hcp.mutex.Lock()
 	defer hcp.mutex.Unlock()
-	
+
 	if !hcp.initialized {
 		return nil, fmt.Errorf("HTTP client pool not initialized")
 	}
-	
+
+	// Check if context is already cancelled
+	select {
+	case <-ctx.Done():
+		return nil, fmt.Errorf("context cancelled: %w", ctx.Err())
+	default:
+	}
+
 	var instance *HTTPClientInstance
-	
+
 	// Try to get an existing client from the pool
 	select {
 	case instance = <-hcp.clients:
@@ -88,14 +95,14 @@ func (hcp *HTTPClientPool) Acquire(ctx context.Context) (*resty.Client, error) {
 			}
 		}
 	}
-	
+
 	// Reset client state for new usage
 	hcp.resetClientState(instance.Client)
-	
+
 	instance.UsageCount++
 	hcp.stats.InUse++
 	hcp.stats.TotalAcquired++
-	
+
 	return instance.Client, nil
 }
 
@@ -103,23 +110,23 @@ func (hcp *HTTPClientPool) Acquire(ctx context.Context) (*resty.Client, error) {
 func (hcp *HTTPClientPool) Release(client *resty.Client) error {
 	hcp.mutex.Lock()
 	defer hcp.mutex.Unlock()
-	
+
 	if !hcp.initialized {
 		return fmt.Errorf("HTTP client pool not initialized")
 	}
-	
+
 	if client == nil {
 		return fmt.Errorf("cannot release nil HTTP client")
 	}
-	
+
 	// Clean up client state before returning to pool
 	hcp.cleanupClientState(client)
-	
+
 	// Create instance wrapper
 	instance := &HTTPClientInstance{
 		Client: client,
 	}
-	
+
 	// Return to pool if there's space
 	select {
 	case hcp.clients <- instance:
@@ -127,23 +134,23 @@ func (hcp *HTTPClientPool) Release(client *resty.Client) error {
 	default:
 		// Pool is full, client will be garbage collected
 	}
-	
+
 	hcp.stats.InUse--
 	hcp.stats.TotalReleased++
-	
+
 	return nil
 }
 
 // createClientInstance creates a new HTTP client instance
 func (hcp *HTTPClientPool) createClientInstance() *HTTPClientInstance {
 	client := resty.New()
-	
+
 	// Configure client with optimized settings for parallel execution
 	client.SetTimeout(30 * time.Second)
 	client.SetRetryCount(3)
 	client.SetRetryWaitTime(1 * time.Second)
 	client.SetRetryMaxWaitTime(5 * time.Second)
-	
+
 	// Enable connection pooling
 	transportConfig := &HTTPTransportConfig{
 		MaxIdleConns:        100,
@@ -151,7 +158,7 @@ func (hcp *HTTPClientPool) createClientInstance() *HTTPClientInstance {
 		IdleConnTimeout:     90 * time.Second,
 	}
 	client.GetClient().Transport = transportConfig.Build()
-	
+
 	return &HTTPClientInstance{
 		Client:    client,
 		CreatedAt: time.Now(),
@@ -165,10 +172,10 @@ func (hcp *HTTPClientPool) resetClientState(client *resty.Client) {
 	client.SetCookies(nil)
 	client.SetAuthToken("")
 	client.SetBasicAuth("", "")
-	
+
 	// Reset debug mode
 	client.SetDebug(false)
-	
+
 	// Clear any custom middleware that might have been added
 	client.OnBeforeRequest(nil)
 	client.OnAfterResponse(nil)
@@ -182,7 +189,7 @@ func (hcp *HTTPClientPool) cleanupClientState(client *resty.Client) {
 	client.SetBasicAuth("", "")
 	client.SetHeaders(nil)
 	client.SetCookies(nil)
-	
+
 	// Clear any temporary settings
 	client.SetDebug(false)
 }
@@ -191,11 +198,11 @@ func (hcp *HTTPClientPool) cleanupClientState(client *resty.Client) {
 func (hcp *HTTPClientPool) Cleanup() error {
 	hcp.mutex.Lock()
 	defer hcp.mutex.Unlock()
-	
+
 	if !hcp.initialized {
 		return nil
 	}
-	
+
 	// Clear all clients from the pool
 	for {
 		select {
@@ -209,7 +216,7 @@ func (hcp *HTTPClientPool) Cleanup() error {
 			goto cleanup_done
 		}
 	}
-	
+
 cleanup_done:
 	hcp.initialized = false
 	return nil
@@ -219,7 +226,7 @@ cleanup_done:
 func (hcp *HTTPClientPool) GetStats() *HTTPClientPoolStats {
 	hcp.mutex.RLock()
 	defer hcp.mutex.RUnlock()
-	
+
 	// Create a copy of stats to avoid race conditions
 	return &HTTPClientPoolStats{
 		MaxSize:       hcp.stats.MaxSize,
@@ -235,42 +242,23 @@ func (hcp *HTTPClientPool) GetStats() *HTTPClientPoolStats {
 func (hcp *HTTPClientPool) Resize(newSize int) error {
 	hcp.mutex.Lock()
 	defer hcp.mutex.Unlock()
-	
+
 	if newSize <= 0 {
 		return fmt.Errorf("HTTP client pool size must be positive")
 	}
-	
-	if newSize < hcp.maxSize {
-		// Shrinking pool - remove excess clients
-		excess := hcp.maxSize - newSize
-		for i := 0; i < excess; i++ {
-			select {
-			case instance := <-hcp.clients:
-				// Close persistent connections
-				if transport, ok := instance.Client.GetClient().Transport.(*http.Transport); ok {
-					transport.CloseIdleConnections()
-				}
-				hcp.stats.Available--
-			default:
-				// No more clients to remove
-				break
-			}
-		}
-	}
-	
-	hcp.maxSize = newSize
-	hcp.stats.MaxSize = newSize
-	
+
 	// Create new channel with new size
 	newClients := make(chan *HTTPClientInstance, newSize)
-	
+
 	// Move existing clients to new channel
+	movedClients := 0
 	for {
 		select {
 		case instance := <-hcp.clients:
-			select {
-			case newClients <- instance:
-			default:
+			if movedClients < newSize {
+				newClients <- instance
+				movedClients++
+			} else {
 				// New channel is full, close excess client connections
 				if transport, ok := instance.Client.GetClient().Transport.(*http.Transport); ok {
 					transport.CloseIdleConnections()
@@ -278,11 +266,17 @@ func (hcp *HTTPClientPool) Resize(newSize int) error {
 				hcp.stats.Available--
 			}
 		default:
+			// No more clients to move
 			goto resize_done
 		}
 	}
-	
+
 resize_done:
+	// Update pool configuration
 	hcp.clients = newClients
+	hcp.maxSize = newSize
+	hcp.stats.MaxSize = newSize
+	hcp.stats.Available = movedClients
+
 	return nil
 }

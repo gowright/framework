@@ -11,27 +11,27 @@ import (
 
 func TestDefaultConfig(t *testing.T) {
 	config := DefaultConfig()
-	
+
 	assert.Equal(t, "info", config.LogLevel)
 	assert.False(t, config.Parallel)
 	assert.Equal(t, 3, config.MaxRetries)
-	
+
 	// Test browser config
 	require.NotNil(t, config.BrowserConfig)
 	assert.True(t, config.BrowserConfig.Headless)
 	assert.Equal(t, 30*time.Second, config.BrowserConfig.Timeout)
 	assert.Equal(t, 1920, config.BrowserConfig.WindowSize.Width)
 	assert.Equal(t, 1080, config.BrowserConfig.WindowSize.Height)
-	
+
 	// Test API config
 	require.NotNil(t, config.APIConfig)
 	assert.Equal(t, 30*time.Second, config.APIConfig.Timeout)
 	assert.NotNil(t, config.APIConfig.Headers)
-	
+
 	// Test database config
 	require.NotNil(t, config.DatabaseConfig)
 	assert.NotNil(t, config.DatabaseConfig.Connections)
-	
+
 	// Test report config
 	require.NotNil(t, config.ReportConfig)
 	assert.True(t, config.ReportConfig.LocalReports.JSON)
@@ -41,20 +41,20 @@ func TestDefaultConfig(t *testing.T) {
 
 func TestLoadConfigFromEnv(t *testing.T) {
 	// Set environment variables
-	os.Setenv("GOWRIGHT_LOG_LEVEL", "debug")
-	os.Setenv("GOWRIGHT_PARALLEL", "true")
-	os.Setenv("GOWRIGHT_HEADLESS", "false")
-	os.Setenv("GOWRIGHT_API_BASE_URL", "https://api.test.com")
-	
+	_ = os.Setenv("GOWRIGHT_LOG_LEVEL", "debug")
+	_ = os.Setenv("GOWRIGHT_PARALLEL", "true")
+	_ = os.Setenv("GOWRIGHT_HEADLESS", "false")
+	_ = os.Setenv("GOWRIGHT_API_BASE_URL", "https://api.test.com")
+
 	defer func() {
-		os.Unsetenv("GOWRIGHT_LOG_LEVEL")
-		os.Unsetenv("GOWRIGHT_PARALLEL")
-		os.Unsetenv("GOWRIGHT_HEADLESS")
-		os.Unsetenv("GOWRIGHT_API_BASE_URL")
+		_ = os.Unsetenv("GOWRIGHT_LOG_LEVEL")
+		_ = os.Unsetenv("GOWRIGHT_PARALLEL")
+		_ = os.Unsetenv("GOWRIGHT_HEADLESS")
+		_ = os.Unsetenv("GOWRIGHT_API_BASE_URL")
 	}()
-	
+
 	config := LoadConfigFromEnv()
-	
+
 	assert.Equal(t, "debug", config.LogLevel)
 	assert.True(t, config.Parallel)
 	assert.False(t, config.BrowserConfig.Headless)
@@ -65,18 +65,18 @@ func TestConfigSaveAndLoad(t *testing.T) {
 	config := DefaultConfig()
 	config.LogLevel = "debug"
 	config.Parallel = true
-	
+
 	filename := "test-config.json"
-	defer os.Remove(filename)
-	
+	defer func() { _ = os.Remove(filename) }()
+
 	// Test saving
 	err := config.SaveToFile(filename)
 	require.NoError(t, err)
-	
+
 	// Test loading
 	loadedConfig, err := LoadConfigFromFile(filename)
 	require.NoError(t, err)
-	
+
 	assert.Equal(t, "debug", loadedConfig.LogLevel)
 	assert.True(t, loadedConfig.Parallel)
 	assert.Equal(t, config.MaxRetries, loadedConfig.MaxRetries)
@@ -85,32 +85,32 @@ func TestConfigSaveAndLoad(t *testing.T) {
 func TestLoadHierarchicalConfig(t *testing.T) {
 	// Create a test config file
 	filename := "test-hierarchical-config.json"
-	defer os.Remove(filename)
-	
+	defer func() { _ = os.Remove(filename) }()
+
 	fileConfig := &Config{
 		LogLevel:   "warn",
 		MaxRetries: 5,
 	}
 	err := fileConfig.SaveToFile(filename)
 	require.NoError(t, err)
-	
+
 	// Set environment variables
-	os.Setenv("GOWRIGHT_LOG_LEVEL", "error")
-	os.Setenv("GOWRIGHT_PARALLEL", "true")
+	_ = os.Setenv("GOWRIGHT_LOG_LEVEL", "error")
+	_ = os.Setenv("GOWRIGHT_PARALLEL", "true")
 	defer func() {
-		os.Unsetenv("GOWRIGHT_LOG_LEVEL")
-		os.Unsetenv("GOWRIGHT_PARALLEL")
+		_ = os.Unsetenv("GOWRIGHT_LOG_LEVEL")
+		_ = os.Unsetenv("GOWRIGHT_PARALLEL")
 	}()
-	
+
 	// Code config (highest priority)
 	codeConfig := &Config{
 		LogLevel: "debug",
 	}
-	
+
 	// Load hierarchical config
 	config, err := LoadHierarchicalConfig(filename, codeConfig)
 	require.NoError(t, err)
-	
+
 	// Code config should take precedence
 	assert.Equal(t, "debug", config.LogLevel)
 	// Environment should override file
@@ -160,7 +160,7 @@ func TestConfigValidation(t *testing.T) {
 			expectError: true,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
@@ -209,7 +209,7 @@ func TestBrowserConfigValidation(t *testing.T) {
 			expectError: true,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
@@ -253,7 +253,7 @@ func TestAPIConfigValidation(t *testing.T) {
 			expectError: true,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
@@ -311,7 +311,7 @@ func TestAuthConfigValidation(t *testing.T) {
 			expectError: true,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
@@ -362,7 +362,7 @@ func TestDatabaseConfigValidation(t *testing.T) {
 			expectError: true,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
@@ -415,7 +415,7 @@ func TestDBConnectionValidation(t *testing.T) {
 			expectError: true,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
@@ -467,7 +467,7 @@ func TestReportConfigValidation(t *testing.T) {
 			expectError: true,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
@@ -489,16 +489,16 @@ func TestMergeConfigs(t *testing.T) {
 			Timeout:  30 * time.Second,
 		},
 	}
-	
+
 	override := &Config{
 		LogLevel: "debug",
 		BrowserConfig: &BrowserConfig{
 			Headless: false,
 		},
 	}
-	
+
 	result := mergeConfigs(base, override)
-	
+
 	assert.Equal(t, "debug", result.LogLevel)
 	assert.Equal(t, 3, result.MaxRetries) // Should keep base value
 	assert.False(t, result.BrowserConfig.Headless)

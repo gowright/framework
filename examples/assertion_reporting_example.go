@@ -1,3 +1,6 @@
+//go:build ignore
+// +build ignore
+
 package main
 
 import (
@@ -5,7 +8,7 @@ import (
 	"log"
 	"time"
 
-	"github/gowright/framework/pkg/gowright"
+	"github.com/gowright/framework/pkg/gowright"
 )
 
 // ExampleTest demonstrates a test using the assertion system
@@ -19,13 +22,13 @@ func (et *ExampleTest) GetName() string {
 
 func (et *ExampleTest) Execute() *gowright.TestCaseResult {
 	startTime := time.Now()
-	
+
 	// Create a test assertion instance
 	ta := gowright.NewTestAssertion(et.name)
-	
+
 	// Log test start
 	ta.Log("Starting example test execution")
-	
+
 	// Simulate API testing with assertions
 	ta.Log("Testing API response validation")
 	apiResponse := map[string]interface{}{
@@ -38,37 +41,37 @@ func (et *ExampleTest) Execute() *gowright.TestCaseResult {
 		},
 		"items": []string{"item1", "item2", "item3"},
 	}
-	
+
 	// Perform assertions with detailed logging
 	ta.Equal("success", apiResponse["status"], "API should return success status")
 	ta.NotNil(apiResponse["data"], "API response should contain data")
 	ta.Contains(apiResponse["message"].(string), "completed", "Message should indicate completion")
 	ta.Len(apiResponse["items"], 3, "Should return exactly 3 items")
-	
+
 	// Test user data validation
 	ta.Log("Validating user data structure")
 	userData := apiResponse["data"].(map[string]interface{})
 	ta.NotEmpty(userData["name"], "User name should not be empty")
 	ta.True(userData["user_id"].(int) > 0, "User ID should be positive")
 	ta.Contains(userData["email"].(string), "@", "Email should contain @ symbol")
-	
+
 	// Simulate a database check
 	ta.Log("Performing database validation")
 	dbConnected := true
 	recordCount := 5
-	
+
 	ta.True(dbConnected, "Database connection should be established")
 	ta.True(recordCount > 0, "Should have records in database")
 	ta.Equal(5, recordCount, "Should have exactly 5 records")
-	
+
 	// Simulate an intentional failure for demonstration
 	ta.Log("Testing error handling")
 	ta.Equal("expected_value", "actual_value", "This assertion will fail for demonstration")
-	
+
 	// Complete the test
 	endTime := time.Now()
 	ta.Log("Test execution completed")
-	
+
 	// Determine overall test status
 	status := gowright.TestStatusPassed
 	var testError error
@@ -79,7 +82,7 @@ func (et *ExampleTest) Execute() *gowright.TestCaseResult {
 			return failed
 		}())
 	}
-	
+
 	return &gowright.TestCaseResult{
 		Name:      et.name,
 		Status:    status,
@@ -94,11 +97,11 @@ func (et *ExampleTest) Execute() *gowright.TestCaseResult {
 
 func main() {
 	fmt.Println("Running example test with assertion reporting...")
-	
+
 	// Create and execute the test
 	test := &ExampleTest{name: "API Integration Test with Assertions"}
 	result := test.Execute()
-	
+
 	// Create test results structure
 	testResults := &gowright.TestResults{
 		SuiteName:    "Assertion Reporting Example",
@@ -111,7 +114,7 @@ func main() {
 		ErrorTests:   0,
 		TestCases:    []gowright.TestCaseResult{*result},
 	}
-	
+
 	// Update counters based on result
 	switch result.Status {
 	case gowright.TestStatusPassed:
@@ -123,7 +126,7 @@ func main() {
 	case gowright.TestStatusError:
 		testResults.ErrorTests = 1
 	}
-	
+
 	// Create report configuration
 	config := &gowright.ReportConfig{
 		LocalReports: gowright.LocalReportConfig{
@@ -132,13 +135,13 @@ func main() {
 			OutputDir: "./assertion-reports",
 		},
 	}
-	
+
 	// Generate reports
 	reportManager := gowright.NewReportManager(config)
 	if err := reportManager.GenerateReports(testResults); err != nil {
 		log.Fatalf("Failed to generate reports: %v", err)
 	}
-	
+
 	// Display summary
 	fmt.Printf("\nTest Execution Summary:\n")
 	fmt.Printf("Test: %s\n", result.Name)
@@ -146,11 +149,11 @@ func main() {
 	fmt.Printf("Duration: %v\n", result.Duration)
 	fmt.Printf("Assertion Steps: %d\n", len(result.Steps))
 	fmt.Printf("Log Entries: %d\n", len(result.Logs))
-	
+
 	if result.Error != nil {
 		fmt.Printf("Error: %s\n", result.Error.Error())
 	}
-	
+
 	// Display assertion summary
 	passed := 0
 	failed := 0
@@ -161,11 +164,11 @@ func main() {
 			failed++
 		}
 	}
-	
+
 	fmt.Printf("\nAssertion Summary:\n")
 	fmt.Printf("Passed: %d\n", passed)
 	fmt.Printf("Failed: %d\n", failed)
-	
+
 	fmt.Printf("\nDetailed Assertion Steps:\n")
 	for i, step := range result.Steps {
 		status := "✓"
@@ -177,7 +180,7 @@ func main() {
 			fmt.Printf("   Error: %s\n", step.Error.Error())
 		}
 	}
-	
+
 	fmt.Printf("\nReports generated in: %s\n", config.LocalReports.OutputDir)
 	fmt.Println("Open the HTML report to see detailed assertion steps with styling!")
 }

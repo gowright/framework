@@ -23,14 +23,14 @@ const (
 
 // MobileDeviceConfig holds mobile device configuration
 type MobileDeviceConfig struct {
-	DeviceType    MobileDeviceType `json:"device_type"`
-	Width         int              `json:"width"`
-	Height        int              `json:"height"`
-	PixelRatio    float64          `json:"pixel_ratio"`
-	UserAgent     string           `json:"user_agent"`
-	TouchEnabled  bool             `json:"touch_enabled"`
-	Mobile        bool             `json:"mobile"`
-	Orientation   string           `json:"orientation"` // portrait, landscape
+	DeviceType   MobileDeviceType `json:"device_type"`
+	Width        int              `json:"width"`
+	Height       int              `json:"height"`
+	PixelRatio   float64          `json:"pixel_ratio"`
+	UserAgent    string           `json:"user_agent"`
+	TouchEnabled bool             `json:"touch_enabled"`
+	Mobile       bool             `json:"mobile"`
+	Orientation  string           `json:"orientation"` // portrait, landscape
 }
 
 // MobileUITester extends RodUITester with mobile-specific capabilities
@@ -44,9 +44,9 @@ func NewMobileUITester(browserConfig *BrowserConfig, mobileConfig *MobileDeviceC
 	if mobileConfig == nil {
 		mobileConfig = GetDefaultMobileConfig(DeviceIPhone12)
 	}
-	
+
 	rodTester := NewRodUITester(browserConfig)
-	
+
 	return &MobileUITester{
 		RodUITester:  rodTester,
 		mobileConfig: mobileConfig,
@@ -59,12 +59,12 @@ func (m *MobileUITester) Initialize(config interface{}) error {
 	if err := m.RodUITester.Initialize(config); err != nil {
 		return err
 	}
-	
+
 	// Apply mobile device emulation
 	if err := m.applyMobileEmulation(); err != nil {
 		return NewGowrightError(BrowserError, "failed to apply mobile emulation", err)
 	}
-	
+
 	return nil
 }
 
@@ -73,7 +73,7 @@ func (m *MobileUITester) applyMobileEmulation() error {
 	if m.page == nil {
 		return NewGowrightError(BrowserError, "page not initialized", nil)
 	}
-	
+
 	// Set device metrics
 	err := m.page.SetViewport(&proto.EmulationSetDeviceMetricsOverride{
 		Width:             m.mobileConfig.Width,
@@ -84,7 +84,7 @@ func (m *MobileUITester) applyMobileEmulation() error {
 	if err != nil {
 		return fmt.Errorf("failed to set device metrics: %w", err)
 	}
-	
+
 	// Set user agent
 	if m.mobileConfig.UserAgent != "" {
 		err = m.page.SetUserAgent(&proto.NetworkSetUserAgentOverride{
@@ -94,7 +94,7 @@ func (m *MobileUITester) applyMobileEmulation() error {
 			return fmt.Errorf("failed to set user agent: %w", err)
 		}
 	}
-	
+
 	// Enable touch events if specified
 	if m.mobileConfig.TouchEnabled {
 		_, err = m.page.Eval(`() => {
@@ -110,7 +110,7 @@ func (m *MobileUITester) applyMobileEmulation() error {
 			return fmt.Errorf("failed to enable touch emulation: %w", err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -163,12 +163,12 @@ func (m *MobileUITester) Swipe(startX, startY, endX, endY int, duration time.Dur
 	for i := 1; i <= steps; i++ {
 		currentX := float64(startX) + stepX*float64(i)
 		currentY := float64(startY) + stepY*float64(i)
-		
+
 		err = m.page.Mouse.MoveTo(proto.Point{X: currentX, Y: currentY})
 		if err != nil {
 			return NewGowrightError(BrowserError, "failed to move during swipe", err)
 		}
-		
+
 		time.Sleep(stepDuration)
 	}
 
@@ -184,11 +184,11 @@ func (m *MobileUITester) Swipe(startX, startY, endX, endY int, duration time.Dur
 func (m *MobileUITester) SwipeLeft() error {
 	width := m.mobileConfig.Width
 	height := m.mobileConfig.Height
-	
-	startX := int(float64(width) * 0.8)  // Start from 80% of width
-	endX := int(float64(width) * 0.2)    // End at 20% of width
-	y := height / 2                      // Middle of screen
-	
+
+	startX := int(float64(width) * 0.8) // Start from 80% of width
+	endX := int(float64(width) * 0.2)   // End at 20% of width
+	y := height / 2                     // Middle of screen
+
 	return m.Swipe(startX, y, endX, y, 300*time.Millisecond)
 }
 
@@ -196,11 +196,11 @@ func (m *MobileUITester) SwipeLeft() error {
 func (m *MobileUITester) SwipeRight() error {
 	width := m.mobileConfig.Width
 	height := m.mobileConfig.Height
-	
-	startX := int(float64(width) * 0.2)  // Start from 20% of width
-	endX := int(float64(width) * 0.8)    // End at 80% of width
-	y := height / 2                      // Middle of screen
-	
+
+	startX := int(float64(width) * 0.2) // Start from 20% of width
+	endX := int(float64(width) * 0.8)   // End at 80% of width
+	y := height / 2                     // Middle of screen
+
 	return m.Swipe(startX, y, endX, y, 300*time.Millisecond)
 }
 
@@ -208,11 +208,11 @@ func (m *MobileUITester) SwipeRight() error {
 func (m *MobileUITester) SwipeUp() error {
 	width := m.mobileConfig.Width
 	height := m.mobileConfig.Height
-	
-	x := width / 2                        // Middle of screen
-	startY := int(float64(height) * 0.8)  // Start from 80% of height
-	endY := int(float64(height) * 0.2)    // End at 20% of height
-	
+
+	x := width / 2                       // Middle of screen
+	startY := int(float64(height) * 0.8) // Start from 80% of height
+	endY := int(float64(height) * 0.2)   // End at 20% of height
+
 	return m.Swipe(x, startY, x, endY, 300*time.Millisecond)
 }
 
@@ -220,11 +220,11 @@ func (m *MobileUITester) SwipeUp() error {
 func (m *MobileUITester) SwipeDown() error {
 	width := m.mobileConfig.Width
 	height := m.mobileConfig.Height
-	
-	x := width / 2                        // Middle of screen
-	startY := int(float64(height) * 0.2)  // Start from 20% of height
-	endY := int(float64(height) * 0.8)    // End at 80% of height
-	
+
+	x := width / 2                       // Middle of screen
+	startY := int(float64(height) * 0.2) // Start from 20% of height
+	endY := int(float64(height) * 0.8)   // End at 80% of height
+
 	return m.Swipe(x, startY, x, endY, 300*time.Millisecond)
 }
 
@@ -235,7 +235,7 @@ func (m *MobileUITester) SetOrientation(orientation string) error {
 	}
 
 	var width, height int
-	
+
 	switch orientation {
 	case "portrait":
 		if m.mobileConfig.Orientation == "portrait" {
@@ -322,11 +322,11 @@ func (m *MobileUITester) Pinch(centerX, centerY int, scale float64) error {
 
 	// This is a simplified pinch implementation
 	// In a real implementation, you would use multi-touch events
-	
+
 	// For now, we'll simulate zoom using the browser's zoom functionality
 	currentZoom := 1.0
 	targetZoom := currentZoom * scale
-	
+
 	err := m.page.SetViewport(&proto.EmulationSetDeviceMetricsOverride{
 		Width:             m.mobileConfig.Width,
 		Height:            m.mobileConfig.Height,
@@ -348,12 +348,12 @@ func (m *MobileUITester) GetMobileConfig() *MobileDeviceConfig {
 // SetMobileConfig updates the mobile configuration
 func (m *MobileUITester) SetMobileConfig(config *MobileDeviceConfig) error {
 	m.mobileConfig = config
-	
+
 	// Re-apply mobile emulation if page is initialized
 	if m.page != nil {
 		return m.applyMobileEmulation()
 	}
-	
+
 	return nil
 }
 
@@ -445,13 +445,13 @@ func (m *MobileUITester) IsMobileDevice() bool {
 // GetDeviceInfo returns information about the current device configuration
 func (m *MobileUITester) GetDeviceInfo() map[string]interface{} {
 	return map[string]interface{}{
-		"device_type":    m.mobileConfig.DeviceType,
-		"width":          m.mobileConfig.Width,
-		"height":         m.mobileConfig.Height,
-		"pixel_ratio":    m.mobileConfig.PixelRatio,
-		"orientation":    m.mobileConfig.Orientation,
-		"touch_enabled":  m.mobileConfig.TouchEnabled,
-		"mobile":         m.mobileConfig.Mobile,
+		"device_type":   m.mobileConfig.DeviceType,
+		"width":         m.mobileConfig.Width,
+		"height":        m.mobileConfig.Height,
+		"pixel_ratio":   m.mobileConfig.PixelRatio,
+		"orientation":   m.mobileConfig.Orientation,
+		"touch_enabled": m.mobileConfig.TouchEnabled,
+		"mobile":        m.mobileConfig.Mobile,
 	}
 }
 

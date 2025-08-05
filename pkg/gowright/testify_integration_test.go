@@ -20,11 +20,11 @@ func TestTestifyAssertion(t *testing.T) {
 		// Test successful assertion
 		result := ta.Equal(5, 5, "values should be equal")
 		assert.True(t, result)
-		
+
 		// Test failed assertion
 		result = ta.Equal(5, 10, "values should be equal")
 		assert.False(t, result)
-		
+
 		// Verify steps were recorded
 		steps := ta.GetSteps()
 		assert.Len(t, steps, 2)
@@ -35,7 +35,7 @@ func TestTestifyAssertion(t *testing.T) {
 	t.Run("NotEqual", func(t *testing.T) {
 		result := ta.NotEqual(5, 10, "values should not be equal")
 		assert.True(t, result)
-		
+
 		result = ta.NotEqual(5, 5, "values should not be equal")
 		assert.False(t, result)
 	})
@@ -43,7 +43,7 @@ func TestTestifyAssertion(t *testing.T) {
 	t.Run("True", func(t *testing.T) {
 		result := ta.True(true, "value should be true")
 		assert.True(t, result)
-		
+
 		result = ta.True(false, "value should be true")
 		assert.False(t, result)
 	})
@@ -51,7 +51,7 @@ func TestTestifyAssertion(t *testing.T) {
 	t.Run("False", func(t *testing.T) {
 		result := ta.False(false, "value should be false")
 		assert.True(t, result)
-		
+
 		result = ta.False(true, "value should be false")
 		assert.False(t, result)
 	})
@@ -59,7 +59,7 @@ func TestTestifyAssertion(t *testing.T) {
 	t.Run("Nil", func(t *testing.T) {
 		result := ta.Nil(nil, "value should be nil")
 		assert.True(t, result)
-		
+
 		result = ta.Nil("not nil", "value should be nil")
 		assert.False(t, result)
 	})
@@ -67,7 +67,7 @@ func TestTestifyAssertion(t *testing.T) {
 	t.Run("NotNil", func(t *testing.T) {
 		result := ta.NotNil("not nil", "value should not be nil")
 		assert.True(t, result)
-		
+
 		result = ta.NotNil(nil, "value should not be nil")
 		assert.False(t, result)
 	})
@@ -75,7 +75,7 @@ func TestTestifyAssertion(t *testing.T) {
 	t.Run("Contains", func(t *testing.T) {
 		result := ta.Contains("hello world", "world", "string should contain substring")
 		assert.True(t, result)
-		
+
 		result = ta.Contains("hello world", "foo", "string should contain substring")
 		assert.False(t, result)
 	})
@@ -83,7 +83,7 @@ func TestTestifyAssertion(t *testing.T) {
 	t.Run("NotContains", func(t *testing.T) {
 		result := ta.NotContains("hello world", "foo", "string should not contain substring")
 		assert.True(t, result)
-		
+
 		result = ta.NotContains("hello world", "world", "string should not contain substring")
 		assert.False(t, result)
 	})
@@ -92,7 +92,7 @@ func TestTestifyAssertion(t *testing.T) {
 		slice := []int{1, 2, 3}
 		result := ta.Len(slice, 3, "slice should have length 3")
 		assert.True(t, result)
-		
+
 		result = ta.Len(slice, 5, "slice should have length 5")
 		assert.False(t, result)
 	})
@@ -100,7 +100,7 @@ func TestTestifyAssertion(t *testing.T) {
 	t.Run("Empty", func(t *testing.T) {
 		result := ta.Empty("", "string should be empty")
 		assert.True(t, result)
-		
+
 		result = ta.Empty("not empty", "string should be empty")
 		assert.False(t, result)
 	})
@@ -108,7 +108,7 @@ func TestTestifyAssertion(t *testing.T) {
 	t.Run("NotEmpty", func(t *testing.T) {
 		result := ta.NotEmpty("not empty", "string should not be empty")
 		assert.True(t, result)
-		
+
 		result = ta.NotEmpty("", "string should not be empty")
 		assert.False(t, result)
 	})
@@ -117,7 +117,7 @@ func TestTestifyAssertion(t *testing.T) {
 		err := errors.New("test error")
 		result := ta.Error(err, "error should be present")
 		assert.True(t, result)
-		
+
 		result = ta.Error(nil, "error should be present")
 		assert.False(t, result)
 	})
@@ -125,7 +125,7 @@ func TestTestifyAssertion(t *testing.T) {
 	t.Run("NoError", func(t *testing.T) {
 		result := ta.NoError(nil, "error should not be present")
 		assert.True(t, result)
-		
+
 		err := errors.New("test error")
 		result = ta.NoError(err, "error should not be present")
 		assert.False(t, result)
@@ -149,14 +149,14 @@ func TestTestifyAssertion(t *testing.T) {
 		// Verify that logs and steps are being recorded
 		logs := ta.GetLogs()
 		assert.NotEmpty(t, logs)
-		
+
 		steps := ta.GetSteps()
 		assert.NotEmpty(t, steps)
-		
+
 		passed, failed := ta.GetSummary()
 		assert.True(t, passed > 0)
 		assert.True(t, failed > 0)
-		
+
 		assert.True(t, ta.HasFailures())
 	})
 }
@@ -168,7 +168,7 @@ func TestGowrightMock(t *testing.T) {
 
 	t.Run("BasicMockFunctionality", func(t *testing.T) {
 		assert.Equal(t, testName, mock.GetTestName())
-		
+
 		// Test logging
 		mock.Log("Test log message")
 		logs := mock.GetLogs()
@@ -179,17 +179,17 @@ func TestGowrightMock(t *testing.T) {
 	t.Run("MockExpectations", func(t *testing.T) {
 		// Create a fresh mock for this test
 		freshMock := NewGowrightMock("MockExpectationsTest")
-		
+
 		// Test that mock expectations work
 		freshMock.On("TestMethod", "arg1").Return("result1")
-		
+
 		// This would normally be called by the code under test
 		result := freshMock.TestMethod("arg1")
 		assert.Equal(t, "result1", result)
-		
+
 		// Verify expectations were met
 		freshMock.AssertExpectations(t)
-		
+
 		// Check that logging occurred
 		logs := freshMock.GetLogs()
 		assert.Contains(t, logs[len(logs)-1], "All mock expectations were met")
@@ -203,12 +203,12 @@ func TestUITesterMock(t *testing.T) {
 		uiMock := NewUITesterMock("NavigateTest")
 		url := "https://example.com"
 		uiMock.On("Navigate", url).Return(nil)
-		
+
 		err := uiMock.Navigate(url)
 		assert.NoError(t, err)
-		
+
 		uiMock.AssertExpectations(t)
-		
+
 		logs := uiMock.GetLogs()
 		assert.Contains(t, logs[0], "Navigate called with URL: "+url)
 	})
@@ -217,12 +217,12 @@ func TestUITesterMock(t *testing.T) {
 		uiMock := NewUITesterMock("ClickTest")
 		selector := "#button"
 		uiMock.On("Click", selector).Return(nil)
-		
+
 		err := uiMock.Click(selector)
 		assert.NoError(t, err)
-		
+
 		uiMock.AssertExpectations(t)
-		
+
 		logs := uiMock.GetLogs()
 		assert.Contains(t, logs[0], "Click called with selector: "+selector)
 	})
@@ -232,12 +232,12 @@ func TestUITesterMock(t *testing.T) {
 		selector := "#input"
 		text := "test text"
 		uiMock.On("Type", selector, text).Return(nil)
-		
+
 		err := uiMock.Type(selector, text)
 		assert.NoError(t, err)
-		
+
 		uiMock.AssertExpectations(t)
-		
+
 		logs := uiMock.GetLogs()
 		assert.Contains(t, logs[0], "Type called with selector: "+selector)
 		assert.Contains(t, logs[0], "text: "+text)
@@ -248,13 +248,13 @@ func TestUITesterMock(t *testing.T) {
 		selector := "#element"
 		expectedText := "element text"
 		uiMock.On("GetText", selector).Return(expectedText, nil)
-		
+
 		text, err := uiMock.GetText(selector)
 		assert.NoError(t, err)
 		assert.Equal(t, expectedText, text)
-		
+
 		uiMock.AssertExpectations(t)
-		
+
 		logs := uiMock.GetLogs()
 		assert.Contains(t, logs[0], "GetText called with selector: "+selector)
 	})
@@ -272,15 +272,15 @@ func TestAPITesterMock(t *testing.T) {
 			Body:       []byte(`{"users": []}`),
 			Duration:   100 * time.Millisecond,
 		}
-		
+
 		apiMock.On("Get", endpoint, headers).Return(expectedResponse, nil)
-		
+
 		response, err := apiMock.Get(endpoint, headers)
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResponse, response)
-		
+
 		apiMock.AssertExpectations(t)
-		
+
 		logs := apiMock.GetLogs()
 		assert.Contains(t, logs[0], "Get called with endpoint: "+endpoint)
 	})
@@ -296,15 +296,15 @@ func TestAPITesterMock(t *testing.T) {
 			Body:       []byte(`{"id": 1, "name": "John Doe"}`),
 			Duration:   150 * time.Millisecond,
 		}
-		
+
 		apiMock.On("Post", endpoint, body, headers).Return(expectedResponse, nil)
-		
+
 		response, err := apiMock.Post(endpoint, body, headers)
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResponse, response)
-		
+
 		apiMock.AssertExpectations(t)
-		
+
 		logs := apiMock.GetLogs()
 		assert.Contains(t, logs[0], "Post called with endpoint: "+endpoint)
 	})
@@ -314,14 +314,14 @@ func TestAPITesterMock(t *testing.T) {
 		endpoint := "/api/error"
 		headers := map[string]string{}
 		expectedError := errors.New("API error")
-		
+
 		apiMock.On("Get", endpoint, headers).Return(nil, expectedError)
-		
+
 		response, err := apiMock.Get(endpoint, headers)
 		assert.Error(t, err)
 		assert.Nil(t, response)
 		assert.Equal(t, expectedError, err)
-		
+
 		apiMock.AssertExpectations(t)
 	})
 }
@@ -341,15 +341,15 @@ func TestDatabaseTesterMock(t *testing.T) {
 			RowCount: 2,
 			Duration: 50 * time.Millisecond,
 		}
-		
+
 		dbMock.On("Query", connection, query, args).Return(expectedResult, nil)
-		
+
 		result, err := dbMock.Query(connection, query, args...)
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResult, result)
-		
+
 		dbMock.AssertExpectations(t)
-		
+
 		logs := dbMock.GetLogs()
 		assert.Contains(t, logs[0], "Query called with connection: "+connection)
 		assert.Contains(t, logs[0], "query: "+query)
@@ -364,16 +364,16 @@ func TestDatabaseTesterMock(t *testing.T) {
 			RowsAffected: 1,
 			Duration:     25 * time.Millisecond,
 		}
-		
+
 		dbMock.On("Execute", connection, query, args).Return(expectedResult, nil)
-		
+
 		result, err := dbMock.Execute(connection, query, args...)
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResult, result)
 		assert.Equal(t, int64(1), result.RowsAffected)
-		
+
 		dbMock.AssertExpectations(t)
-		
+
 		logs := dbMock.GetLogs()
 		assert.Contains(t, logs[0], "Execute called with connection: "+connection)
 		assert.Contains(t, logs[0], "query: "+query)
@@ -385,14 +385,14 @@ func TestDatabaseTesterMock(t *testing.T) {
 		query := "INVALID SQL"
 		args := []interface{}{}
 		expectedError := errors.New("SQL syntax error")
-		
+
 		dbMock.On("Query", connection, query, args).Return(nil, expectedError)
-		
+
 		result, err := dbMock.Query(connection, query, args...)
 		assert.Error(t, err)
 		assert.Nil(t, result)
 		assert.Equal(t, expectedError, err)
-		
+
 		dbMock.AssertExpectations(t)
 	})
 }
@@ -408,7 +408,7 @@ func TestTestifyIntegrationHelper(t *testing.T) {
 		helper, err := NewTestifyIntegrationHelper(t, config)
 		assert.NoError(t, err)
 		assert.NotNil(t, helper)
-		
+
 		// Clean up
 		err = helper.Close()
 		assert.NoError(t, err)
@@ -417,7 +417,7 @@ func TestTestifyIntegrationHelper(t *testing.T) {
 	t.Run("RunUITestWithMock", func(t *testing.T) {
 		helper, err := NewTestifyIntegrationHelper(t, config)
 		require.NoError(t, err)
-		defer helper.Close()
+		defer func() { _ = helper.Close() }()
 
 		// Create a mock UI tester
 		uiMock := NewUITesterMock("test")
@@ -443,7 +443,7 @@ func TestTestifyIntegrationHelper(t *testing.T) {
 	t.Run("RunAPITestWithMock", func(t *testing.T) {
 		helper, err := NewTestifyIntegrationHelper(t, config)
 		require.NoError(t, err)
-		defer helper.Close()
+		defer func() { _ = helper.Close() }()
 
 		// Create a mock API tester
 		apiMock := NewAPITesterMock("test")
@@ -470,7 +470,7 @@ func TestTestifyIntegrationHelper(t *testing.T) {
 	t.Run("RunDatabaseTestWithMock", func(t *testing.T) {
 		helper, err := NewTestifyIntegrationHelper(t, config)
 		require.NoError(t, err)
-		defer helper.Close()
+		defer func() { _ = helper.Close() }()
 
 		// Create a mock database tester
 		dbMock := NewDatabaseTesterMock("test")
@@ -497,7 +497,7 @@ func TestTestifyIntegrationHelper(t *testing.T) {
 	t.Run("RunIntegrationTestWithMock", func(t *testing.T) {
 		helper, err := NewTestifyIntegrationHelper(t, config)
 		require.NoError(t, err)
-		defer helper.Close()
+		defer func() { _ = helper.Close() }()
 
 		// Create a mock integration tester
 		integrationMock := &GowrightMock{}
@@ -530,11 +530,11 @@ func TestGowrightTestSuite(t *testing.T) {
 // TestExampleUITest demonstrates UI testing within the suite
 func (suite *GowrightTestSuiteExample) TestExampleUITest() {
 	assertion := suite.NewTestifyAssertion("ExampleUITest")
-	
+
 	// Example test logic
 	assertion.True(true, "This should pass")
 	assertion.Equal("expected", "expected", "Values should match")
-	
+
 	// Verify the test recorded steps
 	steps := assertion.GetSteps()
 	suite.Assert().Len(steps, 2)
@@ -545,16 +545,16 @@ func (suite *GowrightTestSuiteExample) TestExampleUITest() {
 // TestExampleAPITest demonstrates API testing within the suite
 func (suite *GowrightTestSuiteExample) TestExampleAPITest() {
 	assertion := suite.NewTestifyAssertion("ExampleAPITest")
-	
+
 	// Example API test logic
 	response := map[string]interface{}{
 		"status": "success",
 		"data":   []string{"item1", "item2"},
 	}
-	
+
 	assertion.Equal("success", response["status"], "Status should be success")
 	assertion.NotNil(response["data"], "Data should not be nil")
-	
+
 	// Verify the test recorded steps
 	steps := assertion.GetSteps()
 	suite.Assert().Len(steps, 2)
@@ -564,17 +564,17 @@ func (suite *GowrightTestSuiteExample) TestExampleAPITest() {
 // TestExampleDatabaseTest demonstrates database testing within the suite
 func (suite *GowrightTestSuiteExample) TestExampleDatabaseTest() {
 	assertion := suite.NewTestifyAssertion("ExampleDatabaseTest")
-	
+
 	// Example database test logic
 	rows := []map[string]interface{}{
 		{"id": 1, "name": "John"},
 		{"id": 2, "name": "Jane"},
 	}
-	
+
 	assertion.Len(rows, 2, "Should have 2 rows")
 	assertion.Equal("John", rows[0]["name"], "First row name should be John")
 	assertion.Equal("Jane", rows[1]["name"], "Second row name should be Jane")
-	
+
 	// Verify the test recorded steps
 	steps := assertion.GetSteps()
 	suite.Assert().Len(steps, 3)
@@ -585,12 +585,12 @@ func (suite *GowrightTestSuiteExample) TestExampleDatabaseTest() {
 func TestDirectTestifyIntegration(t *testing.T) {
 	t.Run("TestifyAssertIntegration", func(t *testing.T) {
 		ta := NewTestifyAssertion(t, "DirectIntegration")
-		
+
 		// Test that testify assertions work alongside Gowright assertions
 		assert.True(t, ta.True(true))
-		assert.False(t, ta.False(false))
+		assert.True(t, ta.False(false))
 		assert.Equal(t, 5, 5)
-		
+
 		// Verify Gowright recorded the assertions
 		steps := ta.GetSteps()
 		assert.Len(t, steps, 2) // Only Gowright assertions are recorded
@@ -598,16 +598,16 @@ func TestDirectTestifyIntegration(t *testing.T) {
 
 	t.Run("TestifyRequireIntegration", func(t *testing.T) {
 		ta := NewTestifyAssertion(t, "RequireIntegration")
-		
+
 		// Test require methods (these would fail the test if assertions failed)
 		require.NotNil(t, ta.Require())
 		require.NotNil(t, ta.Assert())
-		
+
 		// Test Gowright require methods
 		ta.RequireEqual(10, 10)
 		ta.RequireNotNil("not nil")
 		ta.RequireNoError(nil)
-		
+
 		// Verify steps were recorded
 		steps := ta.GetSteps()
 		assert.Len(t, steps, 3)

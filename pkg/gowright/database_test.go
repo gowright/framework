@@ -40,7 +40,7 @@ func (dt *DatabaseTestImpl) Execute() *TestCaseResult {
 			result.Logs = append(result.Logs, fmt.Sprintf("Executing setup query %d: %s", i+1, setupQuery))
 			if _, err := dt.tester.Execute(dt.testCase.Connection, setupQuery); err != nil {
 				result.Status = TestStatusError
-				result.Error = NewGowrightError(DatabaseError, 
+				result.Error = NewGowrightError(DatabaseError,
 					fmt.Sprintf("setup query %d failed", i+1), err).
 					WithContext("setup_query", setupQuery).
 					WithContext("connection", dt.testCase.Connection)
@@ -103,7 +103,7 @@ func (dt *DatabaseTestImpl) validateResults(actual *DatabaseResult, expected *Da
 	// Validate row count if specified
 	if expected.RowCount > 0 {
 		if len(actual.Rows) != expected.RowCount {
-			return NewGowrightError(AssertionError, 
+			return NewGowrightError(AssertionError,
 				fmt.Sprintf("expected %d rows, got %d", expected.RowCount, len(actual.Rows)), nil).
 				WithContext("expected_rows", expected.RowCount).
 				WithContext("actual_rows", len(actual.Rows))
@@ -113,7 +113,7 @@ func (dt *DatabaseTestImpl) validateResults(actual *DatabaseResult, expected *Da
 	// Validate rows affected if specified
 	if expected.RowsAffected > 0 {
 		if actual.RowsAffected != expected.RowsAffected {
-			return NewGowrightError(AssertionError, 
+			return NewGowrightError(AssertionError,
 				fmt.Sprintf("expected %d rows affected, got %d", expected.RowsAffected, actual.RowsAffected), nil).
 				WithContext("expected_rows_affected", expected.RowsAffected).
 				WithContext("actual_rows_affected", actual.RowsAffected)
@@ -121,15 +121,15 @@ func (dt *DatabaseTestImpl) validateResults(actual *DatabaseResult, expected *Da
 	}
 
 	// Validate specific rows if specified
-	if expected.Rows != nil && len(expected.Rows) > 0 {
+	if len(expected.Rows) > 0 {
 		if len(actual.Rows) != len(expected.Rows) {
-			return NewGowrightError(AssertionError, 
+			return NewGowrightError(AssertionError,
 				fmt.Sprintf("expected %d rows, got %d", len(expected.Rows), len(actual.Rows)), nil)
 		}
 
 		for i, expectedRow := range expected.Rows {
 			if i >= len(actual.Rows) {
-				return NewGowrightError(AssertionError, 
+				return NewGowrightError(AssertionError,
 					fmt.Sprintf("missing row at index %d", i), nil)
 			}
 
@@ -137,15 +137,15 @@ func (dt *DatabaseTestImpl) validateResults(actual *DatabaseResult, expected *Da
 			for key, expectedValue := range expectedRow {
 				actualValue, exists := actualRow[key]
 				if !exists {
-					return NewGowrightError(AssertionError, 
+					return NewGowrightError(AssertionError,
 						fmt.Sprintf("missing column '%s' in row %d", key, i), nil).
 						WithContext("row_index", i).
 						WithContext("column", key)
 				}
 
 				if !compareValues(expectedValue, actualValue) {
-					return NewGowrightError(AssertionError, 
-						fmt.Sprintf("value mismatch in row %d, column '%s': expected %v, got %v", 
+					return NewGowrightError(AssertionError,
+						fmt.Sprintf("value mismatch in row %d, column '%s': expected %v, got %v",
 							i, key, expectedValue, actualValue), nil).
 						WithContext("row_index", i).
 						WithContext("column", key).
@@ -182,7 +182,7 @@ func (da *DatabaseAssertions) AssertRowCount(connectionName, query string, expec
 
 	actualCount := len(result.Rows)
 	if actualCount != expectedCount {
-		return NewGowrightError(AssertionError, 
+		return NewGowrightError(AssertionError,
 			fmt.Sprintf("expected %d rows, got %d", expectedCount, actualCount), nil).
 			WithContext("expected_count", expectedCount).
 			WithContext("actual_count", actualCount).
@@ -202,7 +202,7 @@ func (da *DatabaseAssertions) AssertRowsAffected(connectionName, query string, e
 	}
 
 	if result.RowsAffected != expectedAffected {
-		return NewGowrightError(AssertionError, 
+		return NewGowrightError(AssertionError,
 			fmt.Sprintf("expected %d rows affected, got %d", expectedAffected, result.RowsAffected), nil).
 			WithContext("expected_affected", expectedAffected).
 			WithContext("actual_affected", result.RowsAffected).
@@ -239,7 +239,7 @@ func (da *DatabaseAssertions) AssertRowNotExists(connectionName, query string, a
 	}
 
 	if len(result.Rows) > 0 {
-		return NewGowrightError(AssertionError, 
+		return NewGowrightError(AssertionError,
 			fmt.Sprintf("expected no rows, got %d", len(result.Rows)), nil).
 			WithContext("actual_count", len(result.Rows)).
 			WithContext("query", query)
@@ -266,15 +266,15 @@ func (da *DatabaseAssertions) AssertColumnValue(connectionName, query, columnNam
 	firstRow := result.Rows[0]
 	actualValue, exists := firstRow[columnName]
 	if !exists {
-		return NewGowrightError(AssertionError, 
+		return NewGowrightError(AssertionError,
 			fmt.Sprintf("column '%s' not found in result", columnName), nil).
 			WithContext("column", columnName).
 			WithContext("available_columns", getColumnNames(firstRow))
 	}
 
 	if !compareValues(expectedValue, actualValue) {
-		return NewGowrightError(AssertionError, 
-			fmt.Sprintf("column '%s' value mismatch: expected %v, got %v", 
+		return NewGowrightError(AssertionError,
+			fmt.Sprintf("column '%s' value mismatch: expected %v, got %v",
 				columnName, expectedValue, actualValue), nil).
 			WithContext("column", columnName).
 			WithContext("expected", expectedValue).
@@ -302,22 +302,22 @@ func (da *DatabaseAssertions) AssertColumnContains(connectionName, query, column
 	firstRow := result.Rows[0]
 	actualValue, exists := firstRow[columnName]
 	if !exists {
-		return NewGowrightError(AssertionError, 
+		return NewGowrightError(AssertionError,
 			fmt.Sprintf("column '%s' not found in result", columnName), nil).
 			WithContext("column", columnName)
 	}
 
 	actualStr, ok := actualValue.(string)
 	if !ok {
-		return NewGowrightError(AssertionError, 
+		return NewGowrightError(AssertionError,
 			fmt.Sprintf("column '%s' is not a string: %T", columnName, actualValue), nil).
 			WithContext("column", columnName).
 			WithContext("actual_type", fmt.Sprintf("%T", actualValue))
 	}
 
 	if !contains(actualStr, expectedSubstring) {
-		return NewGowrightError(AssertionError, 
-			fmt.Sprintf("column '%s' value '%s' does not contain '%s'", 
+		return NewGowrightError(AssertionError,
+			fmt.Sprintf("column '%s' value '%s' does not contain '%s'",
 				columnName, actualStr, expectedSubstring), nil).
 			WithContext("column", columnName).
 			WithContext("actual_value", actualStr).
@@ -339,7 +339,7 @@ func (da *DatabaseAssertions) AssertTableExists(connectionName, tableName string
 	}
 
 	if len(result.Rows) == 0 {
-		return NewGowrightError(AssertionError, 
+		return NewGowrightError(AssertionError,
 			fmt.Sprintf("table '%s' does not exist", tableName), nil).
 			WithContext("table", tableName)
 	}
@@ -359,7 +359,7 @@ func (da *DatabaseAssertions) AssertTableNotExists(connectionName, tableName str
 	}
 
 	if len(result.Rows) > 0 {
-		return NewGowrightError(AssertionError, 
+		return NewGowrightError(AssertionError,
 			fmt.Sprintf("table '%s' exists but should not", tableName), nil).
 			WithContext("table", tableName)
 	}
@@ -391,7 +391,7 @@ func (tr *TransactionTestRunner) RunInTransaction(connectionName string, testFun
 
 	defer func() {
 		// Always attempt rollback in case of panic or if commit wasn't called
-		tx.Rollback()
+		_ = tx.Rollback()
 	}()
 
 	if err := testFunc(tx); err != nil {
@@ -421,7 +421,7 @@ func (tr *TransactionTestRunner) RunWithRollback(connectionName string, testFunc
 	}
 
 	defer func() {
-		tx.Rollback()
+		_ = tx.Rollback()
 	}()
 
 	return testFunc(tx)
@@ -451,7 +451,7 @@ func findSubstring(s, substr string) int {
 	if len(substr) > len(s) {
 		return -1
 	}
-	
+
 	for i := 0; i <= len(s)-len(substr); i++ {
 		if s[i:i+len(substr)] == substr {
 			return i

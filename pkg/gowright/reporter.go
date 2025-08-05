@@ -48,13 +48,13 @@ func NewReportManager(config *ReportConfig) *ReportManager {
 		errorRecovery: NewErrorRecoveryManager(),
 		logger:        log.New(os.Stderr, "[ReportManager] ", log.LstdFlags),
 	}
-	
+
 	// Initialize fallback reporter (always JSON to local filesystem)
 	rm.initializeFallbackReporter()
-	
+
 	// Initialize reporters based on configuration
 	rm.initializeReporters()
-	
+
 	return rm
 }
 
@@ -65,7 +65,7 @@ func (rm *ReportManager) initializeFallbackReporter() {
 	if rm.config != nil && rm.config.LocalReports.OutputDir != "" {
 		outputDir = rm.config.LocalReports.OutputDir + "/fallback"
 	}
-	
+
 	rm.fallbackReporter = &JSONReporter{
 		OutputDir: outputDir,
 		enabled:   true,
@@ -128,7 +128,7 @@ func (rm *ReportManager) AddReporter(reporter Reporter) {
 func (rm *ReportManager) RemoveReporter(name string) {
 	rm.mutex.Lock()
 	defer rm.mutex.Unlock()
-	
+
 	for i, reporter := range rm.reporters {
 		if reporter.GetName() == name {
 			rm.reporters = append(rm.reporters[:i], rm.reporters[i+1:]...)
@@ -154,7 +154,7 @@ func (rm *ReportManager) GenerateReportsWithContext(ctx context.Context, results
 
 	// Channel to collect results from concurrent reporting
 	resultChan := make(chan ReportingResult, len(rm.reporters))
-	
+
 	// Start reporting operations concurrently
 	for _, reporter := range rm.reporters {
 		if reporter.IsEnabled() {
@@ -184,7 +184,7 @@ func (rm *ReportManager) GenerateReportsWithContext(ctx context.Context, results
 		case <-ctx.Done():
 			// Context cancelled, stop waiting for remaining results
 			rm.logger.Printf("Reporting cancelled due to context: %v", ctx.Err())
-			break
+			return summary
 		}
 	}
 
@@ -192,7 +192,7 @@ func (rm *ReportManager) GenerateReportsWithContext(ctx context.Context, results
 	if summary.SuccessfulReports == 0 && rm.fallbackReporter != nil {
 		rm.logger.Printf("All reporters failed, attempting fallback reporting")
 		summary.FallbackUsed = true
-		
+
 		fallbackResult := rm.generateReportWithRecovery(ctx, rm.fallbackReporter, results, make(chan ReportingResult, 1))
 		if !fallbackResult.Success {
 			summary.FallbackError = fallbackResult.Error
@@ -209,32 +209,32 @@ func (rm *ReportManager) GenerateReportsWithContext(ctx context.Context, results
 // generateReportWithRecovery generates a report with error recovery
 func (rm *ReportManager) generateReportWithRecovery(ctx context.Context, reporter Reporter, results *TestResults, resultChan chan<- ReportingResult) ReportingResult {
 	startTime := time.Now()
-	
+
 	result := ReportingResult{
 		ReporterName: reporter.GetName(),
 		Success:      false,
 	}
-	
+
 	// Create retry configuration for reporting
 	retryConfig := DefaultRetryConfig()
 	retryConfig.MaxRetries = 2 // Fewer retries for reporting to avoid delays
 	retryConfig.InitialDelay = 500 * time.Millisecond
-	
+
 	// Attempt to generate report with retry logic
 	err := RetryWithBackoff(ctx, retryConfig, func() error {
 		return reporter.GenerateReport(results)
 	})
-	
+
 	result.Duration = time.Since(startTime)
-	
+
 	if err != nil {
 		// Attempt error recovery
 		recoveredErr := rm.errorRecovery.RecoverFromError(ctx, err)
 		result.Error = recoveredErr
-		
+
 		// Log the error with context
 		if gowrightErr, ok := recoveredErr.(*GowrightError); ok {
-			rm.logger.Printf("Reporter %s failed with error type %s: %v (context: %v)", 
+			rm.logger.Printf("Reporter %s failed with error type %s: %v (context: %v)",
 				reporter.GetName(), gowrightErr.Type.String(), gowrightErr.Message, gowrightErr.Context)
 		} else {
 			rm.logger.Printf("Reporter %s failed: %v", reporter.GetName(), err)
@@ -243,7 +243,7 @@ func (rm *ReportManager) generateReportWithRecovery(ctx context.Context, reporte
 		result.Success = true
 		rm.logger.Printf("Reporter %s succeeded in %v", reporter.GetName(), result.Duration)
 	}
-	
+
 	// Send result to channel if provided
 	if resultChan != nil {
 		select {
@@ -252,7 +252,7 @@ func (rm *ReportManager) generateReportWithRecovery(ctx context.Context, reporte
 			// Context cancelled, don't block
 		}
 	}
-	
+
 	return result
 }
 
@@ -260,7 +260,7 @@ func (rm *ReportManager) generateReportWithRecovery(ctx context.Context, reporte
 func (rm *ReportManager) GetReporters() []Reporter {
 	rm.mutex.RLock()
 	defer rm.mutex.RUnlock()
-	
+
 	reporters := make([]Reporter, len(rm.reporters))
 	copy(reporters, rm.reporters)
 	return reporters
@@ -280,7 +280,7 @@ func (rm *ReportManager) SetFallbackReporter(reporter Reporter) {
 func (rm *ReportManager) EnableReporter(name string) error {
 	rm.mutex.Lock()
 	defer rm.mutex.Unlock()
-	
+
 	for _, reporter := range rm.reporters {
 		if reporter.GetName() == name {
 			if enabler, ok := reporter.(interface{ SetEnabled(bool) }); ok {
@@ -290,7 +290,7 @@ func (rm *ReportManager) EnableReporter(name string) error {
 			return NewGowrightError(ReportingError, "reporter does not support enabling/disabling", nil)
 		}
 	}
-	
+
 	return NewGowrightError(ReportingError, fmt.Sprintf("reporter '%s' not found", name), nil)
 }
 
@@ -298,7 +298,7 @@ func (rm *ReportManager) EnableReporter(name string) error {
 func (rm *ReportManager) DisableReporter(name string) error {
 	rm.mutex.Lock()
 	defer rm.mutex.Unlock()
-	
+
 	for _, reporter := range rm.reporters {
 		if reporter.GetName() == name {
 			if enabler, ok := reporter.(interface{ SetEnabled(bool) }); ok {
@@ -308,7 +308,7 @@ func (rm *ReportManager) DisableReporter(name string) error {
 			return NewGowrightError(ReportingError, "reporter does not support enabling/disabling", nil)
 		}
 	}
-	
+
 	return NewGowrightError(ReportingError, fmt.Sprintf("reporter '%s' not found", name), nil)
 }
 
@@ -316,9 +316,9 @@ func (rm *ReportManager) DisableReporter(name string) error {
 func (rm *ReportManager) GetReportingHealth() map[string]bool {
 	rm.mutex.RLock()
 	defer rm.mutex.RUnlock()
-	
+
 	health := make(map[string]bool)
-	
+
 	for _, reporter := range rm.reporters {
 		// Simple health check - try to create a minimal test result
 		testResult := &TestResults{
@@ -331,15 +331,15 @@ func (rm *ReportManager) GetReportingHealth() map[string]bool {
 			SkippedTests: 0,
 			TestCases:    []TestCaseResult{},
 		}
-		
+
 		// Create a temporary context with short timeout
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		
+
 		result := rm.generateReportWithRecovery(ctx, reporter, testResult, nil)
 		health[reporter.GetName()] = result.Success
 	}
-	
+
 	return health
 }
 
@@ -512,7 +512,7 @@ func (hr *HTMLReporter) generateHTMLContent(results *TestResults) (string, error
 			return a.Sub(b)
 		},
 	}).Parse(htmlTemplate)
-	
+
 	if err != nil {
 		return "", fmt.Errorf("failed to parse HTML template: %w", err)
 	}

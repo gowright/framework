@@ -11,7 +11,6 @@ import (
 
 var (
 	versionFlag = flag.Bool("version", false, "Show version information")
-	configFlag  = flag.String("config", "", "Path to configuration file")
 	helpFlag    = flag.Bool("help", false, "Show help information")
 )
 
@@ -34,14 +33,14 @@ func main() {
 
 func showVersion() {
 	info := gowright.GetVersionInfo()
-	
+
 	fmt.Printf("Gowright Testing Framework\n")
 	fmt.Printf("Version: %s\n", info.Version)
 	fmt.Printf("Git Commit: %s\n", info.GitCommit)
 	fmt.Printf("Build Date: %s\n", info.BuildDate)
 	fmt.Printf("Go Version: %s\n", info.GoVersion)
 	fmt.Printf("Platform: %s\n", info.Platform)
-	
+
 	// Also output as JSON if requested
 	if len(os.Args) > 2 && os.Args[2] == "--json" {
 		jsonData, _ := json.MarshalIndent(info, "", "  ")

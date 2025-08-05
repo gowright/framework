@@ -74,15 +74,15 @@ type TestCaseResult struct {
 
 // TestResults holds all test execution results
 type TestResults struct {
-	SuiteName    string            `json:"suite_name"`
-	StartTime    time.Time         `json:"start_time"`
-	EndTime      time.Time         `json:"end_time"`
-	TotalTests   int               `json:"total_tests"`
-	PassedTests  int               `json:"passed_tests"`
-	FailedTests  int               `json:"failed_tests"`
-	SkippedTests int               `json:"skipped_tests"`
-	ErrorTests   int               `json:"error_tests"`
-	TestCases    []TestCaseResult  `json:"test_cases"`
+	SuiteName    string           `json:"suite_name"`
+	StartTime    time.Time        `json:"start_time"`
+	EndTime      time.Time        `json:"end_time"`
+	TotalTests   int              `json:"total_tests"`
+	PassedTests  int              `json:"passed_tests"`
+	FailedTests  int              `json:"failed_tests"`
+	SkippedTests int              `json:"skipped_tests"`
+	ErrorTests   int              `json:"error_tests"`
+	TestCases    []TestCaseResult `json:"test_cases"`
 }
 
 // ErrorType represents different types of framework errors
@@ -178,12 +178,12 @@ type UIAssertion struct {
 
 // APITest represents an API test case
 type APITest struct {
-	Name     string                 `json:"name"`
-	Method   string                 `json:"method"`
-	Endpoint string                 `json:"endpoint"`
-	Headers  map[string]string      `json:"headers,omitempty"`
-	Body     interface{}            `json:"body,omitempty"`
-	Expected *APIExpectation        `json:"expected"`
+	Name     string            `json:"name"`
+	Method   string            `json:"method"`
+	Endpoint string            `json:"endpoint"`
+	Headers  map[string]string `json:"headers,omitempty"`
+	Body     interface{}       `json:"body,omitempty"`
+	Expected *APIExpectation   `json:"expected"`
 }
 
 // APIExpectation represents expected API response
@@ -196,12 +196,12 @@ type APIExpectation struct {
 
 // DatabaseTest represents a database test case
 type DatabaseTest struct {
-	Name       string                `json:"name"`
-	Connection string                `json:"connection"`
-	Setup      []string              `json:"setup,omitempty"`
-	Query      string                `json:"query"`
-	Expected   *DatabaseExpectation  `json:"expected"`
-	Teardown   []string              `json:"teardown,omitempty"`
+	Name       string               `json:"name"`
+	Connection string               `json:"connection"`
+	Setup      []string             `json:"setup,omitempty"`
+	Query      string               `json:"query"`
+	Expected   *DatabaseExpectation `json:"expected"`
+	Teardown   []string             `json:"teardown,omitempty"`
 }
 
 // DatabaseExpectation represents expected database results
@@ -213,9 +213,9 @@ type DatabaseExpectation struct {
 
 // IntegrationTest represents a complex integration test
 type IntegrationTest struct {
-	Name     string              `json:"name"`
-	Steps    []IntegrationStep   `json:"steps"`
-	Rollback []IntegrationStep   `json:"rollback,omitempty"`
+	Name     string            `json:"name"`
+	Steps    []IntegrationStep `json:"steps"`
+	Rollback []IntegrationStep `json:"rollback,omitempty"`
 }
 
 // UIStepAction represents a UI action in an integration step
@@ -254,14 +254,10 @@ type DatabaseStepValidation struct {
 	ExpectedAffected *int64                   `json:"expected_affected,omitempty"`
 }
 
-
-
-
-
 // MarshalJSON implements custom JSON marshaling for TestCaseResult
 func (tcr TestCaseResult) MarshalJSON() ([]byte, error) {
 	type Alias TestCaseResult
-	
+
 	// Create a temporary struct with string error field
 	temp := struct {
 		Alias
@@ -269,19 +265,19 @@ func (tcr TestCaseResult) MarshalJSON() ([]byte, error) {
 	}{
 		Alias: Alias(tcr),
 	}
-	
+
 	// Convert error to string if present
 	if tcr.Error != nil {
 		temp.Error = tcr.Error.Error()
 	}
-	
+
 	return json.Marshal(temp)
 }
 
 // UnmarshalJSON implements custom JSON unmarshaling for TestCaseResult
 func (tcr *TestCaseResult) UnmarshalJSON(data []byte) error {
 	type Alias TestCaseResult
-	
+
 	// Create a temporary struct with string error field
 	temp := struct {
 		*Alias
@@ -289,15 +285,15 @@ func (tcr *TestCaseResult) UnmarshalJSON(data []byte) error {
 	}{
 		Alias: (*Alias)(tcr),
 	}
-	
+
 	if err := json.Unmarshal(data, &temp); err != nil {
 		return err
 	}
-	
+
 	// Convert string error back to error type if present
 	if temp.Error != "" {
 		tcr.Error = errors.New(temp.Error)
 	}
-	
+
 	return nil
 }

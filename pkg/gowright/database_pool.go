@@ -37,11 +37,11 @@ func NewDatabasePool(name string, config *DBConnection, maxSize int, timeout tim
 	if maxSize <= 0 {
 		return nil, fmt.Errorf("database pool max size must be positive")
 	}
-	
+
 	if config == nil {
 		return nil, fmt.Errorf("database connection config cannot be nil")
 	}
-	
+
 	pool := &DatabasePool{
 		name:        name,
 		config:      config,
@@ -54,7 +54,7 @@ func NewDatabasePool(name string, config *DBConnection, maxSize int, timeout tim
 		},
 		initialized: true,
 	}
-	
+
 	return pool, nil
 }
 
@@ -62,13 +62,20 @@ func NewDatabasePool(name string, config *DBConnection, maxSize int, timeout tim
 func (dp *DatabasePool) Acquire(ctx context.Context) (*sql.DB, error) {
 	dp.mutex.Lock()
 	defer dp.mutex.Unlock()
-	
+
 	if !dp.initialized {
 		return nil, fmt.Errorf("database pool not initialized")
 	}
-	
+
+	// Check if context is already cancelled
+	select {
+	case <-ctx.Done():
+		return nil, fmt.Errorf("context cancelled: %w", ctx.Err())
+	default:
+	}
+
 	var conn *sql.DB
-	
+
 	// Try to get an existing connection from the pool
 	select {
 	case conn = <-dp.connections:
@@ -95,13 +102,13 @@ func (dp *DatabasePool) Acquire(ctx context.Context) (*sql.DB, error) {
 			}
 		}
 	}
-	
+
 	// Test the connection to make sure it's still valid
 	if err := conn.PingContext(ctx); err != nil {
 		// Connection is invalid, try to create a new one
 		if newConn, createErr := dp.createConnection(); createErr == nil {
 			// Close the invalid connection
-			conn.Close()
+			_ = conn.Close()
 			conn = newConn
 		} else {
 			// Return the invalid connection to the pool and return error
@@ -110,10 +117,10 @@ func (dp *DatabasePool) Acquire(ctx context.Context) (*sql.DB, error) {
 			return nil, fmt.Errorf("database connection is invalid and failed to create new one: %w", err)
 		}
 	}
-	
+
 	dp.stats.InUse++
 	dp.stats.TotalAcquired++
-	
+
 	return conn, nil
 }
 
@@ -121,15 +128,15 @@ func (dp *DatabasePool) Acquire(ctx context.Context) (*sql.DB, error) {
 func (dp *DatabasePool) Release(conn *sql.DB) error {
 	dp.mutex.Lock()
 	defer dp.mutex.Unlock()
-	
+
 	if !dp.initialized {
 		return fmt.Errorf("database pool not initialized")
 	}
-	
+
 	if conn == nil {
 		return fmt.Errorf("cannot release nil connection")
 	}
-	
+
 	// Test the connection before returning it to the pool
 	if err := conn.Ping(); err != nil {
 		// Connection is invalid, close it
@@ -141,10 +148,10 @@ func (dp *DatabasePool) Release(conn *sql.DB) error {
 		// Connection is valid, return to pool
 		dp.returnConnectionToPool(conn)
 	}
-	
+
 	dp.stats.InUse--
 	dp.stats.TotalReleased++
-	
+
 	return nil
 }
 
@@ -154,26 +161,26 @@ func (dp *DatabasePool) createConnection() (*sql.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database connection: %w", err)
 	}
-	
+
 	// Configure connection pool settings
 	if dp.config.MaxOpenConns > 0 {
 		conn.SetMaxOpenConns(dp.config.MaxOpenConns)
 	}
-	
+
 	if dp.config.MaxIdleConns > 0 {
 		conn.SetMaxIdleConns(dp.config.MaxIdleConns)
 	}
-	
+
 	// Set connection lifetime to prevent stale connections
 	conn.SetConnMaxLifetime(30 * time.Minute)
 	conn.SetConnMaxIdleTime(5 * time.Minute)
-	
+
 	// Test the connection
 	if err := conn.Ping(); err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
-	
+
 	return conn, nil
 }
 
@@ -194,13 +201,13 @@ func (dp *DatabasePool) returnConnectionToPool(conn *sql.DB) {
 func (dp *DatabasePool) Cleanup() error {
 	dp.mutex.Lock()
 	defer dp.mutex.Unlock()
-	
+
 	if !dp.initialized {
 		return nil
 	}
-	
+
 	var errors []error
-	
+
 	// Close all connections in the pool
 	for {
 		select {
@@ -213,14 +220,14 @@ func (dp *DatabasePool) Cleanup() error {
 			goto cleanup_done
 		}
 	}
-	
+
 cleanup_done:
 	dp.initialized = false
-	
+
 	if len(errors) > 0 {
 		return fmt.Errorf("database pool cleanup errors: %v", errors)
 	}
-	
+
 	return nil
 }
 
@@ -228,7 +235,7 @@ cleanup_done:
 func (dp *DatabasePool) GetStats() *DBPoolStats {
 	dp.mutex.RLock()
 	defer dp.mutex.RUnlock()
-	
+
 	// Create a copy of stats to avoid race conditions
 	return &DBPoolStats{
 		Name:          dp.stats.Name,
@@ -246,54 +253,56 @@ func (dp *DatabasePool) GetStats() *DBPoolStats {
 func (dp *DatabasePool) Resize(newSize int) error {
 	dp.mutex.Lock()
 	defer dp.mutex.Unlock()
-	
+
 	if newSize <= 0 {
 		return fmt.Errorf("database pool size must be positive")
 	}
-	
-	if newSize < dp.maxSize {
-		// Shrinking pool - close excess connections
-		excess := dp.maxSize - newSize
-		for i := 0; i < excess; i++ {
-			select {
-			case conn := <-dp.connections:
-				if err := conn.Close(); err != nil {
-					fmt.Printf("Warning: failed to close database connection during resize: %v\n", err)
-				}
-				dp.stats.Available--
-			default:
-				// No more connections to remove
-				break
-			}
-		}
-	}
-	
-	dp.maxSize = newSize
-	dp.stats.MaxSize = newSize
-	
+
 	// Create new channel with new size
 	newConnections := make(chan *sql.DB, newSize)
-	
-	// Move existing connections to new channel
+
+	// Collect existing connections
+	var existingConnections []*sql.DB
 	for {
 		select {
 		case conn := <-dp.connections:
-			select {
-			case newConnections <- conn:
-			default:
-				// New channel is full, close excess connection
-				if err := conn.Close(); err != nil {
-					fmt.Printf("Warning: failed to close excess database connection: %v\n", err)
-				}
-				dp.stats.Available--
-			}
+			existingConnections = append(existingConnections, conn)
+			dp.stats.Available--
 		default:
-			goto resize_done
+			// No more connections to collect
+			goto collect_done
 		}
 	}
-	
-resize_done:
+
+collect_done:
+	// If shrinking, close excess connections
+	if newSize < len(existingConnections) {
+		for i := newSize; i < len(existingConnections); i++ {
+			if err := existingConnections[i].Close(); err != nil {
+				fmt.Printf("Warning: failed to close database connection during resize: %v\n", err)
+			}
+		}
+		existingConnections = existingConnections[:newSize]
+	}
+
+	// Put remaining connections into new channel
+	for _, conn := range existingConnections {
+		select {
+		case newConnections <- conn:
+			dp.stats.Available++
+		default:
+			// This shouldn't happen since we sized the channel correctly
+			if err := conn.Close(); err != nil {
+				fmt.Printf("Warning: failed to close excess database connection: %v\n", err)
+			}
+		}
+	}
+
+	// Update pool configuration
+	dp.maxSize = newSize
+	dp.stats.MaxSize = newSize
 	dp.connections = newConnections
+
 	return nil
 }
 
@@ -301,14 +310,14 @@ resize_done:
 func (dp *DatabasePool) HealthCheck(ctx context.Context) error {
 	dp.mutex.Lock()
 	defer dp.mutex.Unlock()
-	
+
 	if !dp.initialized {
 		return fmt.Errorf("database pool not initialized")
 	}
-	
+
 	var errors []error
 	var healthyConnections []*sql.DB
-	
+
 	// Check all connections in the pool
 	for {
 		select {
@@ -329,7 +338,7 @@ func (dp *DatabasePool) HealthCheck(ctx context.Context) error {
 			goto health_check_done
 		}
 	}
-	
+
 health_check_done:
 	// Return healthy connections to the pool
 	for _, conn := range healthyConnections {
@@ -342,10 +351,10 @@ health_check_done:
 			}
 		}
 	}
-	
+
 	if len(errors) > 0 {
 		return fmt.Errorf("database pool health check errors: %v", errors)
 	}
-	
+
 	return nil
 }

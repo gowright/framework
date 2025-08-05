@@ -15,10 +15,10 @@ type Config struct {
 	MaxRetries int    `json:"max_retries"`
 
 	// Module-specific configurations
-	BrowserConfig       *BrowserConfig       `json:"browser_config,omitempty"`
-	APIConfig           *APIConfig           `json:"api_config,omitempty"`
-	DatabaseConfig      *DatabaseConfig      `json:"database_config,omitempty"`
-	ReportConfig        *ReportConfig        `json:"report_config,omitempty"`
+	BrowserConfig        *BrowserConfig        `json:"browser_config,omitempty"`
+	APIConfig            *APIConfig            `json:"api_config,omitempty"`
+	DatabaseConfig       *DatabaseConfig       `json:"database_config,omitempty"`
+	ReportConfig         *ReportConfig         `json:"report_config,omitempty"`
 	ParallelRunnerConfig *ParallelRunnerConfig `json:"parallel_runner_config,omitempty"`
 }
 
@@ -88,25 +88,25 @@ type RemoteReportConfig struct {
 
 // JiraXrayConfig holds Jira Xray integration settings
 type JiraXrayConfig struct {
-	URL       string `json:"url"`
-	Username  string `json:"username"`
-	Password  string `json:"password"`
+	URL        string `json:"url"`
+	Username   string `json:"username"`
+	Password   string `json:"password"`
 	ProjectKey string `json:"project_key"`
 }
 
 // AIOTestConfig holds AIOTest integration settings
 type AIOTestConfig struct {
-	URL    string `json:"url"`
-	APIKey string `json:"api_key"`
+	URL       string `json:"url"`
+	APIKey    string `json:"api_key"`
 	ProjectID string `json:"project_id"`
 }
 
 // ReportPortalConfig holds Report Portal integration settings
 type ReportPortalConfig struct {
-	URL       string `json:"url"`
-	UUID      string `json:"uuid"`
-	Project   string `json:"project"`
-	Launch    string `json:"launch"`
+	URL     string `json:"url"`
+	UUID    string `json:"uuid"`
+	Project string `json:"project"`
+	Launch  string `json:"launch"`
 }
 
 // DefaultConfig returns a configuration with sensible defaults
@@ -194,7 +194,7 @@ func LoadConfigFromEnv() *Config {
 func LoadHierarchicalConfig(filePath string, codeConfig *Config) (*Config, error) {
 	// Start with defaults
 	config := DefaultConfig()
-	
+
 	// Apply file configuration if provided
 	if filePath != "" {
 		fileConfig, err := LoadConfigFromFile(filePath)
@@ -203,28 +203,28 @@ func LoadHierarchicalConfig(filePath string, codeConfig *Config) (*Config, error
 		}
 		config = mergeConfigs(config, fileConfig)
 	}
-	
+
 	// Apply environment variables
 	envConfig := LoadConfigFromEnv()
 	config = mergeConfigs(config, envConfig)
-	
+
 	// Apply code configuration if provided
 	if codeConfig != nil {
 		config = mergeConfigs(config, codeConfig)
 	}
-	
+
 	// Validate the final configuration
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("configuration validation failed: %w", err)
 	}
-	
+
 	return config, nil
 }
 
 // mergeConfigs merges two configurations, with the second taking precedence
 func mergeConfigs(base, override *Config) *Config {
 	result := *base // Copy base config
-	
+
 	// Merge global settings
 	if override.LogLevel != "" && override.LogLevel != "info" {
 		result.LogLevel = override.LogLevel
@@ -235,7 +235,7 @@ func mergeConfigs(base, override *Config) *Config {
 	if override.MaxRetries != 0 && override.MaxRetries != 3 {
 		result.MaxRetries = override.MaxRetries
 	}
-	
+
 	// Merge browser config
 	if override.BrowserConfig != nil {
 		if result.BrowserConfig == nil {
@@ -243,7 +243,7 @@ func mergeConfigs(base, override *Config) *Config {
 		}
 		mergeBrowserConfig(result.BrowserConfig, override.BrowserConfig)
 	}
-	
+
 	// Merge API config
 	if override.APIConfig != nil {
 		if result.APIConfig == nil {
@@ -251,7 +251,7 @@ func mergeConfigs(base, override *Config) *Config {
 		}
 		mergeAPIConfig(result.APIConfig, override.APIConfig)
 	}
-	
+
 	// Merge database config
 	if override.DatabaseConfig != nil {
 		if result.DatabaseConfig == nil {
@@ -259,7 +259,7 @@ func mergeConfigs(base, override *Config) *Config {
 		}
 		mergeDatabaseConfig(result.DatabaseConfig, override.DatabaseConfig)
 	}
-	
+
 	// Merge report config
 	if override.ReportConfig != nil {
 		if result.ReportConfig == nil {
@@ -267,7 +267,7 @@ func mergeConfigs(base, override *Config) *Config {
 		}
 		mergeReportConfig(result.ReportConfig, override.ReportConfig)
 	}
-	
+
 	return &result
 }
 
@@ -336,7 +336,7 @@ func mergeReportConfig(base, override *ReportConfig) {
 	if override.LocalReports.OutputDir != "" && override.LocalReports.OutputDir != "./reports" {
 		base.LocalReports.OutputDir = override.LocalReports.OutputDir
 	}
-	
+
 	// Merge remote reports
 	if override.RemoteReports.JiraXray != nil {
 		base.RemoteReports.JiraXray = override.RemoteReports.JiraXray
@@ -366,7 +366,7 @@ func (c *Config) SaveToFile(filename string) error {
 // Validate validates the configuration parameters
 func (c *Config) Validate() error {
 	var errors []string
-	
+
 	// Validate global settings
 	if c.LogLevel != "" {
 		validLogLevels := []string{"debug", "info", "warn", "error"}
@@ -381,54 +381,54 @@ func (c *Config) Validate() error {
 			errors = append(errors, fmt.Sprintf("invalid log level: %s (must be one of: %v)", c.LogLevel, validLogLevels))
 		}
 	}
-	
+
 	if c.MaxRetries < 0 {
 		errors = append(errors, "max_retries cannot be negative")
 	}
-	
+
 	// Validate browser config
 	if c.BrowserConfig != nil {
 		if err := c.BrowserConfig.Validate(); err != nil {
 			errors = append(errors, fmt.Sprintf("browser config validation failed: %v", err))
 		}
 	}
-	
+
 	// Validate API config
 	if c.APIConfig != nil {
 		if err := c.APIConfig.Validate(); err != nil {
 			errors = append(errors, fmt.Sprintf("API config validation failed: %v", err))
 		}
 	}
-	
+
 	// Validate database config
 	if c.DatabaseConfig != nil {
 		if err := c.DatabaseConfig.Validate(); err != nil {
 			errors = append(errors, fmt.Sprintf("database config validation failed: %v", err))
 		}
 	}
-	
+
 	// Validate report config
 	if c.ReportConfig != nil {
 		if err := c.ReportConfig.Validate(); err != nil {
 			errors = append(errors, fmt.Sprintf("report config validation failed: %v", err))
 		}
 	}
-	
+
 	if len(errors) > 0 {
 		return fmt.Errorf("configuration validation errors: %v", errors)
 	}
-	
+
 	return nil
 }
 
 // Validate validates browser configuration
 func (bc *BrowserConfig) Validate() error {
 	var errors []string
-	
+
 	if bc.Timeout <= 0 {
 		errors = append(errors, "timeout must be positive")
 	}
-	
+
 	if bc.WindowSize != nil {
 		if bc.WindowSize.Width <= 0 {
 			errors = append(errors, "window width must be positive")
@@ -437,39 +437,39 @@ func (bc *BrowserConfig) Validate() error {
 			errors = append(errors, "window height must be positive")
 		}
 	}
-	
+
 	if len(errors) > 0 {
 		return fmt.Errorf("browser config errors: %v", errors)
 	}
-	
+
 	return nil
 }
 
 // Validate validates API configuration
 func (ac *APIConfig) Validate() error {
 	var errors []string
-	
+
 	if ac.Timeout <= 0 {
 		errors = append(errors, "timeout must be positive")
 	}
-	
+
 	if ac.AuthConfig != nil {
 		if err := ac.AuthConfig.Validate(); err != nil {
 			errors = append(errors, fmt.Sprintf("auth config validation failed: %v", err))
 		}
 	}
-	
+
 	if len(errors) > 0 {
 		return fmt.Errorf("API config errors: %v", errors)
 	}
-	
+
 	return nil
 }
 
 // Validate validates authentication configuration
 func (auth *AuthConfig) Validate() error {
 	var errors []string
-	
+
 	validTypes := []string{"bearer", "basic", "api_key", "oauth2"}
 	valid := false
 	for _, t := range validTypes {
@@ -481,7 +481,7 @@ func (auth *AuthConfig) Validate() error {
 	if !valid {
 		errors = append(errors, fmt.Sprintf("invalid auth type: %s (must be one of: %v)", auth.Type, validTypes))
 	}
-	
+
 	switch auth.Type {
 	case "bearer":
 		if auth.Token == "" {
@@ -496,101 +496,101 @@ func (auth *AuthConfig) Validate() error {
 			errors = append(errors, "token is required for API key authentication")
 		}
 	}
-	
+
 	if len(errors) > 0 {
 		return fmt.Errorf("auth config errors: %v", errors)
 	}
-	
+
 	return nil
 }
 
 // Validate validates database configuration
 func (dc *DatabaseConfig) Validate() error {
 	var errors []string
-	
-	if dc.Connections == nil || len(dc.Connections) == 0 {
+
+	if len(dc.Connections) == 0 {
 		// Empty connections is valid - no validation needed
 		return nil
 	}
-	
+
 	for name, conn := range dc.Connections {
 		if err := conn.Validate(); err != nil {
 			errors = append(errors, fmt.Sprintf("connection '%s' validation failed: %v", name, err))
 		}
 	}
-	
+
 	if len(errors) > 0 {
 		return fmt.Errorf("database config errors: %v", errors)
 	}
-	
+
 	return nil
 }
 
 // Validate validates database connection configuration
 func (dbc *DBConnection) Validate() error {
 	var errors []string
-	
+
 	if dbc.Driver == "" {
 		errors = append(errors, "driver is required")
 	}
-	
+
 	if dbc.DSN == "" {
 		errors = append(errors, "DSN is required")
 	}
-	
+
 	if dbc.MaxOpenConns < 0 {
 		errors = append(errors, "max_open_conns cannot be negative")
 	}
-	
+
 	if dbc.MaxIdleConns < 0 {
 		errors = append(errors, "max_idle_conns cannot be negative")
 	}
-	
+
 	if len(errors) > 0 {
 		return fmt.Errorf("DB connection errors: %v", errors)
 	}
-	
+
 	return nil
 }
 
 // Validate validates report configuration
 func (rc *ReportConfig) Validate() error {
 	var errors []string
-	
+
 	if rc.LocalReports.OutputDir == "" {
 		errors = append(errors, "output directory cannot be empty")
 	}
-	
+
 	// Validate remote report configs
 	if rc.RemoteReports.JiraXray != nil {
 		if err := rc.RemoteReports.JiraXray.Validate(); err != nil {
 			errors = append(errors, fmt.Sprintf("Jira Xray config validation failed: %v", err))
 		}
 	}
-	
+
 	if rc.RemoteReports.AIOTest != nil {
 		if err := rc.RemoteReports.AIOTest.Validate(); err != nil {
 			errors = append(errors, fmt.Sprintf("AIOTest config validation failed: %v", err))
 		}
 	}
-	
+
 	if rc.RemoteReports.ReportPortal != nil {
 		if err := rc.RemoteReports.ReportPortal.Validate(); err != nil {
 			errors = append(errors, fmt.Sprintf("Report Portal config validation failed: %v", err))
 		}
 	}
-	
+
 	if len(errors) > 0 {
 		return fmt.Errorf("report config errors: %v", errors)
 	}
-	
+
 	return nil
 }
 
 // Validate validates Jira Xray configuration
 func (jx *JiraXrayConfig) Validate() error {
 	var errors []string
-	
+
 	if jx.URL == "" {
 		errors = append(errors, "URL is required")
 	}
@@ -603,18 +603,18 @@ func (jx *JiraXrayConfig) Validate() error {
 	if jx.ProjectKey == "" {
 		errors = append(errors, "project key is required")
 	}
-	
+
 	if len(errors) > 0 {
-		return fmt.Errorf("Jira Xray config errors: %v", errors)
+		return fmt.Errorf("jira Xray config errors: %v", errors)
 	}
-	
+
 	return nil
 }
 
 // Validate validates AIOTest configuration
 func (at *AIOTestConfig) Validate() error {
 	var errors []string
-	
+
 	if at.URL == "" {
 		errors = append(errors, "URL is required")
 	}
@@ -624,18 +624,18 @@ func (at *AIOTestConfig) Validate() error {
 	if at.ProjectID == "" {
 		errors = append(errors, "project ID is required")
 	}
-	
+
 	if len(errors) > 0 {
 		return fmt.Errorf("AIOTest config errors: %v", errors)
 	}
-	
+
 	return nil
 }
 
 // Validate validates Report Portal configuration
 func (rp *ReportPortalConfig) Validate() error {
 	var errors []string
-	
+
 	if rp.URL == "" {
 		errors = append(errors, "URL is required")
 	}
@@ -648,10 +648,10 @@ func (rp *ReportPortalConfig) Validate() error {
 	if rp.Launch == "" {
 		errors = append(errors, "launch is required")
 	}
-	
+
 	if len(errors) > 0 {
-		return fmt.Errorf("Report Portal config errors: %v", errors)
+		return fmt.Errorf("report Portal config errors: %v", errors)
 	}
-	
+
 	return nil
 }

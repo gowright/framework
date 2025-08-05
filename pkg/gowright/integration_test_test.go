@@ -60,9 +60,9 @@ func TestNewIntegrationTestImpl(t *testing.T) {
 	}
 
 	mockTester := &MockIntegrationTester{}
-	
+
 	impl := NewIntegrationTestImpl(integrationTest, mockTester)
-	
+
 	assert.NotNil(t, impl)
 	assert.Equal(t, "Test Integration", impl.GetName())
 	assert.Equal(t, integrationTest, impl.integrationTest)
@@ -103,9 +103,9 @@ func TestIntegrationTestImpl_Execute_Success(t *testing.T) {
 	mockTester.On("Cleanup").Return(nil)
 
 	impl := NewIntegrationTestImpl(integrationTest, mockTester)
-	
+
 	result := impl.Execute()
-	
+
 	assert.NotNil(t, result)
 	assert.Equal(t, "Successful Integration Test", result.Name)
 	assert.Equal(t, TestStatusPassed, result.Status)
@@ -127,9 +127,9 @@ func TestIntegrationTestImpl_Execute_SetupFailure(t *testing.T) {
 	mockTester.On("Initialize", mock.Anything).Return(errors.New("setup failed"))
 
 	impl := NewIntegrationTestImpl(integrationTest, mockTester)
-	
+
 	result := impl.Execute()
-	
+
 	assert.NotNil(t, result)
 	assert.Equal(t, TestStatusError, result.Status)
 	assert.Error(t, result.Error)
@@ -161,9 +161,9 @@ func TestIntegrationTestImpl_Execute_StepFailure(t *testing.T) {
 	mockTester.On("Cleanup").Return(nil)
 
 	impl := NewIntegrationTestImpl(integrationTest, mockTester)
-	
+
 	result := impl.Execute()
-	
+
 	assert.NotNil(t, result)
 	assert.Equal(t, TestStatusFailed, result.Status)
 	assert.Error(t, result.Error)
@@ -189,9 +189,9 @@ func TestIntegrationTestImpl_Execute_TeardownFailure(t *testing.T) {
 	mockTester.On("Cleanup").Return(errors.New("cleanup failed"))
 
 	impl := NewIntegrationTestImpl(integrationTest, mockTester)
-	
+
 	result := impl.Execute()
-	
+
 	assert.NotNil(t, result)
 	assert.Equal(t, TestStatusError, result.Status)
 	assert.Error(t, result.Error)
@@ -226,9 +226,9 @@ func TestIntegrationTestImpl_Execute_WithRollback(t *testing.T) {
 	mockTester.On("Cleanup").Return(nil)
 
 	impl := NewIntegrationTestImpl(integrationTest, mockTester)
-	
+
 	result := impl.Execute()
-	
+
 	assert.NotNil(t, result)
 	assert.Equal(t, TestStatusPassed, result.Status)
 	assert.NoError(t, result.Error)
@@ -303,9 +303,9 @@ func TestIntegrationTestImpl_ExecuteWithSetupAndTeardown_Success(t *testing.T) {
 	mockTester.On("Cleanup").Return(nil)
 
 	impl := NewIntegrationTestImpl(integrationTest, mockTester)
-	
+
 	result := impl.ExecuteWithSetupAndTeardown(setup, teardown)
-	
+
 	assert.NotNil(t, result)
 	assert.Equal(t, TestStatusPassed, result.Status)
 	assert.NoError(t, result.Error)
@@ -313,7 +313,7 @@ func TestIntegrationTestImpl_ExecuteWithSetupAndTeardown_Success(t *testing.T) {
 	// Verify that setup, main steps, and teardown were all executed
 	// The mock should have been called for:
 	// - 1 UI setup step
-	// - 1 API setup step  
+	// - 1 API setup step
 	// - 1 Database setup step
 	// - 1 main test step
 	// - 1 Database teardown step
@@ -346,9 +346,9 @@ func TestIntegrationTestImpl_ExecuteWithSetupAndTeardown_SetupFailure(t *testing
 	mockTester.On("ExecuteStep", mock.AnythingOfType("*gowright.IntegrationStep")).Return(errors.New("setup step failed"))
 
 	impl := NewIntegrationTestImpl(integrationTest, mockTester)
-	
+
 	result := impl.ExecuteWithSetupAndTeardown(setup, nil)
-	
+
 	assert.NotNil(t, result)
 	assert.Equal(t, TestStatusError, result.Status)
 	assert.Error(t, result.Error)
@@ -383,7 +383,7 @@ func TestIntegrationTestImpl_SetupAndTeardownData(t *testing.T) {
 
 	// Test teardown data management
 	impl.SetTeardownData("cleanup_id", "cleanup_123")
-	
+
 	cleanupID, exists := impl.GetTeardownData("cleanup_id")
 	assert.True(t, exists)
 	assert.Equal(t, "cleanup_123", cleanupID)
@@ -413,11 +413,11 @@ func TestIntegrationTestImpl_FailureContext(t *testing.T) {
 	mockTester.On("Cleanup").Return(nil)
 
 	impl := NewIntegrationTestImpl(integrationTest, mockTester)
-	
+
 	result := impl.Execute()
-	
+
 	assert.Equal(t, TestStatusFailed, result.Status)
-	
+
 	failureContext := impl.GetFailureContext()
 	assert.NotNil(t, failureContext)
 	assert.NotNil(t, failureContext.FailedStep)
@@ -453,11 +453,11 @@ func TestIntegrationTestImpl_CollectSystemStates(t *testing.T) {
 	}
 
 	impl.collectSystemStates(apiStep)
-	
+
 	failureContext := impl.GetFailureContext()
 	apiAction, exists := failureContext.SystemStates["failed_api_action"]
 	assert.True(t, exists)
-	
+
 	apiActionMap := apiAction.(map[string]interface{})
 	assert.Equal(t, "POST", apiActionMap["method"])
 	assert.Equal(t, "/api/test", apiActionMap["endpoint"])
@@ -474,10 +474,10 @@ func TestIntegrationTestImpl_CollectSystemStates(t *testing.T) {
 	}
 
 	impl.collectSystemStates(dbStep)
-	
+
 	dbAction, exists := failureContext.SystemStates["failed_database_action"]
 	assert.True(t, exists)
-	
+
 	dbActionMap := dbAction.(map[string]interface{})
 	assert.Equal(t, "test_db", dbActionMap["connection"])
 	assert.Equal(t, "SELECT * FROM users WHERE id = ?", dbActionMap["query"])
@@ -499,7 +499,7 @@ func TestIntegrationTestImpl_AddLog(t *testing.T) {
 	assert.Len(t, failureContext.Logs, 2)
 	assert.Contains(t, failureContext.Logs[0], "Test log message 1")
 	assert.Contains(t, failureContext.Logs[1], "Test log message 2")
-	
+
 	// Check that timestamps are included
 	assert.Contains(t, failureContext.Logs[0], "[")
 	assert.Contains(t, failureContext.Logs[0], "]")
@@ -534,9 +534,9 @@ func TestIntegrationTestImpl_ExecuteCustomSetupTeardown_EmptyOperations(t *testi
 	mockTester.On("Cleanup").Return(nil)
 
 	impl := NewIntegrationTestImpl(integrationTest, mockTester)
-	
+
 	result := impl.ExecuteWithSetupAndTeardown(setup, teardown)
-	
+
 	assert.NotNil(t, result)
 	assert.Equal(t, TestStatusPassed, result.Status)
 	assert.NoError(t, result.Error)
@@ -580,9 +580,9 @@ func TestIntegrationTestImpl_ExecuteWithSetupAndTeardown_TeardownFailure(t *test
 	mockTester.On("Cleanup").Return(nil)
 
 	impl := NewIntegrationTestImpl(integrationTest, mockTester)
-	
+
 	result := impl.ExecuteWithSetupAndTeardown(nil, teardown)
-	
+
 	assert.NotNil(t, result)
 	assert.Equal(t, TestStatusError, result.Status)
 	assert.Error(t, result.Error)

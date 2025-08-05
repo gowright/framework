@@ -37,17 +37,17 @@ func (te *TestExecutor) Logf(format string, args ...interface{}) {
 // Complete finalizes the test execution and returns the result
 func (te *TestExecutor) Complete(testName string) *TestCaseResult {
 	endTime := time.Now()
-	
+
 	// Determine overall test status
 	status := TestStatusPassed
 	var testError error
-	
+
 	if te.assertion.HasFailures() {
 		status = TestStatusFailed
 		_, failed := te.assertion.GetSummary()
 		testError = fmt.Errorf("test failed with %d assertion failures", failed)
 	}
-	
+
 	return &TestCaseResult{
 		Name:      testName,
 		Status:    status,
@@ -63,10 +63,10 @@ func (te *TestExecutor) Complete(testName string) *TestCaseResult {
 // ExecuteTestWithAssertions is a helper function to execute a test function with assertion logging
 func ExecuteTestWithAssertions(testName string, testFunc func(*TestAssertion)) *TestCaseResult {
 	executor := NewTestExecutor(testName)
-	
+
 	// Execute the test function
 	testFunc(executor.assertion)
-	
+
 	return executor.Complete(testName)
 }
 
@@ -100,14 +100,14 @@ func (tse *TestSuiteExecutor) ExecuteTest(testName string, testFunc func(*TestAs
 // GetResults returns the complete test results for the suite
 func (tse *TestSuiteExecutor) GetResults() *TestResults {
 	endTime := time.Now()
-	
+
 	// Calculate statistics
 	totalTests := len(tse.results)
 	passedTests := 0
 	failedTests := 0
 	skippedTests := 0
 	errorTests := 0
-	
+
 	for _, result := range tse.results {
 		switch result.Status {
 		case TestStatusPassed:
@@ -120,7 +120,7 @@ func (tse *TestSuiteExecutor) GetResults() *TestResults {
 			errorTests++
 		}
 	}
-	
+
 	return &TestResults{
 		SuiteName:    tse.suiteName,
 		StartTime:    tse.startTime,
@@ -139,7 +139,7 @@ func (tse *TestSuiteExecutor) GenerateReports(config *ReportConfig) error {
 	results := tse.GetResults()
 	reportManager := NewReportManager(config)
 	summary := reportManager.GenerateReports(results)
-	
+
 	// Return error if no reports were successful
 	if summary.SuccessfulReports == 0 {
 		if summary.FallbackError != nil {
@@ -150,6 +150,6 @@ func (tse *TestSuiteExecutor) GenerateReports(config *ReportConfig) error {
 		}
 		return NewGowrightError(ReportingError, "all reporting failed", nil)
 	}
-	
+
 	return nil
 }

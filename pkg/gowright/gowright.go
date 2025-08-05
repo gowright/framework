@@ -12,13 +12,13 @@ type Gowright struct {
 	config    *Config
 	reporter  *ReportManager
 	testSuite *TestSuite
-	
+
 	// Dependency injection support
 	uiTester          UITester
 	apiTester         APITester
 	databaseTester    DatabaseTester
 	integrationTester IntegrationTester
-	
+
 	// Internal state management
 	initialized bool
 	mutex       sync.RWMutex
@@ -39,7 +39,7 @@ func New(config *Config) *Gowright {
 	if config == nil {
 		config = DefaultConfig()
 	}
-	
+
 	return &Gowright{
 		config:      config,
 		reporter:    NewReportManager(config.ReportConfig),
@@ -52,17 +52,17 @@ func NewWithOptions(options *GowrightOptions) *Gowright {
 	if options == nil {
 		return NewWithDefaults()
 	}
-	
+
 	config := options.Config
 	if config == nil {
 		config = DefaultConfig()
 	}
-	
+
 	reporter := options.ReportManager
 	if reporter == nil {
 		reporter = NewReportManager(config.ReportConfig)
 	}
-	
+
 	return &Gowright{
 		config:            config,
 		reporter:          reporter,
@@ -93,36 +93,36 @@ func NewGowright(config *Config) (*Gowright, error) {
 func (g *Gowright) Initialize() error {
 	g.mutex.Lock()
 	defer g.mutex.Unlock()
-	
+
 	if g.initialized {
 		return nil
 	}
-	
+
 	// Initialize testers if they are provided
 	if g.uiTester != nil {
 		if err := g.uiTester.Initialize(g.config.BrowserConfig); err != nil {
 			return NewGowrightError(ConfigurationError, "failed to initialize UI tester", err)
 		}
 	}
-	
+
 	if g.apiTester != nil {
 		if err := g.apiTester.Initialize(g.config.APIConfig); err != nil {
 			return NewGowrightError(ConfigurationError, "failed to initialize API tester", err)
 		}
 	}
-	
+
 	if g.databaseTester != nil {
 		if err := g.databaseTester.Initialize(g.config.DatabaseConfig); err != nil {
 			return NewGowrightError(ConfigurationError, "failed to initialize database tester", err)
 		}
 	}
-	
+
 	if g.integrationTester != nil {
 		if err := g.integrationTester.Initialize(g.config); err != nil {
 			return NewGowrightError(ConfigurationError, "failed to initialize integration tester", err)
 		}
 	}
-	
+
 	g.initialized = true
 	return nil
 }
@@ -131,40 +131,40 @@ func (g *Gowright) Initialize() error {
 func (g *Gowright) Cleanup() error {
 	g.mutex.Lock()
 	defer g.mutex.Unlock()
-	
+
 	var errors []error
-	
+
 	// Cleanup testers
 	if g.uiTester != nil {
 		if err := g.uiTester.Cleanup(); err != nil {
 			errors = append(errors, fmt.Errorf("UI tester cleanup failed: %w", err))
 		}
 	}
-	
+
 	if g.apiTester != nil {
 		if err := g.apiTester.Cleanup(); err != nil {
 			errors = append(errors, fmt.Errorf("API tester cleanup failed: %w", err))
 		}
 	}
-	
+
 	if g.databaseTester != nil {
 		if err := g.databaseTester.Cleanup(); err != nil {
 			errors = append(errors, fmt.Errorf("database tester cleanup failed: %w", err))
 		}
 	}
-	
+
 	if g.integrationTester != nil {
 		if err := g.integrationTester.Cleanup(); err != nil {
 			errors = append(errors, fmt.Errorf("integration tester cleanup failed: %w", err))
 		}
 	}
-	
+
 	g.initialized = false
-	
+
 	if len(errors) > 0 {
 		return fmt.Errorf("cleanup errors occurred: %v", errors)
 	}
-	
+
 	return nil
 }
 
@@ -186,14 +186,14 @@ func (g *Gowright) SetTestSuite(suite *TestSuite) {
 func (g *Gowright) CreateTestSuiteManager() *TestSuiteManager {
 	g.mutex.RLock()
 	defer g.mutex.RUnlock()
-	
+
 	if g.testSuite == nil {
 		g.testSuite = &TestSuite{
 			Name:  "Default Test Suite",
 			Tests: make([]Test, 0),
 		}
 	}
-	
+
 	return NewTestSuiteManager(g.testSuite, g.config)
 }
 
@@ -284,7 +284,7 @@ func (g *Gowright) SetIntegrationTester(tester IntegrationTester) {
 func (g *Gowright) ExecuteUITest(test *UITest) *TestCaseResult {
 	g.mutex.RLock()
 	defer g.mutex.RUnlock()
-	
+
 	if g.uiTester == nil {
 		return &TestCaseResult{
 			Name:   test.Name,
@@ -292,7 +292,7 @@ func (g *Gowright) ExecuteUITest(test *UITest) *TestCaseResult {
 			Error:  NewGowrightError(ConfigurationError, "UI tester not configured", nil),
 		}
 	}
-	
+
 	return g.uiTester.ExecuteTest(test)
 }
 
@@ -300,7 +300,7 @@ func (g *Gowright) ExecuteUITest(test *UITest) *TestCaseResult {
 func (g *Gowright) ExecuteAPITest(test *APITest) *TestCaseResult {
 	g.mutex.RLock()
 	defer g.mutex.RUnlock()
-	
+
 	if g.apiTester == nil {
 		return &TestCaseResult{
 			Name:   test.Name,
@@ -308,7 +308,7 @@ func (g *Gowright) ExecuteAPITest(test *APITest) *TestCaseResult {
 			Error:  NewGowrightError(ConfigurationError, "API tester not configured", nil),
 		}
 	}
-	
+
 	return g.apiTester.ExecuteTest(test)
 }
 
@@ -316,7 +316,7 @@ func (g *Gowright) ExecuteAPITest(test *APITest) *TestCaseResult {
 func (g *Gowright) ExecuteDatabaseTest(test *DatabaseTest) *TestCaseResult {
 	g.mutex.RLock()
 	defer g.mutex.RUnlock()
-	
+
 	if g.databaseTester == nil {
 		return &TestCaseResult{
 			Name:   test.Name,
@@ -324,7 +324,7 @@ func (g *Gowright) ExecuteDatabaseTest(test *DatabaseTest) *TestCaseResult {
 			Error:  NewGowrightError(ConfigurationError, "Database tester not configured", nil),
 		}
 	}
-	
+
 	return g.databaseTester.ExecuteTest(test)
 }
 
@@ -332,7 +332,7 @@ func (g *Gowright) ExecuteDatabaseTest(test *DatabaseTest) *TestCaseResult {
 func (g *Gowright) ExecuteIntegrationTest(test *IntegrationTest) *TestCaseResult {
 	g.mutex.RLock()
 	defer g.mutex.RUnlock()
-	
+
 	if g.integrationTester == nil {
 		return &TestCaseResult{
 			Name:   test.Name,
@@ -340,7 +340,7 @@ func (g *Gowright) ExecuteIntegrationTest(test *IntegrationTest) *TestCaseResult
 			Error:  NewGowrightError(ConfigurationError, "Integration tester not configured", nil),
 		}
 	}
-	
+
 	return g.integrationTester.ExecuteTest(test)
 }
 

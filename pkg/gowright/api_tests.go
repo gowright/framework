@@ -12,12 +12,12 @@ import (
 
 // APITestImpl implements the Test interface for API testing
 type APITestImpl struct {
-	Name     string                 `json:"name"`
-	Method   string                 `json:"method"`
-	Endpoint string                 `json:"endpoint"`
-	Headers  map[string]string      `json:"headers,omitempty"`
-	Body     interface{}            `json:"body,omitempty"`
-	Expected *APIExpectation        `json:"expected"`
+	Name     string            `json:"name"`
+	Method   string            `json:"method"`
+	Endpoint string            `json:"endpoint"`
+	Headers  map[string]string `json:"headers,omitempty"`
+	Body     interface{}       `json:"body,omitempty"`
+	Expected *APIExpectation   `json:"expected"`
 	tester   *APITesterImpl
 }
 
@@ -40,17 +40,17 @@ func (at *APITestImpl) GetName() string {
 // Execute runs the API test and returns the result
 func (at *APITestImpl) Execute() *TestCaseResult {
 	startTime := time.Now()
-	
+
 	result := &TestCaseResult{
 		Name:      at.Name,
 		StartTime: startTime,
 		Status:    TestStatusPassed,
 		Logs:      []string{},
 	}
-	
+
 	// Log test execution start
 	result.Logs = append(result.Logs, fmt.Sprintf("Starting API test: %s %s", at.Method, at.Endpoint))
-	
+
 	// Execute the HTTP request
 	response, err := at.executeRequest()
 	if err != nil {
@@ -61,9 +61,9 @@ func (at *APITestImpl) Execute() *TestCaseResult {
 		result.Logs = append(result.Logs, fmt.Sprintf("Request failed: %v", err))
 		return result
 	}
-	
+
 	result.Logs = append(result.Logs, fmt.Sprintf("Request completed with status: %d", response.StatusCode))
-	
+
 	// Validate response if expectations are defined
 	if at.Expected != nil {
 		if err := at.validateResponse(response); err != nil {
@@ -76,10 +76,10 @@ func (at *APITestImpl) Execute() *TestCaseResult {
 	} else {
 		result.Logs = append(result.Logs, "No expectations defined, test passed")
 	}
-	
+
 	result.EndTime = time.Now()
 	result.Duration = result.EndTime.Sub(startTime)
-	
+
 	return result
 }
 
@@ -88,7 +88,7 @@ func (at *APITestImpl) executeRequest() (*APIResponse, error) {
 	if at.tester == nil {
 		return nil, NewGowrightError(APIError, "API tester not configured", nil)
 	}
-	
+
 	switch at.Method {
 	case "GET":
 		return at.tester.Get(at.Endpoint, at.Headers)
@@ -114,30 +114,30 @@ func (at *APITestImpl) validateResponse(response *APIResponse) error {
 	if at.Expected == nil {
 		return nil
 	}
-	
+
 	// Validate status code
 	if at.Expected.StatusCode != 0 && response.StatusCode != at.Expected.StatusCode {
-		return NewGowrightError(AssertionError, 
+		return NewGowrightError(AssertionError,
 			fmt.Sprintf("status code mismatch: expected %d, got %d", at.Expected.StatusCode, response.StatusCode), nil).
 			WithContext("expected_status", at.Expected.StatusCode).
 			WithContext("actual_status", response.StatusCode)
 	}
-	
+
 	// Validate headers
 	if err := at.validateHeaders(response); err != nil {
 		return err
 	}
-	
+
 	// Validate body
 	if err := at.validateBody(response); err != nil {
 		return err
 	}
-	
+
 	// Validate JSON path expressions
 	if err := at.validateJSONPath(response); err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -146,15 +146,15 @@ func (at *APITestImpl) validateHeaders(response *APIResponse) error {
 	if at.Expected.Headers == nil {
 		return nil
 	}
-	
+
 	for expectedKey, expectedValue := range at.Expected.Headers {
 		actualValues, exists := response.Headers[expectedKey]
 		if !exists {
-			return NewGowrightError(AssertionError, 
+			return NewGowrightError(AssertionError,
 				fmt.Sprintf("expected header '%s' not found", expectedKey), nil).
 				WithContext("expected_header", expectedKey)
 		}
-		
+
 		// Check if any of the actual values match the expected value
 		found := false
 		for _, actualValue := range actualValues {
@@ -163,16 +163,16 @@ func (at *APITestImpl) validateHeaders(response *APIResponse) error {
 				break
 			}
 		}
-		
+
 		if !found {
-			return NewGowrightError(AssertionError, 
+			return NewGowrightError(AssertionError,
 				fmt.Sprintf("header '%s' value mismatch: expected '%s', got %v", expectedKey, expectedValue, actualValues), nil).
 				WithContext("header_key", expectedKey).
 				WithContext("expected_value", expectedValue).
 				WithContext("actual_values", actualValues)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -181,10 +181,10 @@ func (at *APITestImpl) validateBody(response *APIResponse) error {
 	if at.Expected.Body == nil {
 		return nil
 	}
-	
+
 	// Determine content type for appropriate validation
 	contentType := at.getContentType(response)
-	
+
 	switch {
 	case strings.Contains(contentType, "application/json"):
 		return at.validateJSONBody(response)
@@ -202,14 +202,14 @@ func (at *APITestImpl) validateJSONBody(response *APIResponse) error {
 		return NewGowrightError(AssertionError, "response body is not valid JSON", err).
 			WithContext("body", string(response.Body))
 	}
-	
+
 	// Compare with expected data
 	if !at.compareValues(at.Expected.Body, actualData) {
 		return NewGowrightError(AssertionError, "JSON body mismatch", nil).
 			WithContext("expected", at.Expected.Body).
 			WithContext("actual", actualData)
 	}
-	
+
 	return nil
 }
 
@@ -221,19 +221,19 @@ func (at *APITestImpl) validateXMLBody(response *APIResponse) error {
 	if !ok {
 		return NewGowrightError(AssertionError, "expected XML body must be a string", nil)
 	}
-	
+
 	actualStr := string(response.Body)
-	
+
 	// Normalize whitespace for comparison
 	expectedNormalized := at.normalizeXML(expectedStr)
 	actualNormalized := at.normalizeXML(actualStr)
-	
+
 	if expectedNormalized != actualNormalized {
 		return NewGowrightError(AssertionError, "XML body mismatch", nil).
 			WithContext("expected", expectedStr).
 			WithContext("actual", actualStr)
 	}
-	
+
 	return nil
 }
 
@@ -241,13 +241,13 @@ func (at *APITestImpl) validateXMLBody(response *APIResponse) error {
 func (at *APITestImpl) validateTextBody(response *APIResponse) error {
 	expectedStr := fmt.Sprintf("%v", at.Expected.Body)
 	actualStr := string(response.Body)
-	
+
 	if expectedStr != actualStr {
 		return NewGowrightError(AssertionError, "text body mismatch", nil).
 			WithContext("expected", expectedStr).
 			WithContext("actual", actualStr)
 	}
-	
+
 	return nil
 }
 
@@ -256,13 +256,13 @@ func (at *APITestImpl) validateJSONPath(response *APIResponse) error {
 	if at.Expected.JSONPath == nil {
 		return nil
 	}
-	
+
 	// Parse response as JSON
 	var jsonData interface{}
 	if err := json.Unmarshal(response.Body, &jsonData); err != nil {
 		return NewGowrightError(AssertionError, "cannot validate JSON path on non-JSON response", err)
 	}
-	
+
 	// Validate each JSON path expression
 	for path, expectedValue := range at.Expected.JSONPath {
 		actualValue, err := at.evaluateJSONPath(jsonData, path)
@@ -270,7 +270,7 @@ func (at *APITestImpl) validateJSONPath(response *APIResponse) error {
 			return NewGowrightError(AssertionError, fmt.Sprintf("JSON path evaluation failed: %s", path), err).
 				WithContext("json_path", path)
 		}
-		
+
 		if !at.compareValues(expectedValue, actualValue) {
 			return NewGowrightError(AssertionError, fmt.Sprintf("JSON path value mismatch at '%s'", path), nil).
 				WithContext("json_path", path).
@@ -278,7 +278,7 @@ func (at *APITestImpl) validateJSONPath(response *APIResponse) error {
 				WithContext("actual", actualValue)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -288,23 +288,23 @@ func (at *APITestImpl) evaluateJSONPath(data interface{}, path string) (interfac
 	if path == "" || path == "$" {
 		return data, nil
 	}
-	
+
 	// Remove leading $ if present
 	if strings.HasPrefix(path, "$.") {
 		path = path[2:]
 	} else if strings.HasPrefix(path, "$") {
 		path = path[1:]
 	}
-	
+
 	// Split path into segments
 	segments := strings.Split(path, ".")
 	current := data
-	
+
 	for _, segment := range segments {
 		if segment == "" {
 			continue
 		}
-		
+
 		// Handle array indexing
 		if strings.Contains(segment, "[") && strings.Contains(segment, "]") {
 			current = at.handleArrayAccess(current, segment)
@@ -319,7 +319,7 @@ func (at *APITestImpl) evaluateJSONPath(data interface{}, path string) (interfac
 			}
 		}
 	}
-	
+
 	return current, nil
 }
 
@@ -330,10 +330,10 @@ func (at *APITestImpl) handleArrayAccess(data interface{}, segment string) inter
 	if len(parts) != 2 {
 		return nil
 	}
-	
+
 	propertyName := parts[0]
 	indexStr := strings.TrimSuffix(parts[1], "]")
-	
+
 	// Get the property first if it exists
 	if propertyName != "" {
 		data = at.handleObjectAccess(data, propertyName)
@@ -341,24 +341,24 @@ func (at *APITestImpl) handleArrayAccess(data interface{}, segment string) inter
 			return nil
 		}
 	}
-	
+
 	// Convert to slice
 	slice, ok := data.([]interface{})
 	if !ok {
 		return nil
 	}
-	
+
 	// Parse index
 	index, err := strconv.Atoi(indexStr)
 	if err != nil {
 		return nil
 	}
-	
+
 	// Check bounds
 	if index < 0 || index >= len(slice) {
 		return nil
 	}
-	
+
 	return slice[index]
 }
 
@@ -383,7 +383,7 @@ func (at *APITestImpl) compareValues(expected, actual interface{}) bool {
 	if expected == nil || actual == nil {
 		return false
 	}
-	
+
 	// Use reflection for deep comparison
 	return reflect.DeepEqual(expected, actual)
 }
@@ -402,7 +402,7 @@ func (at *APITestImpl) normalizeXML(xmlStr string) string {
 	// Remove extra whitespace between tags
 	re := regexp.MustCompile(`>\s+<`)
 	normalized := re.ReplaceAllString(xmlStr, "><")
-	
+
 	// Trim leading/trailing whitespace
 	return strings.TrimSpace(normalized)
 }

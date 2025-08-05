@@ -74,7 +74,7 @@ jobs:
       uses: golangci/golangci-lint-action@v3
       with:
         version: latest
-        args: --timeout=5m
+        args: --timeout=5m --max-issues-per-linter=10 --max-same-issues=3
 
     - name: Check formatting
       run: |
@@ -90,14 +90,14 @@ jobs:
 
     - name: Run integration tests
       run: |
-        go run integration_test_runner.go
+        go run -tags ignore integration_test_runner.go
       env:
         POSTGRES_URL: postgres://postgres:postgres@localhost:5432/testdb?sslmode=disable
         MYSQL_URL: root:root@tcp(localhost:3306)/testdb
 
     - name: Run performance benchmarks
       run: |
-        go test -bench=. -benchmem ./... > benchmark_results.txt
+        go test -bench=. -benchmem ./pkg/... > benchmark_results.txt
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3

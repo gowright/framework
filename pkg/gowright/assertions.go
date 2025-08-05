@@ -37,7 +37,7 @@ func (ta *TestAssertion) Logf(format string, args ...interface{}) {
 // executeAssertion executes an assertion and records the result
 func (ta *TestAssertion) executeAssertion(name, description string, assertionFunc func() bool, expected, actual interface{}) bool {
 	startTime := time.Now()
-	
+
 	step := AssertionStep{
 		Name:        name,
 		Description: description,
@@ -48,7 +48,7 @@ func (ta *TestAssertion) executeAssertion(name, description string, assertionFun
 
 	// Execute the assertion
 	success := assertionFunc()
-	
+
 	endTime := time.Now()
 	step.EndTime = endTime
 	step.Duration = endTime.Sub(startTime)
@@ -68,7 +68,7 @@ func (ta *TestAssertion) executeAssertion(name, description string, assertionFun
 
 // Equal asserts that two values are equal
 func (ta *TestAssertion) Equal(expected, actual interface{}, msgAndArgs ...interface{}) bool {
-	description := fmt.Sprintf("values should be equal")
+	description := "values should be equal"
 	if len(msgAndArgs) > 0 {
 		if msg, ok := msgAndArgs[0].(string); ok {
 			if len(msgAndArgs) > 1 {
@@ -90,7 +90,7 @@ func (ta *TestAssertion) Equal(expected, actual interface{}, msgAndArgs ...inter
 
 // NotEqual asserts that two values are not equal
 func (ta *TestAssertion) NotEqual(expected, actual interface{}, msgAndArgs ...interface{}) bool {
-	description := fmt.Sprintf("values should not be equal")
+	description := "values should not be equal"
 	if len(msgAndArgs) > 0 {
 		if msg, ok := msgAndArgs[0].(string); ok {
 			if len(msgAndArgs) > 1 {
@@ -112,7 +112,7 @@ func (ta *TestAssertion) NotEqual(expected, actual interface{}, msgAndArgs ...in
 
 // True asserts that the value is true
 func (ta *TestAssertion) True(value bool, msgAndArgs ...interface{}) bool {
-	description := fmt.Sprintf("value should be true")
+	description := "value should be true"
 	if len(msgAndArgs) > 0 {
 		if msg, ok := msgAndArgs[0].(string); ok {
 			if len(msgAndArgs) > 1 {
@@ -134,7 +134,7 @@ func (ta *TestAssertion) True(value bool, msgAndArgs ...interface{}) bool {
 
 // False asserts that the value is false
 func (ta *TestAssertion) False(value bool, msgAndArgs ...interface{}) bool {
-	description := fmt.Sprintf("value should be false")
+	description := "value should be false"
 	if len(msgAndArgs) > 0 {
 		if msg, ok := msgAndArgs[0].(string); ok {
 			if len(msgAndArgs) > 1 {
@@ -156,7 +156,7 @@ func (ta *TestAssertion) False(value bool, msgAndArgs ...interface{}) bool {
 
 // Nil asserts that the value is nil
 func (ta *TestAssertion) Nil(value interface{}, msgAndArgs ...interface{}) bool {
-	description := fmt.Sprintf("value should be nil")
+	description := "value should be nil"
 	if len(msgAndArgs) > 0 {
 		if msg, ok := msgAndArgs[0].(string); ok {
 			if len(msgAndArgs) > 1 {
@@ -178,7 +178,7 @@ func (ta *TestAssertion) Nil(value interface{}, msgAndArgs ...interface{}) bool 
 
 // NotNil asserts that the value is not nil
 func (ta *TestAssertion) NotNil(value interface{}, msgAndArgs ...interface{}) bool {
-	description := fmt.Sprintf("value should not be nil")
+	description := "value should not be nil"
 	if len(msgAndArgs) > 0 {
 		if msg, ok := msgAndArgs[0].(string); ok {
 			if len(msgAndArgs) > 1 {
@@ -200,7 +200,7 @@ func (ta *TestAssertion) NotNil(value interface{}, msgAndArgs ...interface{}) bo
 
 // Contains asserts that the string contains the substring
 func (ta *TestAssertion) Contains(s, contains string, msgAndArgs ...interface{}) bool {
-	description := fmt.Sprintf("string should contain substring")
+	description := "string should contain substring"
 	if len(msgAndArgs) > 0 {
 		if msg, ok := msgAndArgs[0].(string); ok {
 			if len(msgAndArgs) > 1 {
@@ -222,7 +222,7 @@ func (ta *TestAssertion) Contains(s, contains string, msgAndArgs ...interface{})
 
 // NotContains asserts that the string does not contain the substring
 func (ta *TestAssertion) NotContains(s, contains string, msgAndArgs ...interface{}) bool {
-	description := fmt.Sprintf("string should not contain substring")
+	description := "string should not contain substring"
 	if len(msgAndArgs) > 0 {
 		if msg, ok := msgAndArgs[0].(string); ok {
 			if len(msgAndArgs) > 1 {
@@ -244,7 +244,7 @@ func (ta *TestAssertion) NotContains(s, contains string, msgAndArgs ...interface
 
 // Len asserts that the object has the expected length
 func (ta *TestAssertion) Len(object interface{}, length int, msgAndArgs ...interface{}) bool {
-	description := fmt.Sprintf("object should have expected length")
+	description := "object should have expected length"
 	if len(msgAndArgs) > 0 {
 		if msg, ok := msgAndArgs[0].(string); ok {
 			if len(msgAndArgs) > 1 {
@@ -267,7 +267,7 @@ func (ta *TestAssertion) Len(object interface{}, length int, msgAndArgs ...inter
 
 // Empty asserts that the object is empty
 func (ta *TestAssertion) Empty(object interface{}, msgAndArgs ...interface{}) bool {
-	description := fmt.Sprintf("object should be empty")
+	description := "object should be empty"
 	if len(msgAndArgs) > 0 {
 		if msg, ok := msgAndArgs[0].(string); ok {
 			if len(msgAndArgs) > 1 {
@@ -289,7 +289,7 @@ func (ta *TestAssertion) Empty(object interface{}, msgAndArgs ...interface{}) bo
 
 // NotEmpty asserts that the object is not empty
 func (ta *TestAssertion) NotEmpty(object interface{}, msgAndArgs ...interface{}) bool {
-	description := fmt.Sprintf("object should not be empty")
+	description := "object should not be empty"
 	if len(msgAndArgs) > 0 {
 		if msg, ok := msgAndArgs[0].(string); ok {
 			if len(msgAndArgs) > 1 {
@@ -311,7 +311,7 @@ func (ta *TestAssertion) NotEmpty(object interface{}, msgAndArgs ...interface{})
 
 // Error asserts that the error is not nil
 func (ta *TestAssertion) Error(err error, msgAndArgs ...interface{}) bool {
-	description := fmt.Sprintf("error should be present")
+	description := "error should be present"
 	if len(msgAndArgs) > 0 {
 		if msg, ok := msgAndArgs[0].(string); ok {
 			if len(msgAndArgs) > 1 {
@@ -333,7 +333,7 @@ func (ta *TestAssertion) Error(err error, msgAndArgs ...interface{}) bool {
 
 // NoError asserts that the error is nil
 func (ta *TestAssertion) NoError(err error, msgAndArgs ...interface{}) bool {
-	description := fmt.Sprintf("error should not be present")
+	description := "error should not be present"
 	if len(msgAndArgs) > 0 {
 		if msg, ok := msgAndArgs[0].(string); ok {
 			if len(msgAndArgs) > 1 {
@@ -366,9 +366,10 @@ func (ta *TestAssertion) GetLogs() []string {
 // GetSummary returns a summary of the test assertions
 func (ta *TestAssertion) GetSummary() (passed, failed int) {
 	for _, step := range ta.steps {
-		if step.Status == TestStatusPassed {
+		switch step.Status {
+		case TestStatusPassed:
 			passed++
-		} else if step.Status == TestStatusFailed {
+		case TestStatusFailed:
 			failed++
 		}
 	}

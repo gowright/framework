@@ -17,39 +17,39 @@ import (
 
 // MemoryEfficientCaptureManager handles memory-efficient screenshot and data capture
 type MemoryEfficientCaptureManager struct {
-	config           *MemoryEfficientConfig
-	compressionPool  sync.Pool
-	imagePool        sync.Pool
-	bufferPool       sync.Pool
-	mutex            sync.RWMutex
-	activeCaptures   map[string]*CaptureInfo
-	totalMemoryUsed  int64
-	maxMemoryUsage   int64
+	config          *MemoryEfficientConfig
+	compressionPool sync.Pool
+	imagePool       sync.Pool
+	bufferPool      sync.Pool
+	mutex           sync.RWMutex
+	activeCaptures  map[string]*CaptureInfo
+	totalMemoryUsed int64
+	maxMemoryUsage  int64
 }
 
 // MemoryEfficientConfig holds configuration for memory-efficient operations
 type MemoryEfficientConfig struct {
 	// Memory limits
-	MaxMemoryUsageMB     int64   `json:"max_memory_usage_mb"`
-	MaxScreenshotSizeMB  int64   `json:"max_screenshot_size_mb"`
-	
+	MaxMemoryUsageMB    int64 `json:"max_memory_usage_mb"`
+	MaxScreenshotSizeMB int64 `json:"max_screenshot_size_mb"`
+
 	// Compression settings
-	EnableCompression    bool    `json:"enable_compression"`
-	CompressionLevel     int     `json:"compression_level"`
-	CompressThresholdKB  int64   `json:"compress_threshold_kb"`
-	
+	EnableCompression   bool  `json:"enable_compression"`
+	CompressionLevel    int   `json:"compression_level"`
+	CompressThresholdKB int64 `json:"compress_threshold_kb"`
+
 	// Image optimization
-	MaxImageWidth        int     `json:"max_image_width"`
-	MaxImageHeight       int     `json:"max_image_height"`
-	JPEGQuality          int     `json:"jpeg_quality"`
-	
+	MaxImageWidth  int `json:"max_image_width"`
+	MaxImageHeight int `json:"max_image_height"`
+	JPEGQuality    int `json:"jpeg_quality"`
+
 	// Streaming settings
-	EnableStreaming      bool    `json:"enable_streaming"`
-	StreamChunkSizeKB    int64   `json:"stream_chunk_size_kb"`
-	
+	EnableStreaming   bool  `json:"enable_streaming"`
+	StreamChunkSizeKB int64 `json:"stream_chunk_size_kb"`
+
 	// Cleanup settings
-	AutoCleanupEnabled   bool    `json:"auto_cleanup_enabled"`
-	CleanupThresholdMB   int64   `json:"cleanup_threshold_mb"`
+	AutoCleanupEnabled bool  `json:"auto_cleanup_enabled"`
+	CleanupThresholdMB int64 `json:"cleanup_threshold_mb"`
 }
 
 // CaptureInfo holds information about active captures
@@ -65,28 +65,24 @@ type CaptureInfo struct {
 
 // StreamingCapture represents a streaming capture operation
 type StreamingCapture struct {
-	writer     io.Writer
-	compressor *gzip.Writer
-	buffer     *bytes.Buffer
-	chunkSize  int64
-	totalSize  int64
+	// Fields removed as they were unused
 }
 
 // DefaultMemoryEfficientConfig returns default configuration
 func DefaultMemoryEfficientConfig() *MemoryEfficientConfig {
 	return &MemoryEfficientConfig{
-		MaxMemoryUsageMB:     512,  // 512MB
-		MaxScreenshotSizeMB:  10,   // 10MB per screenshot
-		EnableCompression:    true,
-		CompressionLevel:     6,    // Balanced compression
-		CompressThresholdKB:  100,  // Compress files > 100KB
-		MaxImageWidth:        1920,
-		MaxImageHeight:       1080,
-		JPEGQuality:          85,
-		EnableStreaming:      true,
-		StreamChunkSizeKB:    64,   // 64KB chunks
-		AutoCleanupEnabled:   true,
-		CleanupThresholdMB:   256,  // Cleanup when 256MB used
+		MaxMemoryUsageMB:    512, // 512MB
+		MaxScreenshotSizeMB: 10,  // 10MB per screenshot
+		EnableCompression:   true,
+		CompressionLevel:    6,   // Balanced compression
+		CompressThresholdKB: 100, // Compress files > 100KB
+		MaxImageWidth:       1920,
+		MaxImageHeight:      1080,
+		JPEGQuality:         85,
+		EnableStreaming:     true,
+		StreamChunkSizeKB:   64, // 64KB chunks
+		AutoCleanupEnabled:  true,
+		CleanupThresholdMB:  256, // Cleanup when 256MB used
 	}
 }
 
@@ -95,32 +91,32 @@ func NewMemoryEfficientCaptureManager(config *MemoryEfficientConfig) *MemoryEffi
 	if config == nil {
 		config = DefaultMemoryEfficientConfig()
 	}
-	
+
 	mecm := &MemoryEfficientCaptureManager{
 		config:         config,
 		activeCaptures: make(map[string]*CaptureInfo),
 		maxMemoryUsage: config.MaxMemoryUsageMB * 1024 * 1024,
 	}
-	
+
 	// Initialize object pools for memory reuse
 	mecm.compressionPool = sync.Pool{
 		New: func() interface{} {
 			return &bytes.Buffer{}
 		},
 	}
-	
+
 	mecm.imagePool = sync.Pool{
 		New: func() interface{} {
 			return make([]byte, 0, 1024*1024) // 1MB initial capacity
 		},
 	}
-	
+
 	mecm.bufferPool = sync.Pool{
 		New: func() interface{} {
 			return make([]byte, config.StreamChunkSizeKB*1024)
 		},
 	}
-	
+
 	return mecm
 }
 
@@ -129,44 +125,44 @@ func (mecm *MemoryEfficientCaptureManager) CaptureScreenshotOptimized(tester UIT
 	if options == nil {
 		options = DefaultOptimizedCaptureOptions()
 	}
-	
+
 	// Check memory usage before capture
 	if err := mecm.checkMemoryUsage(); err != nil {
 		return nil, fmt.Errorf("memory check failed: %w", err)
 	}
-	
+
 	captureID := fmt.Sprintf("%s_%d", testName, time.Now().UnixNano())
-	
+
 	// Create temporary file for screenshot
 	tempFile, err := mecm.createTempFile(captureID, "screenshot", ".png")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create temp file: %w", err)
 	}
-	defer tempFile.Close()
-	
+	defer func() { _ = tempFile.Close() }()
+
 	// Capture screenshot to temporary file
 	screenshotPath, err := tester.TakeScreenshot(tempFile.Name())
 	if err != nil {
-		os.Remove(tempFile.Name())
+		_ = os.Remove(tempFile.Name())
 		return nil, fmt.Errorf("failed to capture screenshot: %w", err)
 	}
-	
+
 	// Get file info
 	fileInfo, err := os.Stat(screenshotPath)
 	if err != nil {
-		os.Remove(screenshotPath)
+		_ = os.Remove(screenshotPath)
 		return nil, fmt.Errorf("failed to get file info: %w", err)
 	}
-	
+
 	originalSize := fileInfo.Size()
-	
+
 	// Optimize the image if needed
 	optimizedPath, finalSize, err := mecm.optimizeImage(screenshotPath, options)
 	if err != nil {
-		os.Remove(screenshotPath)
+		_ = os.Remove(screenshotPath)
 		return nil, fmt.Errorf("failed to optimize image: %w", err)
 	}
-	
+
 	// Track the capture
 	captureInfo := &CaptureInfo{
 		ID:           captureID,
@@ -177,12 +173,12 @@ func (mecm *MemoryEfficientCaptureManager) CaptureScreenshotOptimized(tester UIT
 		LastAccessed: time.Now(),
 		FilePath:     optimizedPath,
 	}
-	
+
 	mecm.mutex.Lock()
 	mecm.activeCaptures[captureID] = captureInfo
 	mecm.totalMemoryUsed += finalSize
 	mecm.mutex.Unlock()
-	
+
 	return &CaptureResult{
 		ID:           captureID,
 		FilePath:     optimizedPath,
@@ -200,54 +196,54 @@ func (mecm *MemoryEfficientCaptureManager) optimizeImage(imagePath string, optio
 	if err != nil {
 		return "", 0, fmt.Errorf("failed to open image: %w", err)
 	}
-	defer file.Close()
-	
+	defer func() { _ = file.Close() }()
+
 	// Decode the image
 	img, format, err := image.Decode(file)
 	if err != nil {
 		return "", 0, fmt.Errorf("failed to decode image: %w", err)
 	}
-	
+
 	// Resize if needed
 	if options.MaxWidth > 0 || options.MaxHeight > 0 {
 		img = mecm.resizeImage(img, options.MaxWidth, options.MaxHeight)
 	}
-	
+
 	// Create optimized file
 	optimizedPath := imagePath
 	if options.ConvertToJPEG && format != "jpeg" {
 		optimizedPath = mecm.changeExtension(imagePath, ".jpg")
 	}
-	
+
 	// Save optimized image
 	optimizedFile, err := os.Create(optimizedPath)
 	if err != nil {
 		return "", 0, fmt.Errorf("failed to create optimized file: %w", err)
 	}
-	defer optimizedFile.Close()
-	
+	defer func() { _ = optimizedFile.Close() }()
+
 	// Encode with optimization
 	if options.ConvertToJPEG || format == "jpeg" {
 		err = jpeg.Encode(optimizedFile, img, &jpeg.Options{Quality: options.JPEGQuality})
 	} else {
 		err = png.Encode(optimizedFile, img)
 	}
-	
+
 	if err != nil {
 		return "", 0, fmt.Errorf("failed to encode optimized image: %w", err)
 	}
-	
+
 	// Get final size
 	fileInfo, err := optimizedFile.Stat()
 	if err != nil {
 		return "", 0, fmt.Errorf("failed to get optimized file info: %w", err)
 	}
-	
+
 	// Remove original if different from optimized
 	if optimizedPath != imagePath {
-		os.Remove(imagePath)
+		_ = os.Remove(imagePath)
 	}
-	
+
 	return optimizedPath, fileInfo.Size(), nil
 }
 
@@ -256,7 +252,7 @@ func (mecm *MemoryEfficientCaptureManager) resizeImage(img image.Image, maxWidth
 	bounds := img.Bounds()
 	width := bounds.Dx()
 	height := bounds.Dy()
-	
+
 	// Calculate scaling factor
 	scaleX := float64(maxWidth) / float64(width)
 	scaleY := float64(maxHeight) / float64(height)
@@ -264,18 +260,18 @@ func (mecm *MemoryEfficientCaptureManager) resizeImage(img image.Image, maxWidth
 	if scaleY < scaleX {
 		scale = scaleY
 	}
-	
+
 	// Only resize if image is larger than max dimensions
 	if scale >= 1.0 {
 		return img
 	}
-	
+
 	newWidth := int(float64(width) * scale)
 	newHeight := int(float64(height) * scale)
-	
+
 	// Create new image with scaled dimensions
 	newImg := image.NewRGBA(image.Rect(0, 0, newWidth, newHeight))
-	
+
 	// Simple nearest neighbor scaling (for better performance)
 	for y := 0; y < newHeight; y++ {
 		for x := 0; x < newWidth; x++ {
@@ -284,39 +280,39 @@ func (mecm *MemoryEfficientCaptureManager) resizeImage(img image.Image, maxWidth
 			newImg.Set(x, y, img.At(srcX, srcY))
 		}
 	}
-	
+
 	return newImg
 }
 
 // CaptureDataStreamOptimized captures large data with streaming and compression
 func (mecm *MemoryEfficientCaptureManager) CaptureDataStreamOptimized(data []byte, testName, dataType string) (*CaptureResult, error) {
 	captureID := fmt.Sprintf("%s_%s_%d", testName, dataType, time.Now().UnixNano())
-	
+
 	// Check memory usage
 	if err := mecm.checkMemoryUsage(); err != nil {
 		return nil, fmt.Errorf("memory check failed: %w", err)
 	}
-	
+
 	// Create temporary file
 	tempFile, err := mecm.createTempFile(captureID, dataType, ".dat")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create temp file: %w", err)
 	}
-	defer tempFile.Close()
-	
+	defer func() { _ = tempFile.Close() }()
+
 	originalSize := int64(len(data))
 	var finalSize int64
 	var compressed bool
-	
+
 	// Determine if compression should be used
-	shouldCompress := mecm.config.EnableCompression && 
+	shouldCompress := mecm.config.EnableCompression &&
 		originalSize > mecm.config.CompressThresholdKB*1024
-	
+
 	if shouldCompress {
 		// Use streaming compression
 		finalSize, err = mecm.writeCompressedStream(tempFile, data)
 		if err != nil {
-			os.Remove(tempFile.Name())
+			_ = os.Remove(tempFile.Name())
 			return nil, fmt.Errorf("failed to write compressed data: %w", err)
 		}
 		compressed = true
@@ -324,11 +320,11 @@ func (mecm *MemoryEfficientCaptureManager) CaptureDataStreamOptimized(data []byt
 		// Write data directly in chunks to avoid memory spikes
 		finalSize, err = mecm.writeDataStream(tempFile, data)
 		if err != nil {
-			os.Remove(tempFile.Name())
+			_ = os.Remove(tempFile.Name())
 			return nil, fmt.Errorf("failed to write data: %w", err)
 		}
 	}
-	
+
 	// Track the capture
 	captureInfo := &CaptureInfo{
 		ID:           captureID,
@@ -339,12 +335,12 @@ func (mecm *MemoryEfficientCaptureManager) CaptureDataStreamOptimized(data []byt
 		LastAccessed: time.Now(),
 		FilePath:     tempFile.Name(),
 	}
-	
+
 	mecm.mutex.Lock()
 	mecm.activeCaptures[captureID] = captureInfo
 	mecm.totalMemoryUsed += finalSize
 	mecm.mutex.Unlock()
-	
+
 	return &CaptureResult{
 		ID:           captureID,
 		FilePath:     tempFile.Name(),
@@ -361,52 +357,52 @@ func (mecm *MemoryEfficientCaptureManager) writeCompressedStream(writer io.Write
 	buffer := mecm.compressionPool.Get().(*bytes.Buffer)
 	buffer.Reset()
 	defer mecm.compressionPool.Put(buffer)
-	
+
 	// Create gzip writer
 	gzipWriter, err := gzip.NewWriterLevel(buffer, mecm.config.CompressionLevel)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create gzip writer: %w", err)
 	}
-	
+
 	// Write data in chunks to avoid memory spikes
 	chunkSize := mecm.config.StreamChunkSizeKB * 1024
 	var totalWritten int64
-	
+
 	for i := int64(0); i < int64(len(data)); i += chunkSize {
 		end := i + chunkSize
 		if end > int64(len(data)) {
 			end = int64(len(data))
 		}
-		
+
 		chunk := data[i:end]
 		if _, err := gzipWriter.Write(chunk); err != nil {
-			gzipWriter.Close()
+			_ = gzipWriter.Close()
 			return 0, fmt.Errorf("failed to write chunk: %w", err)
 		}
-		
+
 		// Flush buffer to writer periodically to avoid memory buildup
 		if buffer.Len() > int(chunkSize) {
 			if err := gzipWriter.Flush(); err != nil {
-				gzipWriter.Close()
+				_ = gzipWriter.Close()
 				return 0, fmt.Errorf("failed to flush gzip writer: %w", err)
 			}
-			
+
 			written, err := writer.Write(buffer.Bytes())
 			if err != nil {
-				gzipWriter.Close()
+				_ = gzipWriter.Close()
 				return 0, fmt.Errorf("failed to write to output: %w", err)
 			}
-			
+
 			totalWritten += int64(written)
 			buffer.Reset()
 		}
 	}
-	
+
 	// Close gzip writer and write remaining data
 	if err := gzipWriter.Close(); err != nil {
 		return 0, fmt.Errorf("failed to close gzip writer: %w", err)
 	}
-	
+
 	if buffer.Len() > 0 {
 		written, err := writer.Write(buffer.Bytes())
 		if err != nil {
@@ -414,7 +410,7 @@ func (mecm *MemoryEfficientCaptureManager) writeCompressedStream(writer io.Write
 		}
 		totalWritten += int64(written)
 	}
-	
+
 	return totalWritten, nil
 }
 
@@ -422,22 +418,22 @@ func (mecm *MemoryEfficientCaptureManager) writeCompressedStream(writer io.Write
 func (mecm *MemoryEfficientCaptureManager) writeDataStream(writer io.Writer, data []byte) (int64, error) {
 	chunkSize := mecm.config.StreamChunkSizeKB * 1024
 	var totalWritten int64
-	
+
 	for i := int64(0); i < int64(len(data)); i += chunkSize {
 		end := i + chunkSize
 		if end > int64(len(data)) {
 			end = int64(len(data))
 		}
-		
+
 		chunk := data[i:end]
 		written, err := writer.Write(chunk)
 		if err != nil {
 			return totalWritten, fmt.Errorf("failed to write chunk: %w", err)
 		}
-		
+
 		totalWritten += int64(written)
 	}
-	
+
 	return totalWritten, nil
 }
 
@@ -446,18 +442,18 @@ func (mecm *MemoryEfficientCaptureManager) checkMemoryUsage() error {
 	mecm.mutex.RLock()
 	currentUsage := mecm.totalMemoryUsed
 	mecm.mutex.RUnlock()
-	
+
 	if currentUsage > mecm.maxMemoryUsage {
-		return fmt.Errorf("memory usage exceeded: %d MB > %d MB", 
+		return fmt.Errorf("memory usage exceeded: %d MB > %d MB",
 			currentUsage/(1024*1024), mecm.maxMemoryUsage/(1024*1024))
 	}
-	
+
 	// Trigger cleanup if threshold is reached
-	if mecm.config.AutoCleanupEnabled && 
+	if mecm.config.AutoCleanupEnabled &&
 		currentUsage > mecm.config.CleanupThresholdMB*1024*1024 {
 		go mecm.performMemoryCleanup()
 	}
-	
+
 	return nil
 }
 
@@ -465,26 +461,26 @@ func (mecm *MemoryEfficientCaptureManager) checkMemoryUsage() error {
 func (mecm *MemoryEfficientCaptureManager) performMemoryCleanup() {
 	mecm.mutex.Lock()
 	defer mecm.mutex.Unlock()
-	
+
 	// Find oldest captures to remove
 	cutoffTime := time.Now().Add(-1 * time.Hour)
 	var toRemove []string
-	
+
 	for id, capture := range mecm.activeCaptures {
 		if capture.LastAccessed.Before(cutoffTime) {
 			toRemove = append(toRemove, id)
 		}
 	}
-	
+
 	// Remove old captures
 	for _, id := range toRemove {
 		if capture, exists := mecm.activeCaptures[id]; exists {
-			os.Remove(capture.FilePath)
+			_ = os.Remove(capture.FilePath)
 			mecm.totalMemoryUsed -= capture.Size
 			delete(mecm.activeCaptures, id)
 		}
 	}
-	
+
 	// Force garbage collection
 	runtime.GC()
 }
@@ -495,10 +491,10 @@ func (mecm *MemoryEfficientCaptureManager) createTempFile(id, dataType, extensio
 	if err := os.MkdirAll(tempDir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create temp directory: %w", err)
 	}
-	
+
 	filename := fmt.Sprintf("%s_%s%s", id, dataType, extension)
 	filepath := filepath.Join(tempDir, filename)
-	
+
 	return os.Create(filepath)
 }
 
@@ -542,10 +538,10 @@ type CaptureResult struct {
 func (mecm *MemoryEfficientCaptureManager) GetMemoryStats() *MemoryStats {
 	mecm.mutex.RLock()
 	defer mecm.mutex.RUnlock()
-	
+
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-	
+
 	return &MemoryStats{
 		ActiveCaptures:    len(mecm.activeCaptures),
 		TotalMemoryUsedMB: mecm.totalMemoryUsed / (1024 * 1024),
@@ -568,21 +564,21 @@ type MemoryStats struct {
 func (mecm *MemoryEfficientCaptureManager) ReleaseCaptureMemory(captureID string) error {
 	mecm.mutex.Lock()
 	defer mecm.mutex.Unlock()
-	
+
 	capture, exists := mecm.activeCaptures[captureID]
 	if !exists {
 		return fmt.Errorf("capture %s not found", captureID)
 	}
-	
+
 	// Remove file
 	if err := os.Remove(capture.FilePath); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("failed to remove capture file: %w", err)
 	}
-	
+
 	// Update memory tracking
 	mecm.totalMemoryUsed -= capture.Size
 	delete(mecm.activeCaptures, captureID)
-	
+
 	return nil
 }
 
@@ -590,26 +586,26 @@ func (mecm *MemoryEfficientCaptureManager) ReleaseCaptureMemory(captureID string
 func (mecm *MemoryEfficientCaptureManager) Cleanup() error {
 	mecm.mutex.Lock()
 	defer mecm.mutex.Unlock()
-	
+
 	var errors []error
-	
+
 	// Remove all capture files
 	for id, capture := range mecm.activeCaptures {
 		if err := os.Remove(capture.FilePath); err != nil && !os.IsNotExist(err) {
 			errors = append(errors, fmt.Errorf("failed to remove capture %s: %w", id, err))
 		}
 	}
-	
+
 	// Reset tracking
 	mecm.activeCaptures = make(map[string]*CaptureInfo)
 	mecm.totalMemoryUsed = 0
-	
+
 	// Force garbage collection
 	runtime.GC()
-	
+
 	if len(errors) > 0 {
 		return fmt.Errorf("cleanup errors: %v", errors)
 	}
-	
+
 	return nil
 }

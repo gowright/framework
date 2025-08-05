@@ -10,34 +10,34 @@ import (
 
 // ParallelRunner manages concurrent test execution with resource management
 type ParallelRunner struct {
-	config           *Config
-	maxConcurrency   int
-	resourceManager  *ResourceManager
-	semaphore        chan struct{}
-	ctx              context.Context
-	cancel           context.CancelFunc
-	mutex            sync.RWMutex
+	config          *Config
+	maxConcurrency  int
+	resourceManager *ResourceManager
+	semaphore       chan struct{}
+	ctx             context.Context
+	cancel          context.CancelFunc
+	mutex           sync.RWMutex
 }
 
 // ParallelRunnerConfig holds configuration for parallel test execution
 type ParallelRunnerConfig struct {
-	MaxConcurrency      int           `json:"max_concurrency"`
-	ResourceTimeout     time.Duration `json:"resource_timeout"`
-	BrowserPoolSize     int           `json:"browser_pool_size"`
-	DatabasePoolSize    int           `json:"database_pool_size"`
-	HTTPClientPoolSize  int           `json:"http_client_pool_size"`
-	GracefulShutdown    time.Duration `json:"graceful_shutdown"`
+	MaxConcurrency     int           `json:"max_concurrency"`
+	ResourceTimeout    time.Duration `json:"resource_timeout"`
+	BrowserPoolSize    int           `json:"browser_pool_size"`
+	DatabasePoolSize   int           `json:"database_pool_size"`
+	HTTPClientPoolSize int           `json:"http_client_pool_size"`
+	GracefulShutdown   time.Duration `json:"graceful_shutdown"`
 }
 
 // DefaultParallelRunnerConfig returns default configuration for parallel runner
 func DefaultParallelRunnerConfig() *ParallelRunnerConfig {
 	return &ParallelRunnerConfig{
-		MaxConcurrency:      runtime.NumCPU(),
-		ResourceTimeout:     30 * time.Second,
-		BrowserPoolSize:     5,
-		DatabasePoolSize:    10,
-		HTTPClientPoolSize:  20,
-		GracefulShutdown:    10 * time.Second,
+		MaxConcurrency:     runtime.NumCPU(),
+		ResourceTimeout:    30 * time.Second,
+		BrowserPoolSize:    5,
+		DatabasePoolSize:   10,
+		HTTPClientPoolSize: 20,
+		GracefulShutdown:   10 * time.Second,
 	}
 }
 
@@ -46,9 +46,9 @@ func NewParallelRunner(config *Config, runnerConfig *ParallelRunnerConfig) *Para
 	if runnerConfig == nil {
 		runnerConfig = DefaultParallelRunnerConfig()
 	}
-	
+
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	return &ParallelRunner{
 		config:          config,
 		maxConcurrency:  runnerConfig.MaxConcurrency,
@@ -63,36 +63,36 @@ func NewParallelRunner(config *Config, runnerConfig *ParallelRunnerConfig) *Para
 func (pr *ParallelRunner) ExecuteTestsParallel(tests []Test) (*TestResults, error) {
 	pr.mutex.Lock()
 	defer pr.mutex.Unlock()
-	
+
 	if len(tests) == 0 {
 		return &TestResults{
 			StartTime: time.Now(),
 			EndTime:   time.Now(),
 		}, nil
 	}
-	
+
 	// Initialize resource manager
 	if err := pr.resourceManager.Initialize(pr.ctx); err != nil {
 		return nil, fmt.Errorf("failed to initialize resource manager: %w", err)
 	}
-	
+
 	defer func() {
 		if err := pr.resourceManager.Cleanup(); err != nil {
 			fmt.Printf("Warning: resource manager cleanup failed: %v\n", err)
 		}
 	}()
-	
+
 	results := &TestResults{
 		StartTime: time.Now(),
 		TestCases: make([]TestCaseResult, 0, len(tests)),
 	}
-	
+
 	// Create channels for communication
 	resultsChan := make(chan *TestCaseResult, len(tests))
 	errorsChan := make(chan error, len(tests))
-	
+
 	var wg sync.WaitGroup
-	
+
 	// Execute tests concurrently
 	for _, test := range tests {
 		wg.Add(1)
@@ -101,14 +101,14 @@ func (pr *ParallelRunner) ExecuteTestsParallel(tests []Test) (*TestResults, erro
 			pr.executeTestWithResourceManagement(t, resultsChan, errorsChan)
 		}(test)
 	}
-	
+
 	// Wait for all tests to complete
 	go func() {
 		wg.Wait()
 		close(resultsChan)
 		close(errorsChan)
 	}()
-	
+
 	// Collect results
 	var executionErrors []error
 	for {
@@ -126,19 +126,19 @@ func (pr *ParallelRunner) ExecuteTestsParallel(tests []Test) (*TestResults, erro
 				executionErrors = append(executionErrors, err)
 			}
 		}
-		
+
 		if resultsChan == nil && errorsChan == nil {
 			break
 		}
 	}
-	
+
 	results.EndTime = time.Now()
 	pr.calculateSummary(results)
-	
+
 	if len(executionErrors) > 0 {
 		return results, fmt.Errorf("parallel execution errors: %v", executionErrors)
 	}
-	
+
 	return results, nil
 }
 
@@ -152,7 +152,7 @@ func (pr *ParallelRunner) executeTestWithResourceManagement(test Test, resultsCh
 		errorsChan <- fmt.Errorf("test execution cancelled: %w", pr.ctx.Err())
 		return
 	}
-	
+
 	// Get resources for the test
 	resources, err := pr.resourceManager.AcquireResources(pr.ctx, test)
 	if err != nil {
@@ -166,24 +166,24 @@ func (pr *ParallelRunner) executeTestWithResourceManagement(test Test, resultsCh
 		resultsChan <- result
 		return
 	}
-	
+
 	defer func() {
 		if err := pr.resourceManager.ReleaseResources(resources); err != nil {
 			errorsChan <- fmt.Errorf("failed to release resources for test %s: %w", test.GetName(), err)
 		}
 	}()
-	
+
 	// Execute the test with timeout
 	ctx, cancel := context.WithTimeout(pr.ctx, pr.config.BrowserConfig.Timeout)
 	defer cancel()
-	
+
 	resultChan := make(chan *TestCaseResult, 1)
-	
+
 	go func() {
 		result := test.Execute()
 		resultChan <- result
 	}()
-	
+
 	select {
 	case result := <-resultChan:
 		resultsChan <- result
@@ -202,7 +202,7 @@ func (pr *ParallelRunner) executeTestWithResourceManagement(test Test, resultsCh
 // calculateSummary calculates test execution summary
 func (pr *ParallelRunner) calculateSummary(results *TestResults) {
 	results.TotalTests = len(results.TestCases)
-	
+
 	for _, testCase := range results.TestCases {
 		switch testCase.Status {
 		case TestStatusPassed:
@@ -221,10 +221,10 @@ func (pr *ParallelRunner) calculateSummary(results *TestResults) {
 func (pr *ParallelRunner) Shutdown() error {
 	pr.mutex.Lock()
 	defer pr.mutex.Unlock()
-	
+
 	// Cancel context to stop new executions
 	pr.cancel()
-	
+
 	// Wait for ongoing executions to complete with timeout
 	done := make(chan struct{})
 	go func() {
@@ -234,7 +234,7 @@ func (pr *ParallelRunner) Shutdown() error {
 		}
 		close(done)
 	}()
-	
+
 	select {
 	case <-done:
 		return nil
@@ -247,17 +247,17 @@ func (pr *ParallelRunner) Shutdown() error {
 func (pr *ParallelRunner) GetStats() *ParallelRunnerStats {
 	pr.mutex.RLock()
 	defer pr.mutex.RUnlock()
-	
+
 	return &ParallelRunnerStats{
-		MaxConcurrency:    pr.maxConcurrency,
-		ActiveTests:       pr.maxConcurrency - len(pr.semaphore),
-		ResourceStats:     pr.resourceManager.GetStats(),
+		MaxConcurrency: pr.maxConcurrency,
+		ActiveTests:    pr.maxConcurrency - len(pr.semaphore),
+		ResourceStats:  pr.resourceManager.GetStats(),
 	}
 }
 
 // ParallelRunnerStats holds statistics about parallel execution
 type ParallelRunnerStats struct {
-	MaxConcurrency int                `json:"max_concurrency"`
-	ActiveTests    int                `json:"active_tests"`
-	ResourceStats  *ResourceStats     `json:"resource_stats"`
+	MaxConcurrency int            `json:"max_concurrency"`
+	ActiveTests    int            `json:"active_tests"`
+	ResourceStats  *ResourceStats `json:"resource_stats"`
 }

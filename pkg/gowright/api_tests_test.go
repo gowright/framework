@@ -14,9 +14,9 @@ import (
 
 func TestNewAPITest(t *testing.T) {
 	tester := NewAPITester(nil)
-	
+
 	test := NewAPITest("test-api", "GET", "/users", tester)
-	
+
 	assert.Equal(t, "test-api", test.Name)
 	assert.Equal(t, "GET", test.Method)
 	assert.Equal(t, "/users", test.Endpoint)
@@ -31,18 +31,18 @@ func TestAPITestImpl_Execute(t *testing.T) {
 		case "/success":
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"status": "success",
 				"data":   []string{"item1", "item2"},
 			})
 		case "/error":
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Internal Server Error"))
+			_, _ = w.Write([]byte("Internal Server Error"))
 		case "/users":
 			if r.Method == "POST" {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusCreated)
-				json.NewEncoder(w).Encode(map[string]interface{}{
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{
 					"id":   123,
 					"name": "John Doe",
 				})
@@ -50,7 +50,7 @@ func TestAPITestImpl_Execute(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	
+
 	// Create tester
 	config := &APIConfig{
 		BaseURL: server.URL,
@@ -59,12 +59,12 @@ func TestAPITestImpl_Execute(t *testing.T) {
 	tester := NewAPITester(config)
 	err := tester.Initialize(config)
 	require.NoError(t, err)
-	
+
 	t.Run("successful test without expectations", func(t *testing.T) {
 		test := NewAPITest("success-test", "GET", "/success", tester)
-		
+
 		result := test.Execute()
-		
+
 		assert.Equal(t, "success-test", result.Name)
 		assert.Equal(t, TestStatusPassed, result.Status)
 		assert.NoError(t, result.Error)
@@ -72,33 +72,33 @@ func TestAPITestImpl_Execute(t *testing.T) {
 		assert.NotEmpty(t, result.Logs)
 		assert.Contains(t, result.Logs[len(result.Logs)-1], "No expectations defined")
 	})
-	
+
 	t.Run("successful test with valid expectations", func(t *testing.T) {
 		test := NewAPITest("success-with-expectations", "GET", "/success", tester)
 		test.SetExpectedStatus(200)
 		test.SetExpectedHeader("Content-Type", "application/json")
 		test.SetExpectedJSONPath("$.status", "success")
 		test.SetExpectedJSONPath("$.data[0]", "item1")
-		
+
 		result := test.Execute()
-		
+
 		assert.Equal(t, TestStatusPassed, result.Status)
 		assert.NoError(t, result.Error)
 		assert.Contains(t, result.Logs[len(result.Logs)-1], "All validations passed")
 	})
-	
+
 	t.Run("test with failed expectations", func(t *testing.T) {
 		test := NewAPITest("failed-expectations", "GET", "/success", tester)
 		test.SetExpectedStatus(201) // Wrong status code
-		
+
 		result := test.Execute()
-		
+
 		assert.Equal(t, TestStatusFailed, result.Status)
 		assert.Error(t, result.Error)
 		assert.Contains(t, result.Error.Error(), "status code mismatch")
 		assert.Contains(t, result.Logs[len(result.Logs)-1], "Validation failed")
 	})
-	
+
 	t.Run("test with network error", func(t *testing.T) {
 		// Create tester with invalid URL
 		invalidConfig := &APIConfig{
@@ -108,16 +108,16 @@ func TestAPITestImpl_Execute(t *testing.T) {
 		invalidTester := NewAPITester(invalidConfig)
 		err := invalidTester.Initialize(invalidConfig)
 		require.NoError(t, err)
-		
+
 		test := NewAPITest("network-error", "GET", "/test", invalidTester)
-		
+
 		result := test.Execute()
-		
+
 		assert.Equal(t, TestStatusError, result.Status)
 		assert.Error(t, result.Error)
 		assert.Contains(t, result.Logs[len(result.Logs)-1], "Request failed")
 	})
-	
+
 	t.Run("POST test with body", func(t *testing.T) {
 		test := NewAPITest("post-test", "POST", "/users", tester)
 		test.SetBody(map[string]interface{}{
@@ -126,9 +126,9 @@ func TestAPITestImpl_Execute(t *testing.T) {
 		test.SetExpectedStatus(201)
 		test.SetExpectedJSONPath("$.id", float64(123)) // JSON numbers are float64
 		test.SetExpectedJSONPath("$.name", "John Doe")
-		
+
 		result := test.Execute()
-		
+
 		assert.Equal(t, TestStatusPassed, result.Status)
 		assert.NoError(t, result.Error)
 	})
@@ -141,7 +141,7 @@ func TestAPITestImpl_ValidationMethods(t *testing.T) {
 		case "/json":
 			w.Header().Set("Content-Type", "application/json")
 			w.Header().Set("X-Custom-Header", "custom-value")
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"message": "hello",
 				"count":   42,
 				"items":   []string{"a", "b", "c"},
@@ -151,14 +151,14 @@ func TestAPITestImpl_ValidationMethods(t *testing.T) {
 			})
 		case "/xml":
 			w.Header().Set("Content-Type", "application/xml")
-			w.Write([]byte(`<root><message>hello</message></root>`))
+			_, _ = w.Write([]byte(`<root><message>hello</message></root>`))
 		case "/text":
 			w.Header().Set("Content-Type", "text/plain")
-			w.Write([]byte("plain text response"))
+			_, _ = w.Write([]byte("plain text response"))
 		}
 	}))
 	defer server.Close()
-	
+
 	config := &APIConfig{
 		BaseURL: server.URL,
 		Timeout: 5 * time.Second,
@@ -166,7 +166,7 @@ func TestAPITestImpl_ValidationMethods(t *testing.T) {
 	tester := NewAPITester(config)
 	err := tester.Initialize(config)
 	require.NoError(t, err)
-	
+
 	t.Run("JSON response validation", func(t *testing.T) {
 		test := NewAPITest("json-test", "GET", "/json", tester)
 		test.SetExpectedStatus(200)
@@ -176,13 +176,13 @@ func TestAPITestImpl_ValidationMethods(t *testing.T) {
 		test.SetExpectedJSONPath("$.count", float64(42))
 		test.SetExpectedJSONPath("$.items[1]", "b")
 		test.SetExpectedJSONPath("$.nested.key", "value")
-		
+
 		result := test.Execute()
-		
+
 		assert.Equal(t, TestStatusPassed, result.Status)
 		assert.NoError(t, result.Error)
 	})
-	
+
 	t.Run("JSON response validation with full body", func(t *testing.T) {
 		expectedBody := map[string]interface{}{
 			"message": "hello",
@@ -192,67 +192,67 @@ func TestAPITestImpl_ValidationMethods(t *testing.T) {
 				"key": "value",
 			},
 		}
-		
+
 		test := NewAPITest("json-body-test", "GET", "/json", tester)
 		test.SetExpectedStatus(200)
 		test.SetExpectedBody(expectedBody)
-		
+
 		result := test.Execute()
-		
+
 		assert.Equal(t, TestStatusPassed, result.Status)
 		assert.NoError(t, result.Error)
 	})
-	
+
 	t.Run("XML response validation", func(t *testing.T) {
 		test := NewAPITest("xml-test", "GET", "/xml", tester)
 		test.SetExpectedStatus(200)
 		test.SetExpectedBody("<root><message>hello</message></root>")
-		
+
 		result := test.Execute()
-		
+
 		assert.Equal(t, TestStatusPassed, result.Status)
 		assert.NoError(t, result.Error)
 	})
-	
+
 	t.Run("text response validation", func(t *testing.T) {
 		test := NewAPITest("text-test", "GET", "/text", tester)
 		test.SetExpectedStatus(200)
 		test.SetExpectedBody("plain text response")
-		
+
 		result := test.Execute()
-		
+
 		assert.Equal(t, TestStatusPassed, result.Status)
 		assert.NoError(t, result.Error)
 	})
-	
+
 	t.Run("failed header validation", func(t *testing.T) {
 		test := NewAPITest("failed-header", "GET", "/json", tester)
 		test.SetExpectedHeader("X-Missing-Header", "value")
-		
+
 		result := test.Execute()
-		
+
 		assert.Equal(t, TestStatusFailed, result.Status)
 		assert.Error(t, result.Error)
 		assert.Contains(t, result.Error.Error(), "expected header 'X-Missing-Header' not found")
 	})
-	
+
 	t.Run("failed JSON path validation", func(t *testing.T) {
 		test := NewAPITest("failed-jsonpath", "GET", "/json", tester)
 		test.SetExpectedJSONPath("$.message", "wrong-value")
-		
+
 		result := test.Execute()
-		
+
 		assert.Equal(t, TestStatusFailed, result.Status)
 		assert.Error(t, result.Error)
 		assert.Contains(t, result.Error.Error(), "JSON path value mismatch")
 	})
-	
+
 	t.Run("invalid JSON path", func(t *testing.T) {
 		test := NewAPITest("invalid-jsonpath", "GET", "/json", tester)
 		test.SetExpectedJSONPath("$.nonexistent.deep.path", "value")
-		
+
 		result := test.Execute()
-		
+
 		assert.Equal(t, TestStatusFailed, result.Status)
 		assert.Error(t, result.Error)
 		assert.Contains(t, result.Error.Error(), "JSON path evaluation failed")
@@ -261,7 +261,7 @@ func TestAPITestImpl_ValidationMethods(t *testing.T) {
 
 func TestAPITestImpl_JSONPathEvaluation(t *testing.T) {
 	test := &APITestImpl{}
-	
+
 	testData := map[string]interface{}{
 		"name": "John",
 		"age":  30,
@@ -272,7 +272,7 @@ func TestAPITestImpl_JSONPathEvaluation(t *testing.T) {
 		"hobbies": []interface{}{"reading", "swimming", "coding"},
 		"scores":  []interface{}{85, 92, 78},
 	}
-	
+
 	testCases := []struct {
 		path     string
 		expected interface{}
@@ -286,16 +286,16 @@ func TestAPITestImpl_JSONPathEvaluation(t *testing.T) {
 		{"$.hobbies[2]", "coding"},
 		{"$.scores[1]", 92},
 	}
-	
+
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("path_%s", tc.path), func(t *testing.T) {
 			result, err := test.evaluateJSONPath(testData, tc.path)
-			
+
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expected, result)
 		})
 	}
-	
+
 	// Test error cases
 	errorCases := []struct {
 		path        string
@@ -306,11 +306,11 @@ func TestAPITestImpl_JSONPathEvaluation(t *testing.T) {
 		{"$.name[0]", "array access on non-array"},
 		{"$.address.nonexistent", "nonexistent nested property"},
 	}
-	
+
 	for _, tc := range errorCases {
 		t.Run(fmt.Sprintf("error_%s", tc.description), func(t *testing.T) {
 			result, err := test.evaluateJSONPath(testData, tc.path)
-			
+
 			assert.Error(t, err)
 			assert.Nil(t, result)
 		})
@@ -319,7 +319,7 @@ func TestAPITestImpl_JSONPathEvaluation(t *testing.T) {
 
 func TestAPITestImpl_FluentInterface(t *testing.T) {
 	tester := NewAPITester(nil)
-	
+
 	test := NewAPITest("fluent-test", "POST", "/api/users", tester).
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Authorization", "Bearer token").
@@ -327,7 +327,7 @@ func TestAPITestImpl_FluentInterface(t *testing.T) {
 		SetExpectedStatus(201).
 		SetExpectedHeader("Location", "/users/123").
 		SetExpectedJSONPath("$.id", 123)
-	
+
 	assert.Equal(t, "fluent-test", test.Name)
 	assert.Equal(t, "POST", test.Method)
 	assert.Equal(t, "/api/users", test.Endpoint)
@@ -341,7 +341,7 @@ func TestAPITestImpl_FluentInterface(t *testing.T) {
 
 func TestAPITestBuilder(t *testing.T) {
 	tester := NewAPITester(nil)
-	
+
 	test := NewAPITestBuilder("builder-test", "PUT", "/api/users/1").
 		WithTester(tester).
 		WithHeader("Content-Type", "application/json").
@@ -358,7 +358,7 @@ func TestAPITestBuilder(t *testing.T) {
 		ExpectJSONPath("$.name", "Jane Doe").
 		ExpectJSONPath("$.email", "jane@example.com").
 		Build()
-	
+
 	assert.Equal(t, "builder-test", test.Name)
 	assert.Equal(t, "PUT", test.Method)
 	assert.Equal(t, "/api/users/1", test.Endpoint)
@@ -377,12 +377,12 @@ func TestAPITestImpl_HTTPMethods(t *testing.T) {
 	// Create test server that echoes method
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{
+		_ = json.NewEncoder(w).Encode(map[string]string{
 			"method": r.Method,
 		})
 	}))
 	defer server.Close()
-	
+
 	config := &APIConfig{
 		BaseURL: server.URL,
 		Timeout: 5 * time.Second,
@@ -390,32 +390,32 @@ func TestAPITestImpl_HTTPMethods(t *testing.T) {
 	tester := NewAPITester(config)
 	err := tester.Initialize(config)
 	require.NoError(t, err)
-	
+
 	methods := []string{"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"}
-	
+
 	for _, method := range methods {
 		t.Run(method, func(t *testing.T) {
 			test := NewAPITest(fmt.Sprintf("%s-test", method), method, "/test", tester)
 			if method == "POST" || method == "PUT" || method == "PATCH" {
 				test.SetBody(map[string]string{"test": "data"})
 			}
-			
+
 			if method != "HEAD" { // HEAD responses don't have body
 				test.SetExpectedJSONPath("$.method", method)
 			}
-			
+
 			result := test.Execute()
-			
+
 			assert.Equal(t, TestStatusPassed, result.Status, "Method %s should pass", method)
 			assert.NoError(t, result.Error, "Method %s should not error", method)
 		})
 	}
-	
+
 	t.Run("unsupported method", func(t *testing.T) {
 		test := NewAPITest("unsupported-method", "INVALID", "/test", tester)
-		
+
 		result := test.Execute()
-		
+
 		assert.Equal(t, TestStatusError, result.Status)
 		assert.Error(t, result.Error)
 		assert.Contains(t, result.Error.Error(), "unsupported HTTP method")
@@ -425,22 +425,22 @@ func TestAPITestImpl_HTTPMethods(t *testing.T) {
 func TestAPITestImpl_ErrorHandling(t *testing.T) {
 	t.Run("test without tester", func(t *testing.T) {
 		test := NewAPITest("no-tester", "GET", "/test", nil)
-		
+
 		result := test.Execute()
-		
+
 		assert.Equal(t, TestStatusError, result.Status)
 		assert.Error(t, result.Error)
 		assert.Contains(t, result.Error.Error(), "API tester not configured")
 	})
-	
+
 	t.Run("invalid JSON in response for JSON path validation", func(t *testing.T) {
 		// Create server that returns invalid JSON
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte("{invalid json"))
+			_, _ = w.Write([]byte("{invalid json"))
 		}))
 		defer server.Close()
-		
+
 		config := &APIConfig{
 			BaseURL: server.URL,
 			Timeout: 5 * time.Second,
@@ -448,12 +448,12 @@ func TestAPITestImpl_ErrorHandling(t *testing.T) {
 		tester := NewAPITester(config)
 		err := tester.Initialize(config)
 		require.NoError(t, err)
-		
+
 		test := NewAPITest("invalid-json", "GET", "/test", tester)
 		test.SetExpectedJSONPath("$.key", "value")
-		
+
 		result := test.Execute()
-		
+
 		assert.Equal(t, TestStatusFailed, result.Status)
 		assert.Error(t, result.Error)
 		assert.Contains(t, result.Error.Error(), "cannot validate JSON path on non-JSON response")
@@ -462,7 +462,7 @@ func TestAPITestImpl_ErrorHandling(t *testing.T) {
 
 func TestAPITestImpl_CompareValues(t *testing.T) {
 	test := &APITestImpl{}
-	
+
 	testCases := []struct {
 		name     string
 		expected interface{}
@@ -482,7 +482,7 @@ func TestAPITestImpl_CompareValues(t *testing.T) {
 		{"equal maps", map[string]interface{}{"key": "value"}, map[string]interface{}{"key": "value"}, true},
 		{"different maps", map[string]interface{}{"key": "value1"}, map[string]interface{}{"key": "value2"}, false},
 	}
-	
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			result := test.compareValues(tc.expected, tc.actual)
@@ -493,7 +493,7 @@ func TestAPITestImpl_CompareValues(t *testing.T) {
 
 func TestAPITestImpl_XMLNormalization(t *testing.T) {
 	test := &APITestImpl{}
-	
+
 	testCases := []struct {
 		name     string
 		input    string
@@ -515,7 +515,7 @@ func TestAPITestImpl_XMLNormalization(t *testing.T) {
 			"<root><child>  value  </child></root>",
 		},
 	}
-	
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			result := test.normalizeXML(tc.input)

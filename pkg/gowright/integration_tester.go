@@ -166,8 +166,8 @@ func (it *IntegrationTesterImpl) ExecuteWorkflow(steps []IntegrationStep) error 
 			if it.config.RollbackOnError && len(executedSteps) > 0 {
 				rollbackErr := it.Rollback(executedSteps)
 				if rollbackErr != nil {
-					return NewGowrightError(AssertionError, 
-						fmt.Sprintf("step %d failed and rollback also failed", i+1), 
+					return NewGowrightError(AssertionError,
+						fmt.Sprintf("step %d failed and rollback also failed", i+1),
 						fmt.Errorf("original error: %w, rollback error: %w", err, rollbackErr))
 				}
 			}
@@ -361,7 +361,7 @@ func (it *IntegrationTesterImpl) executeDatabaseRollback(step *IntegrationStep) 
 // validateAPIResponse validates an API response against expected criteria
 func (it *IntegrationTesterImpl) validateAPIResponse(response *APIResponse, validation *APIStepValidation) error {
 	if validation.ExpectedStatusCode != 0 && response.StatusCode != validation.ExpectedStatusCode {
-		return NewGowrightError(AssertionError, 
+		return NewGowrightError(AssertionError,
 			fmt.Sprintf("expected status code %d, got %d", validation.ExpectedStatusCode, response.StatusCode), nil)
 	}
 
@@ -372,7 +372,7 @@ func (it *IntegrationTesterImpl) validateAPIResponse(response *APIResponse, vali
 // validateDatabaseResult validates a database result against expected criteria
 func (it *IntegrationTesterImpl) validateDatabaseResult(result *DatabaseResult, validation *DatabaseStepValidation) error {
 	if validation.ExpectedRowCount != nil && len(result.Rows) != *validation.ExpectedRowCount {
-		return NewGowrightError(AssertionError, 
+		return NewGowrightError(AssertionError,
 			fmt.Sprintf("expected %d rows, got %d", *validation.ExpectedRowCount, len(result.Rows)), nil)
 	}
 

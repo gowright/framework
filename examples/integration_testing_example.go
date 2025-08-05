@@ -1,3 +1,6 @@
+//go:build ignore
+// +build ignore
+
 package main
 
 import (
@@ -5,7 +8,7 @@ import (
 	"log"
 	"time"
 
-	"github/gowright/framework/pkg/gowright"
+	"github.com/gowright/framework/pkg/gowright"
 )
 
 func main() {
@@ -13,17 +16,17 @@ func main() {
 
 	// Create comprehensive configuration for all modules
 	config := &gowright.Config{
-		LogLevel: "INFO",
-		Parallel: false,
+		LogLevel:   "INFO",
+		Parallel:   false,
 		MaxRetries: 3,
-		
+
 		BrowserConfig: &gowright.BrowserConfig{
 			Headless:   true, // Use headless for integration tests
 			Timeout:    30 * time.Second,
 			UserAgent:  "Gowright-Integration-Tester/1.0",
 			WindowSize: &gowright.WindowSize{Width: 1920, Height: 1080},
 		},
-		
+
 		APIConfig: &gowright.APIConfig{
 			BaseURL: "https://jsonplaceholder.typicode.com",
 			Timeout: 30 * time.Second,
@@ -31,7 +34,7 @@ func main() {
 				"User-Agent": "Gowright-Integration-Tester/1.0",
 			},
 		},
-		
+
 		DatabaseConfig: &gowright.DatabaseConfig{
 			Connections: map[string]*gowright.DBConnection{
 				"main": {
@@ -42,7 +45,7 @@ func main() {
 				},
 			},
 		},
-		
+
 		ReportConfig: &gowright.ReportConfig{
 			LocalReports: gowright.LocalReportConfig{
 				JSON:      true,
@@ -62,7 +65,7 @@ func main() {
 	// Example 1: E-commerce workflow integration test
 	fmt.Println("1. Testing complete e-commerce workflow")
 	ecommerceTest := gowright.NewIntegrationTest("E-commerce Workflow Test")
-	
+
 	// Step 1: Setup database schema
 	ecommerceTest.AddStep(gowright.NewIntegrationStep(
 		gowright.StepTypeDatabase,
@@ -83,10 +86,10 @@ func main() {
 		},
 		&gowright.DatabaseValidation{
 			ExpectedRowCount: 3,
-			Query: "SELECT COUNT(*) as count FROM products",
+			Query:            "SELECT COUNT(*) as count FROM products",
 		},
 	))
-	
+
 	// Step 2: API - Get product catalog
 	ecommerceTest.AddStep(gowright.NewIntegrationStep(
 		gowright.StepTypeAPI,
@@ -101,40 +104,40 @@ func main() {
 			},
 		},
 	))
-	
+
 	// Step 3: UI - Navigate to product page
 	ecommerceTest.AddStep(gowright.NewIntegrationStep(
 		gowright.StepTypeUI,
 		&gowright.UIAction{
-			Type: gowright.UIActionNavigate,
+			Type:   gowright.UIActionNavigate,
 			Target: "https://example.com", // Mock product page
 		},
 		&gowright.UIValidation{
 			ExpectedElements: []string{"h1", "p"},
-			ExpectedTitle: "Example Domain",
+			ExpectedTitle:    "Example Domain",
 		},
 	))
-	
+
 	// Step 4: Database - Update stock after purchase
 	ecommerceTest.AddStep(gowright.NewIntegrationStep(
 		gowright.StepTypeDatabase,
 		&gowright.DatabaseAction{
 			Connection: "main",
-			Query: "UPDATE products SET stock = stock - 1 WHERE id = 1",
+			Query:      "UPDATE products SET stock = stock - 1 WHERE id = 1",
 		},
 		&gowright.DatabaseValidation{
-			Query: "SELECT stock FROM products WHERE id = 1",
+			Query:               "SELECT stock FROM products WHERE id = 1",
 			ExpectedColumnValue: map[string]interface{}{"stock": 9},
 		},
 	))
-	
+
 	result := ecommerceTest.Execute(integrationTester)
 	printIntegrationTestResult(result)
 
 	// Example 2: User registration and profile management workflow
 	fmt.Println("\n2. Testing user registration and profile workflow")
 	userWorkflowTest := gowright.NewIntegrationTest("User Registration Workflow Test")
-	
+
 	// Step 1: Database - Setup user tables
 	userWorkflowTest.AddStep(gowright.NewIntegrationStep(
 		gowright.StepTypeDatabase,
@@ -150,11 +153,11 @@ func main() {
 			`,
 		},
 		&gowright.DatabaseValidation{
-			Query: "SELECT name FROM sqlite_master WHERE type='table' AND name='users'",
+			Query:            "SELECT name FROM sqlite_master WHERE type='table' AND name='users'",
 			ExpectedRowCount: 1,
 		},
 	))
-	
+
 	// Step 2: API - Create user via API
 	userWorkflowTest.AddStep(gowright.NewIntegrationStep(
 		gowright.StepTypeAPI,
@@ -176,39 +179,39 @@ func main() {
 			},
 		},
 	))
-	
+
 	// Step 3: Database - Verify user was created
 	userWorkflowTest.AddStep(gowright.NewIntegrationStep(
 		gowright.StepTypeDatabase,
 		&gowright.DatabaseAction{
 			Connection: "main",
-			Query: "INSERT INTO users (username, email) VALUES ('johndoe', 'john@example.com')",
+			Query:      "INSERT INTO users (username, email) VALUES ('johndoe', 'john@example.com')",
 		},
 		&gowright.DatabaseValidation{
-			Query: "SELECT COUNT(*) as count FROM users WHERE username = 'johndoe'",
+			Query:               "SELECT COUNT(*) as count FROM users WHERE username = 'johndoe'",
 			ExpectedColumnValue: map[string]interface{}{"count": 1},
 		},
 	))
-	
+
 	// Step 4: UI - Login with new user
 	userWorkflowTest.AddStep(gowright.NewIntegrationStep(
 		gowright.StepTypeUI,
 		&gowright.UIAction{
-			Type: gowright.UIActionNavigate,
+			Type:   gowright.UIActionNavigate,
 			Target: "https://the-internet.herokuapp.com/login",
 		},
 		&gowright.UIValidation{
 			ExpectedElements: []string{"#username", "#password", "button[type='submit']"},
 		},
 	))
-	
+
 	result = userWorkflowTest.Execute(integrationTester)
 	printIntegrationTestResult(result)
 
 	// Example 3: Data synchronization workflow
 	fmt.Println("\n3. Testing data synchronization across systems")
 	syncTest := gowright.NewIntegrationTest("Data Synchronization Test")
-	
+
 	// Step 1: Database - Create source data
 	syncTest.AddStep(gowright.NewIntegrationStep(
 		gowright.StepTypeDatabase,
@@ -227,11 +230,11 @@ func main() {
 			`,
 		},
 		&gowright.DatabaseValidation{
-			Query: "SELECT COUNT(*) as count FROM sync_source",
+			Query:               "SELECT COUNT(*) as count FROM sync_source",
 			ExpectedColumnValue: map[string]interface{}{"count": 3},
 		},
 	))
-	
+
 	// Step 2: API - Sync data to external system
 	syncTest.AddStep(gowright.NewIntegrationStep(
 		gowright.StepTypeAPI,
@@ -246,7 +249,7 @@ func main() {
 			},
 		},
 	))
-	
+
 	// Step 3: Database - Create destination table and sync
 	syncTest.AddStep(gowright.NewIntegrationStep(
 		gowright.StepTypeDatabase,
@@ -263,30 +266,30 @@ func main() {
 			`,
 		},
 		&gowright.DatabaseValidation{
-			Query: "SELECT COUNT(*) as count FROM sync_destination",
+			Query:               "SELECT COUNT(*) as count FROM sync_destination",
 			ExpectedColumnValue: map[string]interface{}{"count": 3},
 		},
 	))
-	
+
 	// Step 4: UI - Verify sync status in dashboard
 	syncTest.AddStep(gowright.NewIntegrationStep(
 		gowright.StepTypeUI,
 		&gowright.UIAction{
-			Type: gowright.UIActionNavigate,
+			Type:   gowright.UIActionNavigate,
 			Target: "https://httpbin.org/status/200", // Mock dashboard
 		},
 		&gowright.UIValidation{
 			ExpectedStatusCode: 200,
 		},
 	))
-	
+
 	result = syncTest.Execute(integrationTester)
 	printIntegrationTestResult(result)
 
 	// Example 4: Error handling and rollback workflow
 	fmt.Println("\n4. Testing error handling and rollback mechanisms")
 	errorHandlingTest := gowright.NewIntegrationTest("Error Handling and Rollback Test")
-	
+
 	// Step 1: Database - Setup transaction
 	errorHandlingTest.AddStep(gowright.NewIntegrationStep(
 		gowright.StepTypeDatabase,
@@ -302,11 +305,11 @@ func main() {
 			`,
 		},
 		&gowright.DatabaseValidation{
-			Query: "SELECT status FROM transaction_test WHERE id = 1",
+			Query:               "SELECT status FROM transaction_test WHERE id = 1",
 			ExpectedColumnValue: map[string]interface{}{"status": "pending"},
 		},
 	))
-	
+
 	// Step 2: API - Attempt payment (simulate failure)
 	errorHandlingTest.AddStep(gowright.NewIntegrationStep(
 		gowright.StepTypeAPI,
@@ -318,27 +321,27 @@ func main() {
 			ExpectedStatus: 404, // Expect failure
 		},
 	))
-	
+
 	// Step 3: Database - Rollback transaction on API failure
 	errorHandlingTest.AddRollbackStep(gowright.NewIntegrationStep(
 		gowright.StepTypeDatabase,
 		&gowright.DatabaseAction{
 			Connection: "main",
-			Query: "UPDATE transaction_test SET status = 'failed' WHERE id = 1",
+			Query:      "UPDATE transaction_test SET status = 'failed' WHERE id = 1",
 		},
 		&gowright.DatabaseValidation{
-			Query: "SELECT status FROM transaction_test WHERE id = 1",
+			Query:               "SELECT status FROM transaction_test WHERE id = 1",
 			ExpectedColumnValue: map[string]interface{}{"status": "failed"},
 		},
 	))
-	
+
 	result = errorHandlingTest.Execute(integrationTester)
 	printIntegrationTestResult(result)
 
 	// Example 5: Performance and load testing workflow
 	fmt.Println("\n5. Testing performance across multiple systems")
 	performanceTest := gowright.NewIntegrationTest("Performance Integration Test")
-	
+
 	// Step 1: Database - Create large dataset
 	performanceTest.AddStep(gowright.NewIntegrationStep(
 		gowright.StepTypeDatabase,
@@ -353,23 +356,23 @@ func main() {
 			`,
 		},
 		&gowright.DatabaseValidation{
-			Query: "SELECT name FROM sqlite_master WHERE type='table' AND name='performance_data'",
+			Query:            "SELECT name FROM sqlite_master WHERE type='table' AND name='performance_data'",
 			ExpectedRowCount: 1,
 		},
 	))
-	
+
 	// Insert multiple records for performance testing
 	for i := 0; i < 100; i++ {
 		performanceTest.AddStep(gowright.NewIntegrationStep(
 			gowright.StepTypeDatabase,
 			&gowright.DatabaseAction{
 				Connection: "main",
-				Query: fmt.Sprintf("INSERT INTO performance_data (id, data) VALUES (%d, 'Performance test data %d')", i+1, i+1),
+				Query:      fmt.Sprintf("INSERT INTO performance_data (id, data) VALUES (%d, 'Performance test data %d')", i+1, i+1),
 			},
 			nil, // No validation for individual inserts
 		))
 	}
-	
+
 	// Step 2: API - Bulk data retrieval
 	performanceTest.AddStep(gowright.NewIntegrationStep(
 		gowright.StepTypeAPI,
@@ -378,17 +381,17 @@ func main() {
 			Endpoint: "/posts", // Get all posts for performance test
 		},
 		&gowright.APIValidation{
-			ExpectedStatus: 200,
+			ExpectedStatus:  200,
 			MaxResponseTime: 5 * time.Second,
 		},
 	))
-	
+
 	// Step 3: Database - Performance query
 	performanceTest.AddStep(gowright.NewIntegrationStep(
 		gowright.StepTypeDatabase,
 		&gowright.DatabaseAction{
 			Connection: "main",
-			Query: "SELECT COUNT(*) as total, MAX(id) as max_id FROM performance_data",
+			Query:      "SELECT COUNT(*) as total, MAX(id) as max_id FROM performance_data",
 		},
 		&gowright.DatabaseValidation{
 			ExpectedColumnValue: map[string]interface{}{
@@ -398,13 +401,13 @@ func main() {
 			MaxExecutionTime: 2 * time.Second,
 		},
 	))
-	
+
 	result = performanceTest.Execute(integrationTester)
 	printIntegrationTestResult(result)
 
 	// Generate comprehensive integration test report
 	fmt.Println("\nGenerating integration test reports...")
-	
+
 	testResults := &gowright.TestResults{
 		SuiteName:    "Integration Testing Example Suite",
 		StartTime:    time.Now().Add(-15 * time.Minute),
@@ -413,10 +416,10 @@ func main() {
 		PassedTests:  4,
 		FailedTests:  0,
 		SkippedTests: 0,
-		ErrorTests:   1, // The error handling test that expected failures
+		ErrorTests:   1,                           // The error handling test that expected failures
 		TestCases:    []gowright.TestCaseResult{}, // Would contain all results
 	}
-	
+
 	reportManager := gowright.NewReportManager(config.ReportConfig)
 	if err := reportManager.GenerateReports(testResults); err != nil {
 		log.Printf("Failed to generate reports: %v", err)
@@ -438,11 +441,11 @@ func printIntegrationTestResult(result *gowright.TestCaseResult) {
 	fmt.Printf("Status: %s\n", result.Status.String())
 	fmt.Printf("Duration: %v\n", result.Duration)
 	fmt.Printf("Steps Executed: %d\n", len(result.Steps))
-	
+
 	if result.Error != nil {
 		fmt.Printf("Error: %v\n", result.Error)
 	}
-	
+
 	// Show step-by-step results
 	for i, step := range result.Steps {
 		status := "✓"
@@ -451,19 +454,19 @@ func printIntegrationTestResult(result *gowright.TestCaseResult) {
 		} else if step.Status == gowright.TestStatusSkipped {
 			status = "⊝"
 		}
-		
+
 		fmt.Printf("  Step %d: %s %s (%v)\n", i+1, status, step.Name, step.Duration)
 		if step.Error != nil {
 			fmt.Printf("    Error: %s\n", step.Error.Error())
 		}
 	}
-	
+
 	if len(result.Logs) > 0 {
 		fmt.Println("Logs:")
 		for _, logEntry := range result.Logs {
 			fmt.Printf("  - %s\n", logEntry)
 		}
 	}
-	
+
 	fmt.Println("---")
 }

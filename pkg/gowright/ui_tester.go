@@ -32,7 +32,7 @@ func NewRodUITester(config *BrowserConfig) *RodUITester {
 			},
 		}
 	}
-	
+
 	return &RodUITester{
 		config: config,
 		name:   "RodUITester",
@@ -49,13 +49,13 @@ func (r *RodUITester) Initialize(config interface{}) error {
 
 	// Create launcher with configuration
 	launcher := launcher.New()
-	
+
 	if r.config.Headless {
 		launcher = launcher.Headless(true)
 	} else {
 		launcher = launcher.Headless(false)
 	}
-	
+
 	if r.config.UserAgent != "" {
 		launcher = launcher.UserDataDir("")
 	}
@@ -305,7 +305,7 @@ func (r *RodUITester) NewPage() error {
 
 	// Close old page if exists
 	if r.page != nil {
-		r.page.Close()
+		_ = r.page.Close()
 	}
 
 	r.page = page

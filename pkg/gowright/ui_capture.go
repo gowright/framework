@@ -18,7 +18,7 @@ func NewUICaptureManager(tester UITester, outputDir string) *UICaptureManager {
 	if outputDir == "" {
 		outputDir = "./captures"
 	}
-	
+
 	return &UICaptureManager{
 		tester:    tester,
 		outputDir: outputDir,
@@ -30,7 +30,7 @@ func (c *UICaptureManager) CaptureScreenshot(testName string) (string, error) {
 	timestamp := time.Now().Format("20060102_150405")
 	filename := fmt.Sprintf("%s_%s.png", testName, timestamp)
 	filePath := filepath.Join(c.outputDir, "screenshots", filename)
-	
+
 	return c.tester.TakeScreenshot(filePath)
 }
 
@@ -39,7 +39,7 @@ func (c *UICaptureManager) CaptureScreenshotWithName(filename string) (string, e
 	if !filepath.IsAbs(filename) {
 		filename = filepath.Join(c.outputDir, "screenshots", filename)
 	}
-	
+
 	return c.tester.TakeScreenshot(filename)
 }
 
@@ -49,23 +49,23 @@ func (c *UICaptureManager) CapturePageSource(testName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	timestamp := time.Now().Format("20060102_150405")
 	filename := fmt.Sprintf("%s_%s.html", testName, timestamp)
 	filePath := filepath.Join(c.outputDir, "page_sources", filename)
-	
+
 	// Ensure directory exists
 	dir := filepath.Dir(filePath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return "", NewGowrightError(BrowserError, "failed to create page source directory", err)
 	}
-	
+
 	// Write page source to file
 	err = os.WriteFile(filePath, []byte(source), 0644)
 	if err != nil {
 		return "", NewGowrightError(BrowserError, "failed to save page source", err)
 	}
-	
+
 	return filePath, nil
 }
 
@@ -75,23 +75,23 @@ func (c *UICaptureManager) CapturePageSourceWithName(filename string) (string, e
 	if err != nil {
 		return "", err
 	}
-	
+
 	if !filepath.IsAbs(filename) {
 		filename = filepath.Join(c.outputDir, "page_sources", filename)
 	}
-	
+
 	// Ensure directory exists
 	dir := filepath.Dir(filename)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return "", NewGowrightError(BrowserError, "failed to create page source directory", err)
 	}
-	
+
 	// Write page source to file
 	err = os.WriteFile(filename, []byte(source), 0644)
 	if err != nil {
 		return "", NewGowrightError(BrowserError, "failed to save page source", err)
 	}
-	
+
 	return filename, nil
 }
 
@@ -102,7 +102,7 @@ func (c *UICaptureManager) CaptureOnFailure(testName string, err error) (*Failur
 		Error:     err,
 		Timestamp: time.Now(),
 	}
-	
+
 	// Capture screenshot
 	screenshotPath, screenshotErr := c.CaptureScreenshot(fmt.Sprintf("%s_failure", testName))
 	if screenshotErr == nil {
@@ -110,7 +110,7 @@ func (c *UICaptureManager) CaptureOnFailure(testName string, err error) (*Failur
 	} else {
 		capture.CaptureErrors = append(capture.CaptureErrors, fmt.Sprintf("screenshot capture failed: %v", screenshotErr))
 	}
-	
+
 	// Capture page source
 	pageSourcePath, pageSourceErr := c.CapturePageSource(fmt.Sprintf("%s_failure", testName))
 	if pageSourceErr == nil {
@@ -118,14 +118,14 @@ func (c *UICaptureManager) CaptureOnFailure(testName string, err error) (*Failur
 	} else {
 		capture.CaptureErrors = append(capture.CaptureErrors, fmt.Sprintf("page source capture failed: %v", pageSourceErr))
 	}
-	
+
 	// Get current URL if possible
 	if rodTester, ok := c.tester.(*RodUITester); ok {
 		if currentURL, urlErr := rodTester.GetCurrentURL(); urlErr == nil {
 			capture.CurrentURL = currentURL
 		}
 	}
-	
+
 	return capture, nil
 }
 
@@ -144,7 +144,7 @@ type FailureCapture struct {
 type CaptureOptions struct {
 	IncludeTimestamp bool   `json:"include_timestamp"`
 	CustomPrefix     string `json:"custom_prefix,omitempty"`
-	Format           string `json:"format,omitempty"` // png, jpg for screenshots
+	Format           string `json:"format,omitempty"`  // png, jpg for screenshots
 	Quality          int    `json:"quality,omitempty"` // for jpg screenshots
 }
 
@@ -153,27 +153,27 @@ func (c *UICaptureManager) AdvancedCaptureScreenshot(testName string, options *C
 	if options == nil {
 		return c.CaptureScreenshot(testName)
 	}
-	
+
 	var filename string
 	if options.CustomPrefix != "" {
 		filename = options.CustomPrefix
 	} else {
 		filename = testName
 	}
-	
+
 	if options.IncludeTimestamp {
 		timestamp := time.Now().Format("20060102_150405")
 		filename = fmt.Sprintf("%s_%s", filename, timestamp)
 	}
-	
+
 	format := "png"
 	if options.Format != "" {
 		format = options.Format
 	}
-	
+
 	filename = fmt.Sprintf("%s.%s", filename, format)
 	filePath := filepath.Join(c.outputDir, "screenshots", filename)
-	
+
 	// For now, we only support PNG format as that's what rod provides
 	// In a more advanced implementation, we could add format conversion
 	return c.tester.TakeScreenshot(filePath)
@@ -182,19 +182,19 @@ func (c *UICaptureManager) AdvancedCaptureScreenshot(testName string, options *C
 // CleanupOldCaptures removes capture files older than the specified duration
 func (c *UICaptureManager) CleanupOldCaptures(maxAge time.Duration) error {
 	cutoffTime := time.Now().Add(-maxAge)
-	
+
 	// Clean screenshots
 	screenshotDir := filepath.Join(c.outputDir, "screenshots")
 	if err := c.cleanupDirectory(screenshotDir, cutoffTime); err != nil {
 		return fmt.Errorf("failed to cleanup screenshots: %w", err)
 	}
-	
+
 	// Clean page sources
 	pageSourceDir := filepath.Join(c.outputDir, "page_sources")
 	if err := c.cleanupDirectory(pageSourceDir, cutoffTime); err != nil {
 		return fmt.Errorf("failed to cleanup page sources: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -203,22 +203,22 @@ func (c *UICaptureManager) cleanupDirectory(dir string, cutoffTime time.Time) er
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		return nil // Directory doesn't exist, nothing to clean
 	}
-	
+
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return err
 	}
-	
+
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
 		}
-		
+
 		info, err := entry.Info()
 		if err != nil {
 			continue
 		}
-		
+
 		if info.ModTime().Before(cutoffTime) {
 			filePath := filepath.Join(dir, entry.Name())
 			if err := os.Remove(filePath); err != nil {
@@ -227,14 +227,14 @@ func (c *UICaptureManager) cleanupDirectory(dir string, cutoffTime time.Time) er
 			}
 		}
 	}
-	
+
 	return nil
 }
 
 // GetCaptureStats returns statistics about captured files
 func (c *UICaptureManager) GetCaptureStats() (*CaptureStats, error) {
 	stats := &CaptureStats{}
-	
+
 	// Count screenshots
 	screenshotDir := filepath.Join(c.outputDir, "screenshots")
 	screenshotCount, screenshotSize, err := c.getDirectoryStats(screenshotDir)
@@ -242,7 +242,7 @@ func (c *UICaptureManager) GetCaptureStats() (*CaptureStats, error) {
 		stats.ScreenshotCount = screenshotCount
 		stats.ScreenshotTotalSize = screenshotSize
 	}
-	
+
 	// Count page sources
 	pageSourceDir := filepath.Join(c.outputDir, "page_sources")
 	pageSourceCount, pageSourceSize, err := c.getDirectoryStats(pageSourceDir)
@@ -250,10 +250,10 @@ func (c *UICaptureManager) GetCaptureStats() (*CaptureStats, error) {
 		stats.PageSourceCount = pageSourceCount
 		stats.PageSourceTotalSize = pageSourceSize
 	}
-	
+
 	stats.TotalFiles = stats.ScreenshotCount + stats.PageSourceCount
 	stats.TotalSize = stats.ScreenshotTotalSize + stats.PageSourceTotalSize
-	
+
 	return stats, nil
 }
 
@@ -262,29 +262,29 @@ func (c *UICaptureManager) getDirectoryStats(dir string) (int, int64, error) {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		return 0, 0, nil
 	}
-	
+
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return 0, 0, err
 	}
-	
+
 	var count int
 	var totalSize int64
-	
+
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
 		}
-		
+
 		info, err := entry.Info()
 		if err != nil {
 			continue
 		}
-		
+
 		count++
 		totalSize += info.Size()
 	}
-	
+
 	return count, totalSize, nil
 }
 

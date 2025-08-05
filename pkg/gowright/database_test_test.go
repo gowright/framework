@@ -13,10 +13,10 @@ func TestNewDatabaseTest(t *testing.T) {
 		Connection: "test_conn",
 		Query:      "SELECT 1",
 	}
-	
+
 	tester := NewDatabaseTester()
 	dbTest := NewDatabaseTest(testCase, tester)
-	
+
 	assert.NotNil(t, dbTest)
 	assert.Equal(t, "test_query", dbTest.GetName())
 	assert.Equal(t, testCase, dbTest.testCase)
@@ -34,7 +34,7 @@ func TestDatabaseTestImpl_Execute(t *testing.T) {
 			},
 		},
 	}
-	
+
 	err := tester.Initialize(config)
 	require.NoError(t, err)
 
@@ -117,12 +117,12 @@ func TestDatabaseTestImpl_Execute(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			dbTest := NewDatabaseTest(tt.testCase, tester)
 			result := dbTest.Execute()
-			
+
 			assert.Equal(t, tt.testCase.Name, result.Name)
 			assert.Equal(t, tt.expectedStatus, result.Status)
 			assert.NotZero(t, result.Duration)
 			assert.NotEmpty(t, result.Logs)
-			
+
 			if tt.expectedStatus == TestStatusError || tt.expectedStatus == TestStatusFailed {
 				assert.NotNil(t, result.Error)
 			} else {
@@ -146,14 +146,14 @@ func TestDatabaseAssertions_AssertRowCount(t *testing.T) {
 			},
 		},
 	}
-	
+
 	err := tester.Initialize(config)
 	require.NoError(t, err)
 
 	// Setup test data
 	_, err = tester.Execute("test", "CREATE TABLE count_test (id INTEGER PRIMARY KEY, value TEXT)")
 	require.NoError(t, err)
-	
+
 	_, err = tester.Execute("test", "INSERT INTO count_test (value) VALUES ('a'), ('b'), ('c')")
 	require.NoError(t, err)
 
@@ -188,7 +188,7 @@ func TestDatabaseAssertions_AssertRowCount(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := assertions.AssertRowCount("test", tt.query, tt.expectedCount)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				gowrightErr, ok := err.(*GowrightError)
@@ -215,14 +215,14 @@ func TestDatabaseAssertions_AssertRowsAffected(t *testing.T) {
 			},
 		},
 	}
-	
+
 	err := tester.Initialize(config)
 	require.NoError(t, err)
 
 	// Setup test data
 	_, err = tester.Execute("test", "CREATE TABLE affected_test (id INTEGER PRIMARY KEY, value TEXT)")
 	require.NoError(t, err)
-	
+
 	_, err = tester.Execute("test", "INSERT INTO affected_test (value) VALUES ('a'), ('b'), ('c')")
 	require.NoError(t, err)
 
@@ -257,7 +257,7 @@ func TestDatabaseAssertions_AssertRowsAffected(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := assertions.AssertRowsAffected("test", tt.query, tt.expectedAffected)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				gowrightErr, ok := err.(*GowrightError)
@@ -284,14 +284,14 @@ func TestDatabaseAssertions_AssertRowExists(t *testing.T) {
 			},
 		},
 	}
-	
+
 	err := tester.Initialize(config)
 	require.NoError(t, err)
 
 	// Setup test data
 	_, err = tester.Execute("test", "CREATE TABLE exists_test (id INTEGER PRIMARY KEY, name TEXT)")
 	require.NoError(t, err)
-	
+
 	_, err = tester.Execute("test", "INSERT INTO exists_test (name) VALUES ('Alice')")
 	require.NoError(t, err)
 
@@ -317,7 +317,7 @@ func TestDatabaseAssertions_AssertRowExists(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := assertions.AssertRowExists("test", tt.query)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				gowrightErr, ok := err.(*GowrightError)
@@ -344,14 +344,14 @@ func TestDatabaseAssertions_AssertRowNotExists(t *testing.T) {
 			},
 		},
 	}
-	
+
 	err := tester.Initialize(config)
 	require.NoError(t, err)
 
 	// Setup test data
 	_, err = tester.Execute("test", "CREATE TABLE not_exists_test (id INTEGER PRIMARY KEY, name TEXT)")
 	require.NoError(t, err)
-	
+
 	_, err = tester.Execute("test", "INSERT INTO not_exists_test (name) VALUES ('Alice')")
 	require.NoError(t, err)
 
@@ -377,7 +377,7 @@ func TestDatabaseAssertions_AssertRowNotExists(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := assertions.AssertRowNotExists("test", tt.query)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				gowrightErr, ok := err.(*GowrightError)
@@ -404,14 +404,14 @@ func TestDatabaseAssertions_AssertColumnValue(t *testing.T) {
 			},
 		},
 	}
-	
+
 	err := tester.Initialize(config)
 	require.NoError(t, err)
 
 	// Setup test data
 	_, err = tester.Execute("test", "CREATE TABLE column_test (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)")
 	require.NoError(t, err)
-	
+
 	_, err = tester.Execute("test", "INSERT INTO column_test (name, age) VALUES ('Alice', 30)")
 	require.NoError(t, err)
 
@@ -464,7 +464,7 @@ func TestDatabaseAssertions_AssertColumnValue(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := assertions.AssertColumnValue("test", tt.query, tt.columnName, tt.expectedValue)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				gowrightErr, ok := err.(*GowrightError)
@@ -491,25 +491,25 @@ func TestDatabaseAssertions_AssertColumnContains(t *testing.T) {
 			},
 		},
 	}
-	
+
 	err := tester.Initialize(config)
 	require.NoError(t, err)
 
 	// Setup test data
 	_, err = tester.Execute("test", "CREATE TABLE contains_test (id INTEGER PRIMARY KEY, description TEXT)")
 	require.NoError(t, err)
-	
+
 	_, err = tester.Execute("test", "INSERT INTO contains_test (description) VALUES ('This is a test description')")
 	require.NoError(t, err)
 
 	assertions := NewDatabaseAssertions(tester)
 
 	tests := []struct {
-		name               string
-		query              string
-		columnName         string
-		expectedSubstring  string
-		expectError        bool
+		name              string
+		query             string
+		columnName        string
+		expectedSubstring string
+		expectError       bool
 	}{
 		{
 			name:              "contains substring",
@@ -537,7 +537,7 @@ func TestDatabaseAssertions_AssertColumnContains(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := assertions.AssertColumnContains("test", tt.query, tt.columnName, tt.expectedSubstring)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				gowrightErr, ok := err.(*GowrightError)
@@ -564,7 +564,7 @@ func TestDatabaseAssertions_AssertTableExists(t *testing.T) {
 			},
 		},
 	}
-	
+
 	err := tester.Initialize(config)
 	require.NoError(t, err)
 
@@ -594,7 +594,7 @@ func TestDatabaseAssertions_AssertTableExists(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := assertions.AssertTableExists("test", tt.tableName)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				gowrightErr, ok := err.(*GowrightError)
@@ -621,7 +621,7 @@ func TestTransactionTestRunner_RunInTransaction(t *testing.T) {
 			},
 		},
 	}
-	
+
 	err := tester.Initialize(config)
 	require.NoError(t, err)
 
@@ -636,9 +636,9 @@ func TestTransactionTestRunner_RunInTransaction(t *testing.T) {
 			_, err := tx.Execute("INSERT INTO tx_test (value) VALUES (?)", "test_value")
 			return err
 		})
-		
+
 		assert.NoError(t, err)
-		
+
 		// Verify data was committed
 		result, err := tester.Execute("test", "SELECT COUNT(*) as count FROM tx_test")
 		assert.NoError(t, err)
@@ -654,9 +654,9 @@ func TestTransactionTestRunner_RunInTransaction(t *testing.T) {
 			// Return an error to trigger rollback
 			return NewGowrightError(DatabaseError, "intentional error", nil)
 		})
-		
+
 		assert.Error(t, err)
-		
+
 		// Verify data was rolled back - count should still be 1
 		result, err := tester.Execute("test", "SELECT COUNT(*) as count FROM tx_test")
 		assert.NoError(t, err)
@@ -680,7 +680,7 @@ func TestTransactionTestRunner_RunWithRollback(t *testing.T) {
 			},
 		},
 	}
-	
+
 	err := tester.Initialize(config)
 	require.NoError(t, err)
 
@@ -693,19 +693,19 @@ func TestTransactionTestRunner_RunWithRollback(t *testing.T) {
 	err = runner.RunWithRollback("test", func(tx Transaction) error {
 		_, err := tx.Execute("INSERT INTO rollback_test (value) VALUES (?)", "temp_value")
 		assert.NoError(t, err)
-		
+
 		// Verify data exists within transaction
 		result, err := tx.Execute("SELECT COUNT(*) as count FROM rollback_test")
 		assert.NoError(t, err)
 		assert.Len(t, result.Rows, 1)
 		count := result.Rows[0]["count"]
 		assert.Equal(t, int64(1), count)
-		
+
 		return nil
 	})
-	
+
 	assert.NoError(t, err)
-	
+
 	// Verify data was rolled back
 	result, err := tester.Execute("test", "SELECT COUNT(*) as count FROM rollback_test")
 	assert.NoError(t, err)
@@ -726,7 +726,7 @@ func TestHelperFunctions(t *testing.T) {
 			"name": "test",
 			"age":  30,
 		}
-		
+
 		columns := getColumnNames(row)
 		assert.Len(t, columns, 3)
 		assert.Contains(t, columns, "id")
