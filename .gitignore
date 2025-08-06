@@ -31,10 +31,6 @@ go.work.sum
 # env file
 .env
 
-docs/node_modules/
-docs/.astro/
-docs/package-lock.json
-
 # Node.js artifacts (if any)
 package-lock.json
 node_modules/

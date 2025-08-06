@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Gowright Testing Framework</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="description" content="Comprehensive testing framework for Go with unified UI, API, database, and integration testing capabilities">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <!-- Theme: Simple Dark -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple-dark.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/prismjs@1/themes/prism.css">
+  <style>
+    :root {
+      --theme-color: #2196f3;
+      --theme-color-dark: #1976d2;
+    }
+    
+    .app-name-link img {
+      width: 2rem;
+    }
+    
+    .markdown-section {
+      max-width: 80rem;
+    }
+    
+    .cover.show {
+      background: linear-gradient(to left bottom, hsl(118, 100%, 85%) 0%, hsl(181, 100%, 85%) 100%);
+    }
+    
+    .cover-main > p:last-child a {
+      background-color: var(--theme-color);
+      border-color: var(--theme-color);
+    }
+    
+    .cover-main > p:last-child a:hover {
+      background-color: var(--theme-color-dark);
+      border-color: var(--theme-color-dark);
+    }
+    
+    .sidebar-nav li.active > a {
+      border-right: 2px solid var(--theme-color);
+      color: var(--theme-color);
+      font-weight: 600;
+    }
+    
+    /* Custom styling for cards */
+    .grid.cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    
+    .grid.cards > div {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 1rem;
+      background: #fafafa;
+    }
+    
+    .grid.cards h3 {
+      margin-top: 0;
+      color: var(--theme-color);
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.$docsify = {
+      name: 'Gowright Testing Framework',
+      repo: 'https://github.com/gowright/framework',
+      homepage: 'README.md',
+      loadSidebar: true,
+      loadNavbar: true,
+      subMaxLevel: 3,
+      auto2top: true,
+      coverpage: true,
+      onlyCover: false,
+      executeScript: true,
+      search: {
+        maxAge: 86400000,
+        paths: 'auto',
+        placeholder: 'Search documentation...',
+        noData: 'No results found.',
+        depth: 6,
+        hideOtherSidebarContent: false
+      },
+      copyCode: {
+        buttonText: 'Copy',
+        errorText: 'Error',
+        successText: 'Copied'
+      },
+      pagination: {
+        previousText: 'Previous',
+        nextText: 'Next',
+        crossChapter: true,
+        crossChapterText: true
+      },
+      tabs: {
+        persist: true,
+        sync: true,
+        theme: 'classic',
+        tabComments: true,
+        tabHeadings: true
+      },
+      themeable: {
+        readyTransition: true,
+        responsiveTables: true
+      },
+      plugins: [
+        function(hook, vm) {
+          hook.beforeEach(function(html) {
+            // Add edit link
+            const url = 'https://github.com/gowright/framework/edit/main/docs/' + vm.route.file;
+            const editHtml = '[:memo: Edit Document](' + url + ')\n\n';
+            return editHtml + html;
+          });
+          
+          hook.afterEach(function(html, next) {
+            // Add footer
+            const footer = [
+              '<hr/>',
+              '<footer>',
+              '<span>&copy; 2025 Gowright Team. Built with <a href="https://docsify.js.org" target="_blank">Docsify</a>.</span>',
+              '</footer>'
+            ].join('');
+            next(html + footer);
+          });
+        }
+      ]
+    }
+  </script>
+  <!-- Docsify v4 -->
+  <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+  <!-- Search plugin -->
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
+  <!-- Copy code plugin -->
+  <script src="//cdn.jsdelivr.net/npm/docsify-copy-code@2"></script>
+  <!-- Pagination plugin -->
+  <script src="//cdn.jsdelivr.net/npm/docsify-pagination/dist/docsify-pagination.min.js"></script>
+  <!-- Tabs plugin -->
+  <script src="//cdn.jsdelivr.net/npm/docsify-tabs@1"></script>
+  <!-- Themeable plugin -->
+  <script src="//cdn.jsdelivr.net/npm/docsify-themeable@0"></script>
+  <!-- Zoom image plugin -->
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/zoom-image.min.js"></script>
+  <!-- Prism components for syntax highlighting -->
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-go.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-json.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-yaml.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-sql.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-dockerfile.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-makefile.min.js"></script>
+</body>
+</html>
