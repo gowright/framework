@@ -31,23 +31,30 @@ Rich reporting, detailed error messages, and comprehensive debugging tools make 
 ```mermaid
 graph TB
     A[Gowright Framework] --> B[UI Testing Module]
-    A --> C[API Testing Module]
-    A --> D[Database Testing Module]
-    A --> E[Integration Testing Module]
+    A --> C[Mobile Testing Module]
+    A --> D[API Testing Module]
+    A --> E[Database Testing Module]
+    A --> F[Integration Testing Module]
     
-    B --> F[go-rod/rod Browser Automation]
-    C --> G[go-resty/resty HTTP Client]
-    D --> H[database/sql Multi-DB Support]
-    E --> I[Workflow Orchestration]
+    B --> G[go-rod/rod Browser Automation]
+    C --> H[Appium WebDriver Protocol]
+    D --> I[go-resty/resty HTTP Client]
+    E --> J[database/sql Multi-DB Support]
+    F --> K[Workflow Orchestration]
     
-    A --> J[Assertion System]
-    A --> K[Reporting Engine]
-    A --> L[Resource Manager]
-    A --> M[Parallel Executor]
+    H --> H1[Android Automation]
+    H --> H2[iOS Automation]
+    H --> H3[Touch Gestures]
+    H --> H4[App Management]
     
-    K --> N[JSON Reports]
-    K --> O[HTML Reports]
-    K --> P[Remote Reporting]
+    A --> L[Assertion System]
+    A --> M[Reporting Engine]
+    A --> N[Resource Manager]
+    A --> O[Parallel Executor]
+    
+    M --> P[JSON Reports]
+    M --> Q[HTML Reports]
+    M --> R[Remote Reporting]
 ```
 
 ## Key Components
@@ -56,9 +63,15 @@ graph TB
 
 **UI Testing**
 - Browser automation using Chrome DevTools Protocol
-- Mobile device emulation
+- Web application testing and form handling
 - Screenshot capture and visual validation
-- Element interaction and form handling
+- Element interaction and page navigation
+
+**Mobile Testing**
+- Native mobile app automation using Appium WebDriver protocol
+- Cross-platform support for Android and iOS
+- Touch gestures and mobile-specific interactions
+- App lifecycle management and device control
 
 **API Testing**
 - HTTP/REST endpoint testing
@@ -134,6 +147,47 @@ apiTest := gowright.NewAPITestBuilder("Create User", "POST", "/users").
     Build()
 ```
 
+### Mobile Application Testing
+Test native mobile applications with cross-platform support:
+
+```go
+// Test mobile app login workflow
+func testMobileLogin(platform string) {
+    client := gowright.NewAppiumClient("http://localhost:4723")
+    
+    var caps gowright.AppiumCapabilities
+    if platform == "Android" {
+        caps = gowright.AppiumCapabilities{
+            PlatformName: "Android",
+            DeviceName:   "emulator-5554",
+            AppPackage:   "com.example.app",
+            AppActivity:  ".LoginActivity",
+        }
+    } else {
+        caps = gowright.AppiumCapabilities{
+            PlatformName: "iOS",
+            DeviceName:   "iPhone 13 Simulator",
+            BundleID:     "com.example.app",
+        }
+    }
+    
+    client.CreateSession(ctx, caps)
+    defer client.DeleteSession(ctx)
+    
+    // Platform-agnostic element finding
+    var loginButton *gowright.AppiumElement
+    if platform == "Android" {
+        by, value := gowright.Android.Text("Login")
+        loginButton, _ = client.FindElement(ctx, by, value)
+    } else {
+        by, value := gowright.IOS.Label("Login")
+        loginButton, _ = client.FindElement(ctx, by, value)
+    }
+    
+    loginButton.Click(ctx)
+}
+```
+
 ### Database Migration Testing
 Validate database schema changes and data migrations:
 
@@ -180,5 +234,6 @@ Or jump directly to specific testing modules:
 
 - [API Testing](../testing-modules/api-testing.md)
 - [UI Testing](../testing-modules/ui-testing.md)
+- [Mobile Testing](../testing-modules/mobile-testing.md)
 - [Database Testing](../testing-modules/database-testing.md)
 - [Integration Testing](../testing-modules/integration-testing.md)

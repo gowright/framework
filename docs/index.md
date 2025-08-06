@@ -20,6 +20,13 @@ Browser automation using Chrome DevTools Protocol via [go-rod/rod](https://githu
 
 <div>
 
+### 📱 Mobile Testing
+Native mobile app automation using Appium WebDriver protocol for Android and iOS
+
+</div>
+
+<div>
+
 ### 🚀 API Testing
 HTTP/REST API testing with [go-resty/resty](https://github.com/go-resty/resty/v2)
 
@@ -114,10 +121,12 @@ func main() {
 ### Testing Modules
 - [API Testing](testing-modules/api-testing.md) - REST API testing with validation
 - [UI Testing](testing-modules/ui-testing.md) - Browser automation and UI testing
+- [Mobile Testing](testing-modules/mobile-testing.md) - Native mobile app automation with Appium
 - [Database Testing](testing-modules/database-testing.md) - Database operations and validation
 - [Integration Testing](testing-modules/integration-testing.md) - Multi-system workflows
 
 ### Advanced Features
+- [Architecture Overview](advanced/architecture.md) - Framework architecture and design patterns
 - [Test Suites](advanced/test-suites.md) - Organizing and running test collections
 - [Assertions](advanced/assertions.md) - Custom assertion system
 - [Reporting](advanced/reporting.md) - Professional HTML and JSON reports
@@ -128,8 +137,10 @@ func main() {
 - [Basic Usage](examples/basic-usage.md) - Framework initialization examples
 - [API Testing Examples](examples/api-testing.md) - Comprehensive API testing scenarios
 - [UI Testing Examples](examples/ui-testing.md) - Browser automation examples
+- [Mobile Testing Examples](examples/mobile-testing.md) - Native mobile app automation examples
 - [Database Examples](examples/database-testing.md) - Database testing patterns
 - [Integration Examples](examples/integration-testing.md) - End-to-end workflows
+- [Integration Flow Diagrams](examples/integration-flow-diagrams.md) - Visual integration patterns
 
 ### Reference
 - [API Reference](reference/api.md) - Complete API documentation

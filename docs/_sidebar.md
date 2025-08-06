@@ -11,10 +11,12 @@
 * Testing Modules
   * [API Testing](testing-modules/api-testing.md)
   * [UI Testing](testing-modules/ui-testing.md)
+  * [Mobile Testing](testing-modules/mobile-testing.md)
   * [Database Testing](testing-modules/database-testing.md)
   * [Integration Testing](testing-modules/integration-testing.md)
 
 * Advanced Features
+  * [Architecture Overview](advanced/architecture.md)
   * [Test Suites](advanced/test-suites.md)
   * [Assertions](advanced/assertions.md)
   * [Reporting](advanced/reporting.md)
@@ -25,8 +27,10 @@
   * [Basic Usage](examples/basic-usage.md)
   * [API Testing Examples](examples/api-testing.md)
   * [UI Testing Examples](examples/ui-testing.md)
+  * [Mobile Testing Examples](examples/mobile-testing.md)
   * [Database Examples](examples/database-testing.md)
   * [Integration Examples](examples/integration-testing.md)
+  * [Integration Flow Diagrams](examples/integration-flow-diagrams.md)
 
 * Reference
   * [API Reference](reference/api.md)

@@ -62,6 +62,10 @@
       margin-top: 0;
       color: var(--theme-color);
     }
+    .mermaid {
+      background-color: #fff;
+      padding: 15px;
+    }
   </style>
 </head>
 <body>
@@ -154,7 +158,10 @@
   <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-dockerfile.min.js"></script>
   <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-makefile.min.js"></script>
   <script type="module">
-    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({ startOnLoad: true });
+    window.mermaid = mermaid;
   </script>
+  <script src="//unpkg.com/docsify-mermaid@2.0.1/dist/docsify-mermaid.js"></script>
 </body>
 </html>

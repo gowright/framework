@@ -47,6 +47,11 @@ config := &gowright.Config{
         },
     },
     
+    AppiumConfig: &gowright.AppiumConfig{
+        ServerURL: "http://localhost:4723",
+        Timeout:   30 * time.Second,
+    },
+    
     ReportConfig: &gowright.ReportConfig{
         LocalReports: gowright.LocalReportConfig{
             JSON:      true,
@@ -95,6 +100,7 @@ type Config struct {
     BrowserConfig       *BrowserConfig           `json:"browser_config"`
     APIConfig           *APIConfig               `json:"api_config"`
     DatabaseConfig      *DatabaseConfig          `json:"database_config"`
+    AppiumConfig        *AppiumConfig            `json:"appium_config"`
     ReportConfig        *ReportConfig            `json:"report_config"`
     ParallelRunnerConfig *ParallelRunnerConfig   `json:"parallel_runner_config"`
 }
@@ -216,6 +222,29 @@ type DBConnection struct {
   }
 }
 ```
+
+### Appium Configuration
+
+```go
+type AppiumConfig struct {
+    ServerURL string        `json:"server_url"`
+    Timeout   time.Duration `json:"timeout"`
+}
+```
+
+**Example:**
+```json
+{
+  "appium_config": {
+    "server_url": "http://localhost:4723",
+    "timeout": "30s"
+  }
+}
+```
+
+**Environment Variables:**
+- `GOWRIGHT_APPIUM_SERVER_URL` - Appium server URL
+- `GOWRIGHT_APPIUM_TIMEOUT` - Request timeout
 
 ### Report Configuration
 
