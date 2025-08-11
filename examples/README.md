@@ -156,6 +156,35 @@ The Gowright framework provides unified testing capabilities across:
 
 **Run**: `go run examples/reporting_example.go`
 
+### 9. Appium Mobile Testing (`appium_testing_example.go`)
+
+**Purpose**: Comprehensive mobile application testing using Appium WebDriver protocol.
+
+**Key Features**:
+- Android and iOS app automation
+- Mobile web testing
+- Touch gestures and device interactions
+- App lifecycle management
+- Cross-platform element locators
+- Screenshot capture and debugging
+
+**Test Scenarios**:
+- Android calculator app automation with touch interactions
+- iOS app testing using XCUITest automation
+- Mobile web browser automation
+- Touch gestures (tap, swipe, pinch, zoom)
+- App installation and management
+- Device orientation and keyboard handling
+- Integration with GoWright testing framework
+
+**Run**: `go run examples/appium_testing_example.go`
+
+**Prerequisites**: 
+- Appium Server running on http://localhost:4723
+- Android SDK (for Android testing)
+- Xcode (for iOS testing on macOS)
+- Device/Emulator configured and accessible
+
 ## Running the Examples
 
 ### Prerequisites

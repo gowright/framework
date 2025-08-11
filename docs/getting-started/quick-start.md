@@ -14,6 +14,7 @@ Create a new file called `first_test.go`:
 package main
 
 import (
+    "context"
     "fmt"
     "log"
     "net/http"
@@ -43,6 +44,9 @@ func TestFirstGowrightTest(t *testing.T) {
     
     // Test 3: UI Testing (optional - requires Chrome)
     testUIInteraction(t, framework)
+    
+    // Test 4: Mobile Testing (optional - requires Appium server)
+    testMobileInteraction(t, framework)
     
     fmt.Println("✅ All tests completed successfully!")
 }
@@ -168,6 +172,64 @@ func testUIInteraction(t *testing.T, framework *gowright.Framework) {
     assert.NotEmpty(t, screenshotPath)
     
     fmt.Println("  ✅ UI test passed")
+}
+
+func testMobileInteraction(t *testing.T, framework *gowright.Framework) {
+    fmt.Println("📱 Testing mobile interaction...")
+    
+    // Create Appium client
+    client := gowright.NewAppiumClient("http://localhost:4723")
+    ctx := context.Background()
+    
+    // Define Android capabilities for calculator app
+    caps := gowright.AppiumCapabilities{
+        PlatformName:   "Android",
+        DeviceName:     "emulator-5554",
+        AppPackage:     "com.android.calculator2",
+        AppActivity:    ".Calculator",
+        AutomationName: "UiAutomator2",
+        NoReset:        true,
+    }
+    
+    // Create session
+    err := client.CreateSession(ctx, caps)
+    if err != nil {
+        fmt.Printf("  ⚠️  Skipping mobile test (Appium not available): %v\n", err)
+        return
+    }
+    defer client.DeleteSession(ctx)
+    
+    // Perform simple calculation: 5 + 3
+    digit5, err := client.WaitForElementClickable(ctx, gowright.ByID, "com.android.calculator2:id/digit_5", 5*time.Second)
+    if err != nil {
+        fmt.Printf("  ⚠️  Skipping mobile test (Calculator not available): %v\n", err)
+        return
+    }
+    
+    err = digit5.Click(ctx)
+    assert.NoError(t, err)
+    
+    plus, err := client.FindElement(ctx, gowright.ByID, "com.android.calculator2:id/op_add")
+    assert.NoError(t, err)
+    err = plus.Click(ctx)
+    assert.NoError(t, err)
+    
+    digit3, err := client.FindElement(ctx, gowright.ByID, "com.android.calculator2:id/digit_3")
+    assert.NoError(t, err)
+    err = digit3.Click(ctx)
+    assert.NoError(t, err)
+    
+    equals, err := client.FindElement(ctx, gowright.ByID, "com.android.calculator2:id/eq")
+    assert.NoError(t, err)
+    err = equals.Click(ctx)
+    assert.NoError(t, err)
+    
+    // Take screenshot
+    screenshot, err := client.TakeScreenshot(ctx)
+    assert.NoError(t, err)
+    assert.NotEmpty(t, screenshot)
+    
+    fmt.Println("  ✅ Mobile test passed")
 }
 
 func main() {

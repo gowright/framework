@@ -1,350 +1,278 @@
 // Package gowright provides a comprehensive testing framework for Go
-// that supports UI, API, database, and integration testing.
+// that supports UI, API, database, mobile, and integration testing.
+//
+// This is the main entry point that brings together all the modular packages:
+// - core: Main framework orchestrator and interfaces
+// - config: Configuration management
+// - ui: UI/browser testing
+// - api: API/HTTP testing
+// - database: Database testing
+// - mobile: Mobile/Appium testing
+// - integration: Integration testing that orchestrates all other modules
+// - reporting: Test result reporting
+// - assertions: Common assertion utilities
 package gowright
 
 import (
-	"fmt"
-	"sync"
+	"github.com/gowright/framework/pkg/api"
+	"github.com/gowright/framework/pkg/config"
+	"github.com/gowright/framework/pkg/core"
+	"github.com/gowright/framework/pkg/database"
+	"github.com/gowright/framework/pkg/integration"
+	"github.com/gowright/framework/pkg/mobile"
+	"github.com/gowright/framework/pkg/reporting"
+	"github.com/gowright/framework/pkg/ui"
 )
 
-// Gowright is the main framework struct that orchestrates all testing activities
-type Gowright struct {
-	config    *Config
-	reporter  *ReportManager
-	testSuite *TestSuite
+// Re-export core types and interfaces for backward compatibility
+type (
+	// Core framework types
+	Gowright         = core.Gowright
+	GowrightOptions  = core.GowrightOptions
+	TestSuite        = core.TestSuite
+	Test             = core.Test
+	TestStatus       = core.TestStatus
+	TestCaseResult   = core.TestCaseResult
+	TestResults      = core.TestResults
+	GowrightError    = core.GowrightError
+	ErrorType        = core.ErrorType
+	AssertionStep    = core.AssertionStep
+	TestSuiteManager = core.TestSuiteManager
+	TestExecutor     = core.TestExecutor
+	ParallelRunner   = core.ParallelRunner
+	VersionInfo      = core.VersionInfo
+	RetryConfig      = core.RetryConfig
+	TestContext      = core.TestContext
+	TestAssertion    = core.TestAssertion
 
-	// Dependency injection support
-	uiTester          UITester
-	apiTester         APITester
-	databaseTester    DatabaseTester
-	integrationTester IntegrationTester
+	// Test types
+	UITest              = core.UITest
+	UIAction            = core.UIAction
+	UIAssertion         = core.UIAssertion
+	APITest             = core.APITest
+	APIExpectation      = core.APIExpectation
+	APIResponse         = core.APIResponse
+	DatabaseTest        = core.DatabaseTest
+	DatabaseExpectation = core.DatabaseExpectation
+	DatabaseResult      = core.DatabaseResult
+	IntegrationTest     = core.IntegrationTest
+	IntegrationStep     = core.IntegrationStep
+	IntegrationStepType = core.IntegrationStepType
 
-	// Internal state management
-	initialized bool
-	mutex       sync.RWMutex
+	// Step actions and validations
+	UIStepAction           = core.UIStepAction
+	APIStepAction          = core.APIStepAction
+	DatabaseStepAction     = core.DatabaseStepAction
+	APIStepValidation      = core.APIStepValidation
+	DatabaseStepValidation = core.DatabaseStepValidation
+
+	// Interfaces
+	Tester            = core.Tester
+	UITester          = core.UITester
+	APITester         = core.APITester
+	DatabaseTester    = core.DatabaseTester
+	IntegrationTester = core.IntegrationTester
+	Reporter          = core.Reporter
+	Transaction       = core.Transaction
+
+	// Configuration types
+	Config             = config.Config
+	BrowserConfig      = config.BrowserConfig
+	APIConfig          = config.APIConfig
+	DatabaseConfig     = config.DatabaseConfig
+	DatabaseConnection = config.DatabaseConnection
+	ReportConfig       = config.ReportConfig
+	MobileConfig       = config.MobileConfig
+	AuthConfig         = config.AuthConfig
+	TLSConfig          = config.TLSConfig
+	ProxyConfig        = config.ProxyConfig
+	AppiumServerConfig = config.AppiumServerConfig
+	DeviceConfig       = config.DeviceConfig
+)
+
+// Re-export constants
+const (
+	TestStatusPassed  = core.TestStatusPassed
+	TestStatusFailed  = core.TestStatusFailed
+	TestStatusSkipped = core.TestStatusSkipped
+	TestStatusError   = core.TestStatusError
+
+	StepTypeUI       = core.StepTypeUI
+	StepTypeAPI      = core.StepTypeAPI
+	StepTypeDatabase = core.StepTypeDatabase
+	StepTypeMobile   = core.StepTypeMobile
+
+	ConfigurationError = core.ConfigurationError
+	BrowserError       = core.BrowserError
+	APIError           = core.APIError
+	DatabaseError      = core.DatabaseError
+	ReportingError     = core.ReportingError
+	AssertionError     = core.AssertionError
+)
+
+// Factory functions for creating tester instances
+
+// NewUITester creates a new UI tester instance
+func NewUITester() UITester {
+	return ui.NewUITester()
 }
 
-// GowrightOptions provides options for creating a Gowright instance
-type GowrightOptions struct {
-	Config            *Config
-	UITester          UITester
-	APITester         APITester
-	DatabaseTester    DatabaseTester
-	IntegrationTester IntegrationTester
-	ReportManager     *ReportManager
+// NewAPITester creates a new API tester instance
+func NewAPITester() APITester {
+	return api.NewAPITester()
 }
+
+// NewDatabaseTester creates a new database tester instance
+func NewDatabaseTester() DatabaseTester {
+	return database.NewDatabaseTester()
+}
+
+// NewMobileTester creates a new mobile tester instance
+func NewMobileTester() *mobile.MobileTester {
+	return mobile.NewMobileTester()
+}
+
+// NewIntegrationTester creates a new integration tester instance
+func NewIntegrationTester() IntegrationTester {
+	return integration.NewIntegrationTester()
+}
+
+// NewReportManager creates a new report manager
+func NewReportManager(cfg *ReportConfig) *reporting.ReportManager {
+	return reporting.NewReportManager(cfg)
+}
+
+// Convenience functions for creating Gowright instances
 
 // New creates a new Gowright instance with the provided configuration
-func New(config *Config) *Gowright {
-	if config == nil {
-		config = DefaultConfig()
-	}
-
-	return &Gowright{
-		config:      config,
-		reporter:    NewReportManager(config.ReportConfig),
-		initialized: false,
-	}
+func New(cfg *Config) *Gowright {
+	return core.New(cfg)
 }
 
 // NewWithOptions creates a new Gowright instance with dependency injection support
 func NewWithOptions(options *GowrightOptions) *Gowright {
-	if options == nil {
-		return NewWithDefaults()
-	}
-
-	config := options.Config
-	if config == nil {
-		config = DefaultConfig()
-	}
-
-	reporter := options.ReportManager
-	if reporter == nil {
-		reporter = NewReportManager(config.ReportConfig)
-	}
-
-	return &Gowright{
-		config:            config,
-		reporter:          reporter,
-		uiTester:          options.UITester,
-		apiTester:         options.APITester,
-		databaseTester:    options.DatabaseTester,
-		integrationTester: options.IntegrationTester,
-		initialized:       false,
-	}
+	return core.NewWithOptions(options)
 }
 
 // NewWithDefaults creates a new Gowright instance with default configuration
 func NewWithDefaults() *Gowright {
-	return New(DefaultConfig())
+	return core.NewWithDefaults()
 }
 
-// NewGowright creates a new Gowright instance with the provided configuration
-// This is an alias for New() to maintain compatibility
-func NewGowright(config *Config) (*Gowright, error) {
-	gowright := New(config)
+// NewGowright creates a new Gowright instance with the provided configuration and initializes it
+// This is an alias for backward compatibility
+func NewGowright(cfg *Config) (*Gowright, error) {
+	gowright := New(cfg)
 	if err := gowright.Initialize(); err != nil {
 		return nil, err
 	}
 	return gowright, nil
 }
 
-// Initialize initializes the framework and all its components
-func (g *Gowright) Initialize() error {
-	g.mutex.Lock()
-	defer g.mutex.Unlock()
+// DefaultConfig returns a default configuration
+func DefaultConfig() *Config {
+	return config.DefaultConfig()
+}
 
-	if g.initialized {
-		return nil
+// NewGowrightError creates a new GowrightError
+func NewGowrightError(errorType ErrorType, message string, cause error) *GowrightError {
+	return core.NewGowrightError(errorType, message, cause)
+}
+
+// NewGowrightWithAllTesters creates a Gowright instance with all tester types configured
+func NewGowrightWithAllTesters(cfg *Config) *Gowright {
+	if cfg == nil {
+		cfg = DefaultConfig()
 	}
 
-	// Initialize testers if they are provided
-	if g.uiTester != nil {
-		if err := g.uiTester.Initialize(g.config.BrowserConfig); err != nil {
-			return NewGowrightError(ConfigurationError, "failed to initialize UI tester", err)
-		}
+	options := &GowrightOptions{
+		Config:            cfg,
+		UITester:          NewUITester(),
+		APITester:         NewAPITester(),
+		DatabaseTester:    NewDatabaseTester(),
+		IntegrationTester: NewIntegrationTester(),
 	}
 
-	if g.apiTester != nil {
-		if err := g.apiTester.Initialize(g.config.APIConfig); err != nil {
-			return NewGowrightError(ConfigurationError, "failed to initialize API tester", err)
-		}
+	gowright := NewWithOptions(options)
+
+	// Set up integration tester with other testers
+	if integrationTester, ok := gowright.GetIntegrationTester().(*integration.IntegrationTester); ok {
+		integrationTester.SetUITester(gowright.GetUITester())
+		integrationTester.SetAPITester(gowright.GetAPITester())
+		integrationTester.SetDatabaseTester(gowright.GetDatabaseTester())
 	}
 
-	if g.databaseTester != nil {
-		if err := g.databaseTester.Initialize(g.config.DatabaseConfig); err != nil {
-			return NewGowrightError(ConfigurationError, "failed to initialize database tester", err)
-		}
-	}
-
-	if g.integrationTester != nil {
-		if err := g.integrationTester.Initialize(g.config); err != nil {
-			return NewGowrightError(ConfigurationError, "failed to initialize integration tester", err)
-		}
-	}
-
-	g.initialized = true
-	return nil
+	return gowright
 }
 
-// Cleanup performs cleanup operations for all components
-func (g *Gowright) Cleanup() error {
-	g.mutex.Lock()
-	defer g.mutex.Unlock()
+// Additional utility functions
 
-	var errors []error
-
-	// Cleanup testers
-	if g.uiTester != nil {
-		if err := g.uiTester.Cleanup(); err != nil {
-			errors = append(errors, fmt.Errorf("UI tester cleanup failed: %w", err))
-		}
-	}
-
-	if g.apiTester != nil {
-		if err := g.apiTester.Cleanup(); err != nil {
-			errors = append(errors, fmt.Errorf("API tester cleanup failed: %w", err))
-		}
-	}
-
-	if g.databaseTester != nil {
-		if err := g.databaseTester.Cleanup(); err != nil {
-			errors = append(errors, fmt.Errorf("database tester cleanup failed: %w", err))
-		}
-	}
-
-	if g.integrationTester != nil {
-		if err := g.integrationTester.Cleanup(); err != nil {
-			errors = append(errors, fmt.Errorf("integration tester cleanup failed: %w", err))
-		}
-	}
-
-	g.initialized = false
-
-	if len(errors) > 0 {
-		return fmt.Errorf("cleanup errors occurred: %v", errors)
-	}
-
-	return nil
+// GetVersion returns the current framework version
+func GetVersion() string {
+	return core.GetVersion()
 }
 
-// IsInitialized returns whether the framework has been initialized
-func (g *Gowright) IsInitialized() bool {
-	g.mutex.RLock()
-	defer g.mutex.RUnlock()
-	return g.initialized
+// GetVersionInfo returns detailed version information
+func GetVersionInfo() *VersionInfo {
+	return core.GetVersionInfo()
 }
 
-// SetTestSuite sets the test suite for this Gowright instance
-func (g *Gowright) SetTestSuite(suite *TestSuite) {
-	g.mutex.Lock()
-	defer g.mutex.Unlock()
-	g.testSuite = suite
+// GetVersionString returns a formatted version string
+func GetVersionString() string {
+	return core.GetVersionString()
 }
 
-// CreateTestSuiteManager creates a new test suite manager for the current test suite
-func (g *Gowright) CreateTestSuiteManager() *TestSuiteManager {
-	g.mutex.RLock()
-	defer g.mutex.RUnlock()
-
-	if g.testSuite == nil {
-		g.testSuite = &TestSuite{
-			Name:  "Default Test Suite",
-			Tests: make([]Test, 0),
-		}
-	}
-
-	return NewTestSuiteManager(g.testSuite, g.config)
+// NewTestExecutor creates a new test executor
+func NewTestExecutor(testName string) *TestExecutor {
+	return core.NewTestExecutor(testName)
 }
 
-// ExecuteTestSuite executes the current test suite and returns results
-func (g *Gowright) ExecuteTestSuite() (*TestResults, error) {
-	tsm := g.CreateTestSuiteManager()
-	return tsm.ExecuteTestSuite()
+// NewTestAssertion creates a new test assertion instance
+func NewTestAssertion(testName string) *TestAssertion {
+	return core.NewTestAssertion(testName)
 }
 
-// GetTestSuite returns the current test suite
-func (g *Gowright) GetTestSuite() *TestSuite {
-	g.mutex.RLock()
-	defer g.mutex.RUnlock()
-	return g.testSuite
+// NewTestSuite creates a new test suite
+func NewTestSuite(name string) *TestSuite {
+	return core.NewTestSuite(name)
 }
 
-// GetConfig returns the current configuration
-func (g *Gowright) GetConfig() *Config {
-	g.mutex.RLock()
-	defer g.mutex.RUnlock()
-	return g.config
+// NewFunctionTest creates a new function-based test
+func NewFunctionTest(name string, testFunc func(*TestContext)) Test {
+	return core.NewFunctionTest(name, testFunc)
 }
 
-// GetReporter returns the report manager
-func (g *Gowright) GetReporter() *ReportManager {
-	g.mutex.RLock()
-	defer g.mutex.RUnlock()
-	return g.reporter
+// NewMockUITester creates a new mock UI tester
+func NewMockUITester() *core.MockUITester {
+	return core.NewMockUITester()
 }
 
-// GetUITester returns the UI tester instance
-func (g *Gowright) GetUITester() UITester {
-	g.mutex.RLock()
-	defer g.mutex.RUnlock()
-	return g.uiTester
+// NewMockAPITester creates a new mock API tester
+func NewMockAPITester() *core.MockAPITester {
+	return core.NewMockAPITester()
 }
 
-// GetAPITester returns the API tester instance
-func (g *Gowright) GetAPITester() APITester {
-	g.mutex.RLock()
-	defer g.mutex.RUnlock()
-	return g.apiTester
+// NewMockDatabaseTester creates a new mock database tester
+func NewMockDatabaseTester() *core.MockDatabaseTester {
+	return core.NewMockDatabaseTester()
 }
 
-// GetDatabaseTester returns the database tester instance
-func (g *Gowright) GetDatabaseTester() DatabaseTester {
-	g.mutex.RLock()
-	defer g.mutex.RUnlock()
-	return g.databaseTester
+// NewMockIntegrationTester creates a new mock integration tester
+func NewMockIntegrationTester() *core.MockIntegrationTester {
+	return core.NewMockIntegrationTester()
 }
 
-// GetIntegrationTester returns the integration tester instance
-func (g *Gowright) GetIntegrationTester() IntegrationTester {
-	g.mutex.RLock()
-	defer g.mutex.RUnlock()
-	return g.integrationTester
+// NewTestSuiteManager creates a new test suite manager
+func NewTestSuiteManager(suite *TestSuite, cfg *Config) *TestSuiteManager {
+	return core.NewTestSuiteManager(suite, cfg)
 }
 
-// SetUITester sets the UI tester instance
-func (g *Gowright) SetUITester(tester UITester) {
-	g.mutex.Lock()
-	defer g.mutex.Unlock()
-	g.uiTester = tester
+// NewParallelRunner creates a new parallel test runner
+func NewParallelRunner(cfg *Config, runnerConfig *core.ParallelRunnerConfig) *ParallelRunner {
+	return core.NewParallelRunner(cfg, runnerConfig)
 }
 
-// SetAPITester sets the API tester instance
-func (g *Gowright) SetAPITester(tester APITester) {
-	g.mutex.Lock()
-	defer g.mutex.Unlock()
-	g.apiTester = tester
-}
-
-// SetDatabaseTester sets the database tester instance
-func (g *Gowright) SetDatabaseTester(tester DatabaseTester) {
-	g.mutex.Lock()
-	defer g.mutex.Unlock()
-	g.databaseTester = tester
-}
-
-// SetIntegrationTester sets the integration tester instance
-func (g *Gowright) SetIntegrationTester(tester IntegrationTester) {
-	g.mutex.Lock()
-	defer g.mutex.Unlock()
-	g.integrationTester = tester
-}
-
-// ExecuteUITest executes a single UI test and returns the result
-func (g *Gowright) ExecuteUITest(test *UITest) *TestCaseResult {
-	g.mutex.RLock()
-	defer g.mutex.RUnlock()
-
-	if g.uiTester == nil {
-		return &TestCaseResult{
-			Name:   test.Name,
-			Status: TestStatusError,
-			Error:  NewGowrightError(ConfigurationError, "UI tester not configured", nil),
-		}
-	}
-
-	return g.uiTester.ExecuteTest(test)
-}
-
-// ExecuteAPITest executes a single API test and returns the result
-func (g *Gowright) ExecuteAPITest(test *APITest) *TestCaseResult {
-	g.mutex.RLock()
-	defer g.mutex.RUnlock()
-
-	if g.apiTester == nil {
-		return &TestCaseResult{
-			Name:   test.Name,
-			Status: TestStatusError,
-			Error:  NewGowrightError(ConfigurationError, "API tester not configured", nil),
-		}
-	}
-
-	return g.apiTester.ExecuteTest(test)
-}
-
-// ExecuteDatabaseTest executes a single database test and returns the result
-func (g *Gowright) ExecuteDatabaseTest(test *DatabaseTest) *TestCaseResult {
-	g.mutex.RLock()
-	defer g.mutex.RUnlock()
-
-	if g.databaseTester == nil {
-		return &TestCaseResult{
-			Name:   test.Name,
-			Status: TestStatusError,
-			Error:  NewGowrightError(ConfigurationError, "Database tester not configured", nil),
-		}
-	}
-
-	return g.databaseTester.ExecuteTest(test)
-}
-
-// ExecuteIntegrationTest executes a single integration test and returns the result
-func (g *Gowright) ExecuteIntegrationTest(test *IntegrationTest) *TestCaseResult {
-	g.mutex.RLock()
-	defer g.mutex.RUnlock()
-
-	if g.integrationTester == nil {
-		return &TestCaseResult{
-			Name:   test.Name,
-			Status: TestStatusError,
-			Error:  NewGowrightError(ConfigurationError, "Integration tester not configured", nil),
-		}
-	}
-
-	return g.integrationTester.ExecuteTest(test)
-}
-
-// Close performs cleanup and closes the Gowright instance
-func (g *Gowright) Close() error {
-	return g.Cleanup()
+// DefaultRetryConfig returns default retry configuration
+func DefaultRetryConfig() *RetryConfig {
+	return core.DefaultRetryConfig()
 }

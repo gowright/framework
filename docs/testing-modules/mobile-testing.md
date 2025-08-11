@@ -181,6 +181,12 @@ element, err := client.FindElement(ctx, gowright.ByClassName, "android.widget.Bu
 
 // By Accessibility ID (cross-platform)
 element, err := client.FindElement(ctx, gowright.ByAccessibilityID, "accessibility-id")
+
+// By Name
+element, err := client.FindElement(ctx, gowright.ByName, "element-name")
+
+// By Tag Name
+element, err := client.FindElement(ctx, gowright.ByTagName, "button")
 ```
 
 ### Platform-Specific Locators
@@ -337,6 +343,9 @@ err := client.Zoom(ctx, 200, 300)
 
 // Scroll to element with text
 err := client.ScrollTo(ctx, "element-text")
+
+// Long press with duration
+err := client.LongPress(ctx, 100, 200, 2000) // 2 seconds
 ```
 
 ## Wait Conditions
@@ -657,10 +666,11 @@ element, err := client.WaitForElementClickable(ctx, gowright.ByID, "button", 10*
 
 ```go
 // Use platform-specific helpers for better reliability
+var by, value string
 if platform == "Android" {
-    by, value := gowright.Android.Text("Click me")
+    by, value = gowright.Android.Text("Click me")
 } else {
-    by, value := gowright.IOS.Label("Click me")
+    by, value = gowright.IOS.Label("Click me")
 }
 element, err := client.FindElement(ctx, by, value)
 ```

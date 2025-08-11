@@ -51,6 +51,72 @@ If you plan to use UI testing features, you'll need Chrome or Chromium:
 === "Windows"
     Download and install Chrome from [https://www.google.com/chrome/](https://www.google.com/chrome/)
 
+#### For Mobile Testing (Optional)
+If you plan to use mobile testing features, you'll need Appium server and mobile development tools:
+
+=== "Appium Server"
+    ```bash
+    # Install Node.js (required for Appium)
+    # Ubuntu/Debian
+    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+    sudo apt-get install -y nodejs
+    
+    # macOS
+    brew install node
+    
+    # Windows - Download from https://nodejs.org/
+    
+    # Install Appium globally
+    npm install -g appium
+    
+    # Install Appium drivers
+    appium driver install uiautomator2  # For Android
+    appium driver install xcuitest      # For iOS (macOS only)
+    
+    # Start Appium server
+    appium
+    ```
+
+=== "Android Setup"
+    ```bash
+    # Install Android SDK
+    # Ubuntu/Debian
+    sudo apt install android-sdk
+    
+    # macOS
+    brew install --cask android-studio
+    
+    # Set environment variables
+    export ANDROID_HOME=$HOME/Android/Sdk
+    export PATH=$PATH:$ANDROID_HOME/emulator
+    export PATH=$PATH:$ANDROID_HOME/tools
+    export PATH=$PATH:$ANDROID_HOME/tools/bin
+    export PATH=$PATH:$ANDROID_HOME/platform-tools
+    
+    # Create Android Virtual Device (AVD)
+    avdmanager create avd -n test_device -k "system-images;android-30;google_apis;x86_64"
+    
+    # Start emulator
+    emulator -avd test_device
+    ```
+
+=== "iOS Setup (macOS only)"
+    ```bash
+    # Install Xcode from App Store
+    
+    # Install Xcode command line tools
+    xcode-select --install
+    
+    # Install iOS Simulator
+    # This is included with Xcode
+    
+    # List available simulators
+    xcrun simctl list devices
+    
+    # Start iOS Simulator
+    open -a Simulator
+    ```
+
 #### For Database Testing (Optional)
 Database drivers are included, but you may need database servers for testing:
 

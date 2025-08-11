@@ -21,7 +21,7 @@ Browser automation using Chrome DevTools Protocol via [go-rod/rod](https://githu
 <div>
 
 ### 📱 Mobile Testing
-Native mobile app automation using Appium WebDriver protocol for Android and iOS
+Native mobile app automation using Appium WebDriver protocol for Android and iOS with comprehensive touch gesture support
 
 </div>
 

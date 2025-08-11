@@ -10,14 +10,24 @@ Gowright is a comprehensive testing framework for Go that provides unified testi
 ## Features
 
 - **🌐 UI Testing**: Browser automation using Chrome DevTools Protocol via [go-rod/rod](https://github.com/go-rod/rod)
-- **📱 Mobile Testing**: Mobile UI testing with device emulation and touch interactions
+- **📱 Mobile Testing**: Comprehensive native mobile app automation using Appium WebDriver protocol
+  - Cross-platform support for Android and iOS
+  - Touch gestures and mobile-specific interactions
+  - Device management and app lifecycle control
+  - Smart platform-specific locators
 - **🔌 API Testing**: HTTP/REST API testing with [go-resty/resty](https://github.com/go-resty/resty/v2)
+- **� OpetnAPI Testing**: Comprehensive OpenAPI specification validation and testing
+  - Specification validation against OpenAPI 3.0.3 standard
+  - Breaking changes detection across git commits
+  - Circular reference detection in schema definitions
+  - Integration with GoWright test framework
 - **🗄️ Database Testing**: Multi-database support with transaction management
-- **🔗 Integration Testing**: Complex workflows spanning multiple systems
+- **🔗 Integration Testing**: Complex workflows spanning multiple systems with visual flow diagrams
 - **📊 Flexible Reporting**: Local (JSON, HTML) and remote reporting (Jira Xray, AIOTest, Report Portal)
 - **🧪 Testify Integration**: Compatible with [stretchr/testify](https://github.com/stretchr/testify)
 - **⚡ Parallel Execution**: Concurrent test execution with resource management
 - **🛡️ Error Recovery**: Graceful error handling and retry mechanisms
+- **🏗️ Modular Architecture**: Extensible design with comprehensive documentation and Mermaid diagrams
 
 ## Quick Start
 
@@ -79,6 +89,23 @@ config := &gowright.Config{
             },
         },
     },
+    AppiumConfig: &gowright.AppiumConfig{
+        ServerURL: "http://localhost:4723",
+        Timeout:   30 * time.Second,
+        DefaultCapabilities: gowright.AppiumCapabilities{
+            NewCommandTimeout: 60,
+            NoReset:           true,
+        },
+    },
+    
+    OpenAPIConfig: &gowright.OpenAPIConfig{
+        SpecPath:                "openapi.yaml",
+        ValidateSpec:            true,
+        DetectCircularRefs:      true,
+        CheckBreakingChanges:    true,
+        PreviousCommit:          "HEAD~1",
+        FailOnWarnings:          false,
+    },
     ReportConfig: &gowright.ReportConfig{
         LocalReports: gowright.LocalReportConfig{
             JSON:      true,
@@ -123,6 +150,22 @@ Example `gowright-config.json`:
     "headers": {
       "User-Agent": "Gowright-Test-Client"
     }
+  },
+  "appium_config": {
+    "server_url": "http://localhost:4723",
+    "timeout": "30s",
+    "default_capabilities": {
+      "newCommandTimeout": 60,
+      "noReset": true
+    }
+  },
+  "openapi_config": {
+    "spec_path": "openapi.yaml",
+    "validate_spec": true,
+    "detect_circular_refs": true,
+    "check_breaking_changes": true,
+    "previous_commit": "HEAD~1",
+    "fail_on_warnings": false
   },
   "report_config": {
     "local_reports": {
@@ -260,6 +303,197 @@ func TestWebApplication(t *testing.T) {
     screenshotPath, err := uiTester.TakeScreenshot("test-result.png")
     assert.NoError(t, err)
     assert.NotEmpty(t, screenshotPath)
+}
+```
+
+### Mobile Testing (Appium)
+
+Comprehensive mobile testing with cross-platform support and advanced gesture handling:
+
+```go
+func TestMobileApplication(t *testing.T) {
+    // Create Appium client
+    client := gowright.NewAppiumClient("http://localhost:4723")
+    ctx := context.Background()
+    
+    // Define Android capabilities
+    caps := gowright.AppiumCapabilities{
+        PlatformName:      "Android",
+        PlatformVersion:   "11",
+        DeviceName:        "emulator-5554",
+        AppPackage:        "com.android.calculator2",
+        AppActivity:       ".Calculator",
+        AutomationName:    "UiAutomator2",
+        NoReset:           true,
+        NewCommandTimeout: 60,
+    }
+    
+    // Create session
+    err := client.CreateSession(ctx, caps)
+    assert.NoError(t, err)
+    defer client.DeleteSession(ctx)
+    
+    // Find and interact with elements using smart locators
+    button, err := client.FindElement(ctx, gowright.ByID, "com.android.calculator2:id/digit_5")
+    assert.NoError(t, err)
+    
+    err = button.Click(ctx)
+    assert.NoError(t, err)
+    
+    // Advanced touch gestures
+    err = client.Tap(ctx, 100, 200)
+    assert.NoError(t, err)
+    
+    err = client.Swipe(ctx, 100, 200, 300, 400, 1000)
+    assert.NoError(t, err)
+    
+    // Multi-touch gestures
+    err = client.Pinch(ctx, 200, 200, 0.5) // Pinch to zoom out
+    assert.NoError(t, err)
+    
+    err = client.Zoom(ctx, 200, 200, 2.0) // Zoom in
+    assert.NoError(t, err)
+    
+    // Take screenshot for visual validation
+    screenshot, err := client.TakeScreenshot(ctx)
+    assert.NoError(t, err)
+    assert.NotEmpty(t, screenshot)
+    
+    // Smart wait conditions
+    element, err := client.WaitForElementClickable(ctx, gowright.ByID, "button-id", 10*time.Second)
+    assert.NoError(t, err)
+    
+    // Platform-specific locators
+    by, value := gowright.Android.Text("Click me")
+    androidElement, err := client.FindElement(ctx, by, value)
+    assert.NoError(t, err)
+    
+    // UIAutomator selector for complex Android queries
+    by, value = gowright.Android.UIAutomator("new UiSelector().textContains(\"Submit\")")
+    submitButton, err := client.FindElement(ctx, by, value)
+    assert.NoError(t, err)
+}
+
+func TestiOSApplication(t *testing.T) {
+    client := gowright.NewAppiumClient("http://localhost:4723")
+    ctx := context.Background()
+    
+    // Define iOS capabilities
+    caps := gowright.AppiumCapabilities{
+        PlatformName:      "iOS",
+        PlatformVersion:   "15.0",
+        DeviceName:        "iPhone 13 Simulator",
+        BundleID:          "com.apple.calculator",
+        AutomationName:    "XCUITest",
+        NoReset:           true,
+        NewCommandTimeout: 60,
+    }
+    
+    err := client.CreateSession(ctx, caps)
+    assert.NoError(t, err)
+    defer client.DeleteSession(ctx)
+    
+    // iOS-specific interactions
+    button, err := client.FindElement(ctx, gowright.ByAccessibilityID, "7")
+    assert.NoError(t, err)
+    
+    err = button.Click(ctx)
+    assert.NoError(t, err)
+    
+    // iOS predicate string locators
+    by, value := gowright.IOS.Predicate("name == 'Calculate' AND visible == 1")
+    calcButton, err := client.FindElement(ctx, by, value)
+    assert.NoError(t, err)
+    
+    // iOS class chain locators
+    by, value = gowright.IOS.ClassChain("**/XCUIElementTypeButton[`name == 'Submit'`]")
+    submitButton, err := client.FindElement(ctx, by, value)
+    assert.NoError(t, err)
+    
+    // Device management
+    orientation, err := client.GetOrientation(ctx)
+    assert.NoError(t, err)
+    assert.Contains(t, []string{"PORTRAIT", "LANDSCAPE"}, orientation)
+    
+    // App lifecycle management
+    err = client.ActivateApp(ctx, "com.apple.calculator")
+    assert.NoError(t, err)
+    
+    err = client.TerminateApp(ctx, "com.apple.calculator")
+    assert.NoError(t, err)
+}
+```
+
+### OpenAPI Testing
+
+Comprehensive OpenAPI specification validation and testing:
+
+```go
+func TestOpenAPISpecification(t *testing.T) {
+    // Create OpenAPI tester
+    tester, err := openapi.NewOpenAPITester("path/to/openapi.yaml")
+    assert.NoError(t, err)
+    defer tester.Close()
+    
+    // Validate OpenAPI specification
+    result := tester.ValidateSpec()
+    assert.True(t, result.Passed, "OpenAPI specification should be valid")
+    assert.Equal(t, "OpenAPI specification is valid", result.Message)
+    
+    // Check for circular references
+    circularResult := tester.DetectCircularReferences()
+    assert.True(t, circularResult.Passed, "No circular references should be found")
+    
+    // Check for breaking changes (requires git)
+    breakingResult := tester.CheckBreakingChanges("HEAD~1")
+    assert.True(t, breakingResult.Passed, "No breaking changes should be detected")
+    
+    // Print detailed results
+    for _, warning := range result.Warnings {
+        t.Logf("Warning at %s: %s", warning.Path, warning.Message)
+    }
+    
+    for _, err := range result.Errors {
+        t.Errorf("Error at %s: %s", err.Path, err.Message)
+    }
+}
+
+func TestOpenAPIWithGoWrightIntegration(t *testing.T) {
+    // Create OpenAPI integration
+    integration, err := openapi.NewOpenAPIIntegration("openapi.yaml")
+    assert.NoError(t, err)
+    
+    // Create a full test suite
+    suite := integration.CreateFullTestSuite("HEAD~1")
+    
+    // Execute individual tests
+    for _, test := range suite.Tests {
+        result := test.Execute()
+        assert.Equal(t, gowright.TestStatusPassed, result.Status)
+        t.Logf("Test %s: %s", result.Name, result.Status)
+    }
+}
+
+func TestOpenAPITestBuilder(t *testing.T) {
+    // Build a customized test suite using the builder pattern
+    suite, err := openapi.NewOpenAPITestBuilder("openapi.yaml").
+        WithValidation(true).
+        WithCircularReferenceDetection(true).
+        WithBreakingChangesDetection(true, "HEAD~1").
+        Build()
+    
+    assert.NoError(t, err)
+    assert.NotNil(t, suite)
+    assert.Greater(t, len(suite.Tests), 0)
+    
+    // Run the test suite
+    framework := gowright.NewWithDefaults()
+    defer framework.Close()
+    
+    framework.SetTestSuite(suite)
+    results, err := framework.ExecuteTestSuite()
+    assert.NoError(t, err)
+    assert.Greater(t, results.PassedTests, 0)
 }
 ```
 
@@ -407,6 +641,33 @@ config := &gowright.ReportConfig{
 }
 ```
 
+## Architecture
+
+Gowright features a modular architecture designed for extensibility and performance:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        Gowright Framework                           │
+├─────────────────────────────────────────────────────────────────────┤
+│  Framework Controller │ Config Manager │ Resource Manager           │
+├─────────────────────────────────────────────────────────────────────┤
+│ UI Module │ Mobile │ API Module │ OpenAPI │ Database │ Integration   │
+│           │ Module │            │ Module  │ Module   │ Module        │
+├─────────────────────────────────────────────────────────────────────┤
+│ go-rod    │ Appium │ go-resty   │ pb33f   │ sql      │ Orchestrator  │
+│ (Chrome)  │ Server │ (HTTP)     │ openapi │ drivers  │               │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+The framework provides:
+- **Unified API** across all testing modules
+- **Resource pooling** for optimal performance
+- **Parallel execution** with intelligent resource management
+- **Comprehensive reporting** with visual flow diagrams
+- **Cross-platform mobile support** with platform-specific optimizations
+
+For detailed architecture documentation with interactive Mermaid diagrams, see [Architecture Overview](docs/advanced/architecture.md).
+
 ## Advanced Features
 
 ### Custom Assertions
@@ -548,7 +809,7 @@ go func() {
 
 ## Documentation
 
-📖 **[Complete Documentation](https://gowright.github.io/framework/)** - Visit our Docsify site for comprehensive documentation
+📖 **[Complete Documentation](https://gowright.github.io/framework/)** - Visit our Docsify site for comprehensive documentation with interactive Mermaid diagrams
 
 ### Quick Links
 - [Getting Started](docs/getting-started/introduction.md) - Framework overview and setup
@@ -559,19 +820,32 @@ go func() {
 ### Testing Modules
 - [API Testing](docs/testing-modules/api-testing.md) - REST API testing with validation
 - [UI Testing](docs/testing-modules/ui-testing.md) - Browser automation and UI testing
+- [Mobile Testing](docs/testing-modules/mobile-testing.md) - Comprehensive native mobile app automation with Appium
+- [OpenAPI Testing](docs/testing-modules/openapi-testing.md) - OpenAPI specification validation and testing
 - [Database Testing](docs/testing-modules/database-testing.md) - Database operations and validation
 - [Integration Testing](docs/testing-modules/integration-testing.md) - Multi-system workflows
+
+### Advanced Features
+- [Architecture Overview](docs/advanced/architecture.md) - System architecture with detailed Mermaid diagrams
+- [Test Suites](docs/advanced/test-suites.md) - Advanced test organization
+- [Assertions](docs/advanced/assertions.md) - Custom assertion framework
+- [Reporting](docs/advanced/reporting.md) - Comprehensive reporting options
+- [Parallel Execution](docs/advanced/parallel-execution.md) - Concurrent test execution
+- [Resource Management](docs/advanced/resource-management.md) - Memory and resource optimization
 
 ### Examples
 - [Basic Usage](docs/examples/basic-usage.md) - Framework initialization examples
 - [API Testing Examples](docs/examples/api-testing.md) - Comprehensive API testing scenarios
 - [UI Testing Examples](docs/examples/ui-testing.md) - Browser automation examples
+- [Mobile Testing Examples](docs/examples/mobile-testing.md) - Comprehensive mobile automation examples with Android/iOS
+- [OpenAPI Testing Examples](docs/examples/openapi-testing.md) - OpenAPI specification validation and testing examples
 - [Database Examples](docs/examples/database-testing.md) - Database testing patterns
 - [Integration Examples](docs/examples/integration-testing.md) - End-to-end workflows
+- [Integration Flow Diagrams](docs/examples/integration-flow-diagrams.md) - Visual workflow representations
 
 ### Local Documentation
 
-To run the documentation locally with Docsify:
+To run the documentation locally with Docsify and Mermaid diagram support:
 
 ```bash
 # Install docsify-cli globally
@@ -586,6 +860,12 @@ python -m http.server 3000
 ```
 
 Then open [http://localhost:3000](http://localhost:3000) in your browser.
+
+The documentation includes:
+- **Interactive Mermaid diagrams** for architecture visualization
+- **Comprehensive mobile testing examples** for Android and iOS
+- **Integration flow diagrams** showing complex testing workflows
+- **Platform-specific guides** and best practices
 
 ### GitHub Pages Deployment
 
@@ -628,8 +908,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Acknowledgments
 
 - [go-rod/rod](https://github.com/go-rod/rod) for browser automation
+- [Appium](https://appium.io/) for mobile automation protocol
 - [go-resty/resty](https://github.com/go-resty/resty) for HTTP client
+- [pb33f/libopenapi](https://github.com/pb33f/libopenapi) for OpenAPI specification parsing and validation
 - [stretchr/testify](https://github.com/stretchr/testify) for testing utilities
+- [Mermaid](https://mermaid.js.org/) for architecture diagrams
 
 ## Support
 
