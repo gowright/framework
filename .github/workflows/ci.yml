@@ -90,6 +90,7 @@ jobs:
 
     - name: Run integration tests
       run: |
+        go mod tidy
         go run -tags ignore integration_test_runner.go
       env:
         POSTGRES_URL: postgres://postgres:postgres@localhost:5432/testdb?sslmode=disable
