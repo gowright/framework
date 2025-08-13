@@ -14,6 +14,8 @@
 package gowright
 
 import (
+	"fmt"
+
 	"github.com/gowright/framework/pkg/api"
 	"github.com/gowright/framework/pkg/config"
 	"github.com/gowright/framework/pkg/core"
@@ -88,6 +90,11 @@ type (
 	ProxyConfig        = config.ProxyConfig
 	AppiumServerConfig = config.AppiumServerConfig
 	DeviceConfig       = config.DeviceConfig
+
+	// Mobile/Appium types
+	AppiumClient       = mobile.AppiumClient
+	AppiumCapabilities = mobile.AppiumCapabilities
+	AppiumElement      = mobile.AppiumElement
 )
 
 // Re-export constants
@@ -108,6 +115,17 @@ const (
 	DatabaseError      = core.DatabaseError
 	ReportingError     = core.ReportingError
 	AssertionError     = core.AssertionError
+
+	// Appium locator strategies
+	ByID              = "id"
+	ByAccessibilityID = "accessibility id"
+	ByClassName       = "class name"
+	ByName            = "name"
+	ByXPath           = "xpath"
+	ByTagName         = "tag name"
+	ByLinkText        = "link text"
+	ByPartialLinkText = "partial link text"
+	ByCSSSelector     = "css selector"
 )
 
 // Factory functions for creating tester instances
@@ -130,6 +148,11 @@ func NewDatabaseTester() DatabaseTester {
 // NewMobileTester creates a new mobile tester instance
 func NewMobileTester() *mobile.MobileTester {
 	return mobile.NewMobileTester()
+}
+
+// NewAppiumClient creates a new Appium client instance
+func NewAppiumClient(serverURL string) *mobile.AppiumClient {
+	return mobile.NewAppiumClient(serverURL)
 }
 
 // NewIntegrationTester creates a new integration tester instance
@@ -276,3 +299,15 @@ func NewParallelRunner(cfg *Config, runnerConfig *core.ParallelRunnerConfig) *Pa
 func DefaultRetryConfig() *RetryConfig {
 	return core.DefaultRetryConfig()
 }
+
+// iOS provides iOS-specific locator helpers
+var iOS = struct {
+	Label func(string) (string, string)
+}{
+	Label: func(label string) (string, string) {
+		return "ios predicate string", fmt.Sprintf("label == '%s'", label)
+	},
+}
+
+// IOS is an alias for iOS for backward compatibility
+var IOS = iOS

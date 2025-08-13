@@ -16,7 +16,7 @@ Gowright is a comprehensive testing framework for Go that provides unified testi
   - Device management and app lifecycle control
   - Smart platform-specific locators
 - **🔌 API Testing**: HTTP/REST API testing with [go-resty/resty](https://github.com/go-resty/resty/v2)
-- **� OpetnAPI Testing**: Comprehensive OpenAPI specification validation and testing
+- **📊 OpenAPI Testing**: Comprehensive OpenAPI specification validation and testing
   - Specification validation against OpenAPI 3.0.3 standard
   - Breaking changes detection across git commits
   - Circular reference detection in schema definitions

@@ -3,6 +3,7 @@ package mobile
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -58,7 +59,7 @@ func NewAppiumClient(serverURL string) *AppiumClient {
 }
 
 // CreateSession creates a new Appium session
-func (c *AppiumClient) CreateSession(capabilities *AppiumCapabilities) error {
+func (c *AppiumClient) CreateSession(ctx context.Context, capabilities *AppiumCapabilities) error {
 	sessionData := map[string]interface{}{
 		"capabilities": map[string]interface{}{
 			"alwaysMatch": capabilities,
@@ -82,7 +83,7 @@ func (c *AppiumClient) CreateSession(capabilities *AppiumCapabilities) error {
 }
 
 // DeleteSession deletes the current Appium session
-func (c *AppiumClient) DeleteSession() error {
+func (c *AppiumClient) DeleteSession(ctx context.Context) error {
 	if c.sessionID == "" {
 		return nil
 	}
@@ -97,7 +98,7 @@ func (c *AppiumClient) DeleteSession() error {
 }
 
 // FindElement finds an element using the specified locator strategy
-func (c *AppiumClient) FindElement(using, value string) (*AppiumElement, error) {
+func (c *AppiumClient) FindElement(ctx context.Context, using, value string) (*AppiumElement, error) {
 	if c.sessionID == "" {
 		return nil, core.NewGowrightError(core.BrowserError, "no active session", nil)
 	}
@@ -133,7 +134,7 @@ func (c *AppiumClient) FindElement(using, value string) (*AppiumElement, error) 
 }
 
 // TakeScreenshot takes a screenshot and returns the base64 encoded image
-func (c *AppiumClient) TakeScreenshot() (string, error) {
+func (c *AppiumClient) TakeScreenshot(ctx context.Context) ([]byte, error) {
 	if c.sessionID == "" {
 		return "", core.NewGowrightError(core.BrowserError, "no active session", nil)
 	}
@@ -145,14 +146,20 @@ func (c *AppiumClient) TakeScreenshot() (string, error) {
 
 	screenshot, ok := response.Value.(string)
 	if !ok {
-		return "", core.NewGowrightError(core.BrowserError, "invalid screenshot response", nil)
+		return nil, core.NewGowrightError(core.BrowserError, "invalid screenshot response", nil)
 	}
 
-	return screenshot, nil
+	// Decode base64 to bytes
+	data, err := base64.StdEncoding.DecodeString(screenshot)
+	if err != nil {
+		return nil, core.NewGowrightError(core.BrowserError, "failed to decode screenshot", err)
+	}
+
+	return data, nil
 }
 
 // GetPageSource gets the current page source
-func (c *AppiumClient) GetPageSource() (string, error) {
+func (c *AppiumClient) GetPageSource(ctx context.Context) (string, error) {
 	if c.sessionID == "" {
 		return "", core.NewGowrightError(core.BrowserError, "no active session", nil)
 	}
@@ -171,7 +178,7 @@ func (c *AppiumClient) GetPageSource() (string, error) {
 }
 
 // SetOrientation sets the device orientation
-func (c *AppiumClient) SetOrientation(orientation string) error {
+func (c *AppiumClient) SetOrientation(ctx context.Context, orientation string) error {
 	if c.sessionID == "" {
 		return core.NewGowrightError(core.BrowserError, "no active session", nil)
 	}
@@ -241,7 +248,7 @@ func (c *AppiumClient) sendRequest(method, path string, data interface{}) (*Appi
 // Element methods
 
 // Click clicks on the element
-func (e *AppiumElement) Click() error {
+func (e *AppiumElement) Click(ctx context.Context) error {
 	_, err := e.client.sendRequest("POST", fmt.Sprintf("/session/%s/element/%s/click", e.client.sessionID, e.elementID), nil)
 	if err != nil {
 		return core.NewGowrightError(core.BrowserError, "failed to click element", err)
@@ -250,7 +257,7 @@ func (e *AppiumElement) Click() error {
 }
 
 // SendKeys sends text to the element
-func (e *AppiumElement) SendKeys(text string) error {
+func (e *AppiumElement) SendKeys(ctx context.Context, text string) error {
 	data := map[string]interface{}{
 		"value": []string{text},
 	}
@@ -263,7 +270,7 @@ func (e *AppiumElement) SendKeys(text string) error {
 }
 
 // GetText gets the text content of the element
-func (e *AppiumElement) GetText() (string, error) {
+func (e *AppiumElement) GetText(ctx context.Context) (string, error) {
 	response, err := e.client.sendRequest("GET", fmt.Sprintf("/session/%s/element/%s/text", e.client.sessionID, e.elementID), nil)
 	if err != nil {
 		return "", core.NewGowrightError(core.BrowserError, "failed to get element text", err)
@@ -278,7 +285,7 @@ func (e *AppiumElement) GetText() (string, error) {
 }
 
 // IsDisplayed checks if the element is displayed
-func (e *AppiumElement) IsDisplayed() (bool, error) {
+func (e *AppiumElement) IsDisplayed(ctx context.Context) (bool, error) {
 	response, err := e.client.sendRequest("GET", fmt.Sprintf("/session/%s/element/%s/displayed", e.client.sessionID, e.elementID), nil)
 	if err != nil {
 		return false, core.NewGowrightError(core.BrowserError, "failed to check if element is displayed", err)
@@ -293,7 +300,7 @@ func (e *AppiumElement) IsDisplayed() (bool, error) {
 }
 
 // IsEnabled checks if the element is enabled
-func (e *AppiumElement) IsEnabled() (bool, error) {
+func (e *AppiumElement) IsEnabled(ctx context.Context) (bool, error) {
 	response, err := e.client.sendRequest("GET", fmt.Sprintf("/session/%s/element/%s/enabled", e.client.sessionID, e.elementID), nil)
 	if err != nil {
 		return false, core.NewGowrightError(core.BrowserError, "failed to check if element is enabled", err)
@@ -305,4 +312,192 @@ func (e *AppiumElement) IsEnabled() (bool, error) {
 	}
 
 	return enabled, nil
+}
+
+// Additional methods used in examples
+
+// GetSessionID returns the current session ID
+func (c *AppiumClient) GetSessionID() string {
+	return c.sessionID
+}
+
+// WaitForElement waits for an element to be present
+func (c *AppiumClient) WaitForElement(ctx context.Context, using, value string, timeout time.Duration) (*AppiumElement, error) {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		element, err := c.FindElement(ctx, using, value)
+		if err == nil {
+			return element, nil
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+	return nil, core.NewGowrightError(core.BrowserError, "element not found within timeout", nil)
+}
+
+// WaitForElementClickable waits for an element to be clickable (present and enabled)
+func (c *AppiumClient) WaitForElementClickable(ctx context.Context, using, value string, timeout time.Duration) (*AppiumElement, error) {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		element, err := c.FindElement(ctx, using, value)
+		if err == nil {
+			enabled, err := element.IsEnabled(ctx)
+			if err == nil && enabled {
+				return element, nil
+			}
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+	return nil, core.NewGowrightError(core.BrowserError, "element not clickable within timeout", nil)
+}
+
+// FindElements finds multiple elements using the specified locator strategy
+func (c *AppiumClient) FindElements(ctx context.Context, using, value string) ([]*AppiumElement, error) {
+	if c.sessionID == "" {
+		return nil, core.NewGowrightError(core.BrowserError, "no active session", nil)
+	}
+
+	data := map[string]string{
+		"using": using,
+		"value": value,
+	}
+
+	response, err := c.sendRequest("POST", fmt.Sprintf("/session/%s/elements", c.sessionID), data)
+	if err != nil {
+		return nil, core.NewGowrightError(core.BrowserError, "failed to find elements", err)
+	}
+
+	elementsData, ok := response.Value.([]interface{})
+	if !ok {
+		return nil, core.NewGowrightError(core.BrowserError, "invalid elements response", nil)
+	}
+
+	var elements []*AppiumElement
+	for _, elementData := range elementsData {
+		elementMap, ok := elementData.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		var elementID string
+		if id, exists := elementMap["ELEMENT"]; exists {
+			elementID = id.(string)
+		} else if id, exists := elementMap["element-6066-11e4-a52e-4f735466cecf"]; exists {
+			elementID = id.(string)
+		} else {
+			continue
+		}
+
+		elements = append(elements, &AppiumElement{
+			client:    c,
+			elementID: elementID,
+		})
+	}
+
+	return elements, nil
+}
+
+// GetWindowSize returns the current window size
+func (c *AppiumClient) GetWindowSize(ctx context.Context) (int, int, error) {
+	if c.sessionID == "" {
+		return 0, 0, core.NewGowrightError(core.BrowserError, "no active session", nil)
+	}
+
+	response, err := c.sendRequest("GET", fmt.Sprintf("/session/%s/window/rect", c.sessionID), nil)
+	if err != nil {
+		return 0, 0, core.NewGowrightError(core.BrowserError, "failed to get window size", err)
+	}
+
+	sizeData, ok := response.Value.(map[string]interface{})
+	if !ok {
+		return 0, 0, core.NewGowrightError(core.BrowserError, "invalid window size response", nil)
+	}
+
+	width, _ := sizeData["width"].(float64)
+	height, _ := sizeData["height"].(float64)
+
+	return int(width), int(height), nil
+}
+
+// Swipe performs a swipe gesture
+func (c *AppiumClient) Swipe(ctx context.Context, startX, startY, endX, endY int, duration int) error {
+	if c.sessionID == "" {
+		return core.NewGowrightError(core.BrowserError, "no active session", nil)
+	}
+
+	actions := map[string]interface{}{
+		"actions": []map[string]interface{}{
+			{
+				"type": "pointer",
+				"id":   "finger1",
+				"parameters": map[string]interface{}{
+					"pointerType": "touch",
+				},
+				"actions": []map[string]interface{}{
+					{
+						"type":     "pointerMove",
+						"duration": 0,
+						"x":        startX,
+						"y":        startY,
+					},
+					{
+						"type": "pointerDown",
+					},
+					{
+						"type":     "pointerMove",
+						"duration": duration,
+						"x":        endX,
+						"y":        endY,
+					},
+					{
+						"type": "pointerUp",
+					},
+				},
+			},
+		},
+	}
+
+	_, err := c.sendRequest("POST", fmt.Sprintf("/session/%s/actions", c.sessionID), actions)
+	if err != nil {
+		return core.NewGowrightError(core.BrowserError, "failed to perform swipe", err)
+	}
+
+	return nil
+}
+
+// StartActivity starts an Android activity
+func (c *AppiumClient) StartActivity(ctx context.Context, appPackage, appActivity string) error {
+	if c.sessionID == "" {
+		return core.NewGowrightError(core.BrowserError, "no active session", nil)
+	}
+
+	data := map[string]string{
+		"appPackage":  appPackage,
+		"appActivity": appActivity,
+	}
+
+	_, err := c.sendRequest("POST", fmt.Sprintf("/session/%s/appium/device/start_activity", c.sessionID), data)
+	if err != nil {
+		return core.NewGowrightError(core.BrowserError, "failed to start activity", err)
+	}
+
+	return nil
+}
+
+// GetOrientation gets the current device orientation
+func (c *AppiumClient) GetOrientation(ctx context.Context) (string, error) {
+	if c.sessionID == "" {
+		return "", core.NewGowrightError(core.BrowserError, "no active session", nil)
+	}
+
+	response, err := c.sendRequest("GET", fmt.Sprintf("/session/%s/orientation", c.sessionID), nil)
+	if err != nil {
+		return "", core.NewGowrightError(core.BrowserError, "failed to get orientation", err)
+	}
+
+	orientation, ok := response.Value.(string)
+	if !ok {
+		return "", core.NewGowrightError(core.BrowserError, "invalid orientation response", nil)
+	}
+
+	return orientation, nil
 }
