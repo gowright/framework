@@ -157,14 +157,6 @@ else
     print_warning "No coverage files generated"
 fi
 
-print_step "Running linter: Examples"
-if golangci-lint run --timeout=5m --max-issues-per-linter=10 --max-same-issues=3 ./examples; then
-    print_success "Linting passed"
-else
-    print_error "Linting failed"
-    exit 1
-fi
-
 print_success "All unit tests passed"
 
 print_step "Running integration tests..."

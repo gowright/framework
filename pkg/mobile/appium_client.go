@@ -136,12 +136,12 @@ func (c *AppiumClient) FindElement(ctx context.Context, using, value string) (*A
 // TakeScreenshot takes a screenshot and returns the base64 encoded image
 func (c *AppiumClient) TakeScreenshot(ctx context.Context) ([]byte, error) {
 	if c.sessionID == "" {
-		return "", core.NewGowrightError(core.BrowserError, "no active session", nil)
+		return nil, core.NewGowrightError(core.BrowserError, "no active session", nil)
 	}
 
 	response, err := c.sendRequest("GET", fmt.Sprintf("/session/%s/screenshot", c.sessionID), nil)
 	if err != nil {
-		return "", core.NewGowrightError(core.BrowserError, "failed to take screenshot", err)
+		return nil, core.NewGowrightError(core.BrowserError, "failed to take screenshot", err)
 	}
 
 	screenshot, ok := response.Value.(string)
