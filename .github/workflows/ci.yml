@@ -244,9 +244,37 @@ jobs:
 
       - name: Generate documentation
         run: |
-          go install golang.org/x/tools/cmd/godoc@latest
           mkdir -p docs
-          godoc -html github.com/gowright/framework/pkg/gowright > docs/index.html
+          cat > docs/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>GoWright Framework Documentation</title>
+              <meta http-equiv="refresh" content="0; url=https://pkg.go.dev/github.com/gowright/framework">
+              <style>
+                  body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+                  .container { max-width: 600px; margin: 0 auto; }
+                  .logo { font-size: 2.5em; color: #007d9c; margin-bottom: 20px; }
+                  .message { font-size: 1.2em; margin-bottom: 30px; }
+                  .link { color: #007d9c; text-decoration: none; font-weight: bold; }
+                  .link:hover { text-decoration: underline; }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <div class="logo">🚀 GoWright</div>
+                  <h1>GoWright Testing Framework</h1>
+                  <p class="message">Redirecting to official documentation...</p>
+                  <p>If you are not redirected automatically, <a href="https://pkg.go.dev/github.com/gowright/framework" class="link">click here</a>.</p>
+                  <hr>
+                  <p><strong>GoWright</strong> - Comprehensive testing platform for Go applications</p>
+                  <p>Unified testing capabilities across UI, API, mobile, database, and integration testing scenarios.</p>
+              </div>
+          </body>
+          </html>
+          EOF
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
