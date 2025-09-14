@@ -33,13 +33,13 @@ print_error() {
 
 # Check if Go is installed
 if ! command -v go &> /dev/null; then
-    print_error "Go is not installed. Please install Go 1.22 or later."
+    print_error "Go is not installed. Please install Go 1.24 or later."
     exit 1
 fi
 
 # Check Go version
 GO_VERSION=$(go version | grep -oE 'go[0-9]+\.[0-9]+' | sed 's/go//')
-REQUIRED_VERSION="1.22"
+REQUIRED_VERSION="1.24"
 if [ "$(printf '%s\n' "$REQUIRED_VERSION" "$GO_VERSION" | sort -V | head -n1)" != "$REQUIRED_VERSION" ]; then
     print_warning "Go version $GO_VERSION detected. Recommended version is $REQUIRED_VERSION or later."
 fi
@@ -57,10 +57,18 @@ if ! command -v golangci-lint &> /dev/null; then
     export PATH=$PATH:$(go env GOPATH)/bin
 fi
 
+print_step "Running linter..."
+if golangci-lint run --timeout=5m --max-issues-per-linter=10 --max-same-issues=3; then
+    print_success "Linting passed"
+else
+    print_error "Linting failed"
+    exit 1
+fi
+
 print_step "Checking code formatting..."
 UNFORMATTED=$(gofmt -l .)
 if [ -n "$UNFORMATTED" ]; then
-    print_error "Code is not formatted. Run 'gofmt -w .' to fix:"
+    print_error "Code is not formatted:"
     echo "$UNFORMATTED"
     exit 1
 else
@@ -68,96 +76,18 @@ else
 fi
 
 print_step "Running unit tests with race detection and coverage..."
-
-# Define all packages to test
-PACKAGES=(
-    "./pkg/api"
-    "./pkg/assertions" 
-    "./pkg/config"
-    "./pkg/core"
-    "./pkg/database"
-    "./pkg/integration"
-    "./pkg/mobile"
-    "./pkg/openapi"
-    "./pkg/reporting"
-    "./pkg/testify"
-    "./pkg/ui"
-)
-
-# Initialize coverage files array
-COVERAGE_FILES=()
-FAILED_PACKAGES=()
-
-# Run tests for each package separately
-for pkg in "${PACKAGES[@]}"; do
-
-    print_step "Running linter: $pkg"
-    if golangci-lint run --timeout=5m --max-issues-per-linter=10 --max-same-issues=3 $pkg; then
-        print_success "Linting passed"
-    else
-        print_error "Linting failed"
-        exit 1
-    fi
-
-    pkg_name=$(basename "$pkg")
-    coverage_file="coverage_${pkg_name}.out"
-    
-    print_step "Testing package: $pkg"
-    
-    if go test -v -race -coverprofile="$coverage_file" "$pkg"; then
-        print_success "✅ $pkg tests passed"
-        if [ -f "$coverage_file" ]; then
-            COVERAGE_FILES+=("$coverage_file")
-        fi
-    else
-        print_error "❌ $pkg tests failed"
-        FAILED_PACKAGES+=("$pkg")
-    fi
-    echo "" # Add spacing between package test results
-done
-
-
-# Check if any packages failed
-if [ ${#FAILED_PACKAGES[@]} -ne 0 ]; then
-    print_error "The following packages failed testing:"
-    for failed_pkg in "${FAILED_PACKAGES[@]}"; do
-        echo -e "${RED}  - $failed_pkg${NC}"
-    done
-    exit 1
-fi
-
-# Merge coverage files if any exist
-if [ ${#COVERAGE_FILES[@]} -gt 0 ]; then
-    print_step "Merging coverage reports..."
-    
-    # Create merged coverage file
-    echo "mode: atomic" > coverage.out
-    
-    # Merge all coverage files
-    for coverage_file in "${COVERAGE_FILES[@]}"; do
-        if [ -f "$coverage_file" ]; then
-            # Skip the mode line and append the rest
-            tail -n +2 "$coverage_file" >> coverage.out
-        fi
-    done
-    
-    # Clean up individual coverage files
-    for coverage_file in "${COVERAGE_FILES[@]}"; do
-        rm -f "$coverage_file"
-    done
-    
-    print_success "Coverage reports merged"
+if go test -v -race -coverprofile=coverage.out ./...; then
+    print_success "Unit tests passed"
     
     # Display coverage summary
-    if command -v go &> /dev/null; then
+    if [ -f coverage.out ] && command -v go &> /dev/null; then
         COVERAGE=$(go tool cover -func=coverage.out | tail -1 | awk '{print $3}')
         echo -e "${BLUE}📊 Total coverage: $COVERAGE${NC}"
     fi
 else
-    print_warning "No coverage files generated"
+    print_error "Unit tests failed"
+    exit 1
 fi
-
-print_success "All unit tests passed"
 
 print_step "Running integration tests..."
 # Check if databases are available (optional for local testing)
@@ -183,6 +113,8 @@ else
     print_warning "Running integration tests without database connections..."
 fi
 
+# Run integration tests (matches CI/CD exactly)
+go mod tidy
 if go run integration_test_runner.go; then
     print_success "Integration tests passed"
 else
@@ -191,44 +123,11 @@ else
 fi
 
 print_step "Running performance benchmarks..."
-
-# Initialize benchmark results file
-echo "GoWright Performance Benchmarks" > benchmark_results.txt
-echo "=================================" >> benchmark_results.txt
-echo "" >> benchmark_results.txt
-
-BENCHMARK_FAILED=false
-
-# Run benchmarks for each package separately
-for pkg in "${PACKAGES[@]}"; do
-    pkg_name=$(basename "$pkg")
-    
-    print_step "Running benchmarks for: $pkg"
-    
-    # Check if package has benchmark tests
-    if ls "$pkg"/*_test.go 2>/dev/null | xargs grep -l "func Benchmark" >/dev/null 2>&1; then
-        echo "Package: $pkg" >> benchmark_results.txt
-        echo "$(date)" >> benchmark_results.txt
-        echo "---" >> benchmark_results.txt
-        
-        if go test -bench=. -benchmem "$pkg" >> benchmark_results.txt 2>&1; then
-            print_success "✅ $pkg benchmarks completed"
-        else
-            print_warning "⚠️  $pkg benchmarks completed with warnings"
-            BENCHMARK_FAILED=true
-        fi
-        
-        echo "" >> benchmark_results.txt
-    else
-        echo "No benchmarks found in $pkg" >> benchmark_results.txt
-        echo "" >> benchmark_results.txt
-    fi
-done
-
-if [ "$BENCHMARK_FAILED" = true ]; then
-    print_warning "Some performance benchmarks completed with warnings"
-else
+# Run benchmarks (matches CI/CD exactly)
+if go test -bench=. -benchmem ./pkg/... > benchmark_results.txt; then
     print_success "Performance benchmarks completed"
+else
+    print_warning "Performance benchmarks completed with warnings"
 fi
 
 echo -e "${BLUE}📈 Benchmark results saved to benchmark_results.txt${NC}"
@@ -243,11 +142,11 @@ print_success "🎉 All tests completed successfully!"
 
 # Summary
 echo ""
-echo -e "${BLUE}📋 Test Summary:${NC}"
+echo -e "${BLUE}📋 Test Summary (matches CI/CD pipeline):${NC}"
 echo "✅ Dependencies installed and verified"
 echo "✅ Code linting passed"
 echo "✅ Code formatting verified"
-echo "✅ Unit tests passed with race detection"
+echo "✅ Unit tests passed with race detection and coverage"
 echo "✅ Integration tests completed"
 echo "✅ Performance benchmarks completed"
 
@@ -255,6 +154,9 @@ if [ -f coverage.out ]; then
     echo -e "${BLUE}📁 Generated files:${NC}"
     echo "  - coverage.out (test coverage report)"
     echo "  - benchmark_results.txt (performance benchmarks)"
+    echo ""
+    echo -e "${BLUE}💡 View coverage report:${NC}"
+    echo "  go tool cover -html=coverage.out"
 fi
 
 echo ""

@@ -15,9 +15,10 @@ func BenchmarkResourceManagerOperations(b *testing.B) {
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
+		goroutineID := time.Now().UnixNano() // Unique ID per goroutine
 		resourceNum := 0
 		for pb.Next() {
-			resourceID := fmt.Sprintf("benchmark_resource_%d", resourceNum)
+			resourceID := fmt.Sprintf("benchmark_resource_%d_%d", goroutineID, resourceNum)
 			resourceNum++
 
 			resource := &MockResource{
@@ -310,9 +311,10 @@ func BenchmarkParallelResourceOperations(b *testing.B) {
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
+		goroutineID := time.Now().UnixNano() // Unique ID per goroutine
 		operationNum := 0
 		for pb.Next() {
-			opID := fmt.Sprintf("parallel_op_%d", operationNum)
+			opID := fmt.Sprintf("parallel_op_%d_%d", goroutineID, operationNum)
 			operationNum++
 
 			// Resource manager operations
