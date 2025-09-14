@@ -362,12 +362,12 @@ func (t *OpenAPITester) getSpecFromGit(commit string) ([]byte, error) {
 	if !isValidCommitHash(commit) {
 		return nil, fmt.Errorf("invalid commit hash: %s", commit)
 	}
-	
+
 	// Validate spec path to prevent path traversal
 	if !isValidSpecPath(t.specPath) {
 		return nil, fmt.Errorf("invalid spec path: %s", t.specPath)
 	}
-	
+
 	cmd := exec.Command("git", "show", fmt.Sprintf("%s:%s", commit, t.specPath))
 	return cmd.Output()
 }

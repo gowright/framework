@@ -387,13 +387,13 @@ func (m *MemoryEfficientCaptureManager) GetMemoryStats() MemoryStats {
 		ActiveCaptures:    len(m.activeCaptures),
 		TotalMemoryUsedMB: m.totalMemoryUsed / (1024 * 1024),
 		MaxMemoryUsageMB:  m.maxMemoryUsage / (1024 * 1024),
-		SystemMemoryMB:    func() int64 {
+		SystemMemoryMB: func() int64 {
 			if memStats.Sys > 9223372036854775807 { // max int64
 				return 9223372036854775807 / (1024 * 1024)
 			}
 			return int64(memStats.Sys) / (1024 * 1024)
 		}(),
-		GCCount:           int64(memStats.NumGC),
+		GCCount: int64(memStats.NumGC),
 	}
 }
 
