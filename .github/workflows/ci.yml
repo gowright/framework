@@ -2,20 +2,20 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   release:
-    types: [ published ]
+    types: [published]
 
 env:
-  GO_VERSION: '1.22'
+  GO_VERSION: "1.24"
 
 jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:13
@@ -29,7 +29,7 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-      
+
       mysql:
         image: mysql:8.0
         env:
@@ -44,77 +44,77 @@ jobs:
           - 3306:3306
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: ${{ env.GO_VERSION }}
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
 
-    - name: Cache Go modules
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
-    - name: Install Chrome
-      uses: browser-actions/setup-chrome@latest
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@latest
 
-    - name: Install dependencies
-      run: |
-        go mod download
-        go mod verify
+      - name: Install dependencies
+        run: |
+          go mod download
+          go mod verify
 
-    - name: Run linter
-      uses: golangci/golangci-lint-action@v3
-      with:
-        version: latest
-        args: --timeout=5m --max-issues-per-linter=10 --max-same-issues=3
+      - name: Run linter
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          args: --timeout=5m --max-issues-per-linter=10 --max-same-issues=3
 
-    - name: Check formatting
-      run: |
-        if [ -n "$(gofmt -l .)" ]; then
-          echo "Code is not formatted:"
-          gofmt -l .
-          exit 1
-        fi
+      - name: Check formatting
+        run: |
+          if [ -n "$(gofmt -l .)" ]; then
+            echo "Code is not formatted:"
+            gofmt -l .
+            exit 1
+          fi
 
-    - name: Run unit tests
-      run: |
-        go test -v -race -coverprofile=coverage.out ./...
+      - name: Run unit tests
+        run: |
+          go test -v -race -coverprofile=coverage.out ./...
 
-    - name: Run integration tests
-      run: |
-        go mod tidy
-        go run -tags ignore integration_test_runner.go
-      env:
-        POSTGRES_URL: postgres://postgres:postgres@localhost:5432/testdb?sslmode=disable
-        MYSQL_URL: root:root@tcp(localhost:3306)/testdb
+      - name: Run integration tests
+        run: |
+          go mod tidy
+          go run integration_test_runner.go
+        env:
+          POSTGRES_URL: postgres://postgres:postgres@localhost:5432/testdb?sslmode=disable
+          MYSQL_URL: root:root@tcp(localhost:3306)/testdb
 
-    - name: Run performance benchmarks
-      run: |
-        go test -bench=. -benchmem ./pkg/... > benchmark_results.txt
+      - name: Run performance benchmarks
+        run: |
+          go test -bench=. -benchmem ./pkg/... > benchmark_results.txt
 
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.out
-        flags: unittests
-        name: codecov-umbrella
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.out
+          flags: unittests
+          name: codecov-umbrella
 
-    - name: Upload test results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: test-results
-        path: |
-          coverage.out
-          benchmark_results.txt
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            coverage.out
+            benchmark_results.txt
 
   build:
     name: Build
@@ -130,27 +130,27 @@ jobs:
             goarch: arm64
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: ${{ env.GO_VERSION }}
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
 
-    - name: Build binary
-      run: |
-        mkdir -p dist
-        GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
-        go build -ldflags "-X github.com/gowright/framework/pkg/gowright.Version=${GITHUB_REF#refs/tags/} -X github.com/gowright/framework/pkg/gowright.GitCommit=${GITHUB_SHA} -X github.com/gowright/framework/pkg/gowright.BuildDate=$(date -u '+%Y-%m-%d_%H:%M:%S')" \
-        -o dist/gowright-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }} \
-        ./cmd/gowright
+      - name: Build binary
+        run: |
+          mkdir -p dist
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
+          go build -ldflags "-X github.com/gowright/framework/pkg/gowright.Version=${GITHUB_REF#refs/tags/} -X github.com/gowright/framework/pkg/gowright.GitCommit=${GITHUB_SHA} -X github.com/gowright/framework/pkg/gowright.BuildDate=$(date -u '+%Y-%m-%d_%H:%M:%S')" \
+          -o dist/gowright-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }} \
+          ./cmd/gowright
 
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
-        path: dist/
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/
 
   docker:
     name: Docker Build
@@ -159,40 +159,40 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Login to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Extract metadata
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: gowright/framework
-        tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=sha
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: gowright/framework
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
 
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        platforms: linux/amd64,linux/arm64
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   security:
     name: Security Scan
@@ -200,36 +200,36 @@ jobs:
     needs: test
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: ${{ env.GO_VERSION }}
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
 
-    - name: Run Gosec Security Scanner
-      uses: securecodewarrior/github-action-gosec@master
-      with:
-        args: '-fmt sarif -out gosec.sarif ./...'
+      - name: Run Gosec Security Scanner
+        uses: securecodewarrior/github-action-gosec@master
+        with:
+          args: "-fmt sarif -out gosec.sarif ./..."
 
-    - name: Upload SARIF file
-      uses: github/codeql-action/upload-sarif@v2
-      with:
-        sarif_file: gosec.sarif
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: gosec.sarif
 
-    - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
-      with:
-        scan-type: 'fs'
-        scan-ref: '.'
-        format: 'sarif'
-        output: 'trivy-results.sarif'
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-results.sarif"
 
-    - name: Upload Trivy scan results
-      uses: github/codeql-action/upload-sarif@v2
-      with:
-        sarif_file: 'trivy-results.sarif'
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: "trivy-results.sarif"
 
   release:
     name: Release
@@ -238,33 +238,33 @@ jobs:
     if: github.event_name == 'release'
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Download all artifacts
-      uses: actions/download-artifact@v4
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
 
-    - name: Create release archives
-      run: |
-        mkdir -p release
-        for dir in binaries-*; do
-          os_arch=${dir#binaries-}
-          cd "$dir"
-          if [[ "$os_arch" == *"windows"* ]]; then
-            zip -r "../release/gowright-${os_arch}.zip" .
-          else
-            tar -czf "../release/gowright-${os_arch}.tar.gz" .
-          fi
-          cd ..
-        done
+      - name: Create release archives
+        run: |
+          mkdir -p release
+          for dir in binaries-*; do
+            os_arch=${dir#binaries-}
+            cd "$dir"
+            if [[ "$os_arch" == *"windows"* ]]; then
+              zip -r "../release/gowright-${os_arch}.zip" .
+            else
+              tar -czf "../release/gowright-${os_arch}.tar.gz" .
+            fi
+            cd ..
+          done
 
-    - name: Upload release assets
-      uses: softprops/action-gh-release@v1
-      with:
-        files: release/*
-        generate_release_notes: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release/*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   docs:
     name: Deploy Documentation
@@ -273,22 +273,22 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: ${{ env.GO_VERSION }}
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
 
-    - name: Generate documentation
-      run: |
-        go install golang.org/x/tools/cmd/godoc@latest
-        mkdir -p docs
-        godoc -html github.com/gowright/framework/pkg/gowright > docs/index.html
+      - name: Generate documentation
+        run: |
+          go install golang.org/x/tools/cmd/godoc@latest
+          mkdir -p docs
+          godoc -html github.com/gowright/framework/pkg/gowright > docs/index.html
 
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./docs
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
