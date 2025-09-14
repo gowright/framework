@@ -173,7 +173,7 @@ func (m *MemoryEfficientCaptureManager) CaptureScreenshotEfficient(tester core.U
 	filePath := filepath.Join("./captures/screenshots", filename)
 
 	// Ensure directory exists
-	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filePath), 0750); err != nil {
 		return "", core.NewGowrightError(core.BrowserError, "failed to create screenshot directory", err)
 	}
 
@@ -230,7 +230,7 @@ func (m *MemoryEfficientCaptureManager) CapturePageSourceEfficient(tester core.U
 	filePath := filepath.Join("./captures/page_sources", filename)
 
 	// Ensure directory exists
-	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filePath), 0750); err != nil {
 		return "", core.NewGowrightError(core.BrowserError, "failed to create page source directory", err)
 	}
 
@@ -245,7 +245,7 @@ func (m *MemoryEfficientCaptureManager) CapturePageSourceEfficient(tester core.U
 	}
 
 	// Write to file
-	if err := os.WriteFile(filePath, sourceBytes, 0644); err != nil {
+	if err := os.WriteFile(filePath, sourceBytes, 0600); err != nil {
 		return "", core.NewGowrightError(core.BrowserError, "failed to write page source", err)
 	}
 
@@ -294,7 +294,7 @@ func (m *MemoryEfficientCaptureManager) compressFile(filePath string) (string, e
 
 	// Write compressed file
 	compressedPath := filePath + ".gz"
-	if err := os.WriteFile(compressedPath, compressedData, 0644); err != nil {
+	if err := os.WriteFile(compressedPath, compressedData, 0600); err != nil {
 		return "", err
 	}
 
@@ -387,7 +387,12 @@ func (m *MemoryEfficientCaptureManager) GetMemoryStats() MemoryStats {
 		ActiveCaptures:    len(m.activeCaptures),
 		TotalMemoryUsedMB: m.totalMemoryUsed / (1024 * 1024),
 		MaxMemoryUsageMB:  m.maxMemoryUsage / (1024 * 1024),
-		SystemMemoryMB:    int64(memStats.Sys) / (1024 * 1024),
+		SystemMemoryMB:    func() int64 {
+			if memStats.Sys > 9223372036854775807 { // max int64
+				return 9223372036854775807 / (1024 * 1024)
+			}
+			return int64(memStats.Sys) / (1024 * 1024)
+		}(),
 		GCCount:           int64(memStats.NumGC),
 	}
 }
@@ -418,7 +423,7 @@ func (m *MemoryEfficientCaptureManager) CaptureDataStreamOptimized(data []byte, 
 	filePath := filepath.Join("./captures/data", filename)
 
 	// Ensure directory exists
-	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filePath), 0750); err != nil {
 		return nil, core.NewGowrightError(core.BrowserError, "failed to create data directory", err)
 	}
 
@@ -484,7 +489,7 @@ func (m *MemoryEfficientCaptureManager) CaptureDataStreamOptimized(data []byte, 
 
 	// Write data if not already written via streaming
 	if !m.config.EnableStreaming {
-		if err := os.WriteFile(filePath, finalData, 0644); err != nil {
+		if err := os.WriteFile(filePath, finalData, 0600); err != nil {
 			return nil, core.NewGowrightError(core.BrowserError, "failed to write data file", err)
 		}
 	}

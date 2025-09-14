@@ -358,8 +358,42 @@ func (t *OpenAPITester) CheckBreakingChanges(previousCommit string) *TestResult 
 
 // getSpecFromGit retrieves the OpenAPI spec from a specific git commit
 func (t *OpenAPITester) getSpecFromGit(commit string) ([]byte, error) {
+	// Validate commit hash to prevent command injection
+	if !isValidCommitHash(commit) {
+		return nil, fmt.Errorf("invalid commit hash: %s", commit)
+	}
+	
+	// Validate spec path to prevent path traversal
+	if !isValidSpecPath(t.specPath) {
+		return nil, fmt.Errorf("invalid spec path: %s", t.specPath)
+	}
+	
 	cmd := exec.Command("git", "show", fmt.Sprintf("%s:%s", commit, t.specPath))
 	return cmd.Output()
+}
+
+// isValidCommitHash validates that the commit hash is safe to use
+func isValidCommitHash(commit string) bool {
+	// Allow only alphanumeric characters and ensure reasonable length
+	if len(commit) < 7 || len(commit) > 40 {
+		return false
+	}
+	for _, r := range commit {
+		if (r < '0' || r > '9') && (r < 'a' || r > 'f') && (r < 'A' || r > 'F') {
+			return false
+		}
+	}
+	return true
+}
+
+// isValidSpecPath validates that the spec path is safe to use
+func isValidSpecPath(path string) bool {
+	// Prevent path traversal attacks
+	if strings.Contains(path, "..") || strings.Contains(path, "~") {
+		return false
+	}
+	// Only allow reasonable file extensions
+	return strings.HasSuffix(path, ".yaml") || strings.HasSuffix(path, ".yml") || strings.HasSuffix(path, ".json")
 }
 
 // compareSpecs compares two OpenAPI specifications and identifies breaking changes

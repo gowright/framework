@@ -60,7 +60,7 @@ func (rm *ReportManager) GenerateReports(results *core.TestResults) error {
 	}
 
 	// Ensure output directory exists
-	if err := os.MkdirAll(rm.config.OutputDir, 0755); err != nil {
+	if err := os.MkdirAll(rm.config.OutputDir, 0750); err != nil {
 		return core.NewGowrightError(core.ReportingError, "failed to create output directory", err)
 	}
 
@@ -100,7 +100,7 @@ func (jr *JSONReporter) GenerateReport(results *core.TestResults) error {
 		return core.NewGowrightError(core.ReportingError, "failed to marshal JSON", err)
 	}
 
-	if err := os.WriteFile(filename, data, 0644); err != nil {
+	if err := os.WriteFile(filename, data, 0600); err != nil {
 		return core.NewGowrightError(core.ReportingError, "failed to write JSON report", err)
 	}
 
@@ -134,7 +134,7 @@ func (hr *HTMLReporter) GenerateReport(results *core.TestResults) error {
 
 	html := hr.generateHTML(results)
 
-	if err := os.WriteFile(filename, []byte(html), 0644); err != nil {
+	if err := os.WriteFile(filename, []byte(html), 0600); err != nil {
 		return core.NewGowrightError(core.ReportingError, "failed to write HTML report", err)
 	}
 
@@ -235,7 +235,7 @@ func (xr *XMLReporter) GenerateReport(results *core.TestResults) error {
 
 	xml := xr.generateXML(results)
 
-	if err := os.WriteFile(filename, []byte(xml), 0644); err != nil {
+	if err := os.WriteFile(filename, []byte(xml), 0600); err != nil {
 		return core.NewGowrightError(core.ReportingError, "failed to write XML report", err)
 	}
 
@@ -310,7 +310,7 @@ func (jr *JUnitReporter) GenerateReport(results *core.TestResults) error {
 
 	xml := jr.generateJUnitXML(results)
 
-	if err := os.WriteFile(filename, []byte(xml), 0644); err != nil {
+	if err := os.WriteFile(filename, []byte(xml), 0600); err != nil {
 		return core.NewGowrightError(core.ReportingError, "failed to write JUnit report", err)
 	}
 

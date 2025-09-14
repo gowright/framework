@@ -34,7 +34,7 @@ func (c *UICaptureManager) CaptureScreenshot(testName string) (string, error) {
 	filePath := filepath.Join(c.outputDir, "screenshots", filename)
 
 	// Ensure directory exists
-	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filePath), 0750); err != nil {
 		return "", core.NewGowrightError(core.BrowserError, "failed to create screenshot directory", err)
 	}
 
@@ -48,7 +48,7 @@ func (c *UICaptureManager) CaptureScreenshotWithName(filename string) (string, e
 	}
 
 	// Ensure directory exists
-	if err := os.MkdirAll(filepath.Dir(filename), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filename), 0750); err != nil {
 		return "", core.NewGowrightError(core.BrowserError, "failed to create screenshot directory", err)
 	}
 
@@ -67,12 +67,12 @@ func (c *UICaptureManager) CapturePageSource(testName string) (string, error) {
 	filePath := filepath.Join(c.outputDir, "page_sources", filename)
 
 	// Ensure directory exists
-	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filePath), 0750); err != nil {
 		return "", core.NewGowrightError(core.BrowserError, "failed to create page source directory", err)
 	}
 
 	// Write page source to file
-	if err := os.WriteFile(filePath, []byte(source), 0644); err != nil {
+	if err := os.WriteFile(filePath, []byte(source), 0600); err != nil {
 		return "", core.NewGowrightError(core.BrowserError, "failed to write page source", err)
 	}
 
@@ -91,12 +91,12 @@ func (c *UICaptureManager) CapturePageSourceWithName(filename string) (string, e
 	}
 
 	// Ensure directory exists
-	if err := os.MkdirAll(filepath.Dir(filename), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filename), 0750); err != nil {
 		return "", core.NewGowrightError(core.BrowserError, "failed to create page source directory", err)
 	}
 
 	// Write page source to file
-	if err := os.WriteFile(filename, []byte(source), 0644); err != nil {
+	if err := os.WriteFile(filename, []byte(source), 0600); err != nil {
 		return "", core.NewGowrightError(core.BrowserError, "failed to write page source", err)
 	}
 
@@ -256,7 +256,7 @@ func (c *UICaptureManager) AdvancedCaptureScreenshot(testName string, options *C
 	filePath := filepath.Join(c.outputDir, "screenshots", filename)
 
 	// Ensure directory exists
-	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filePath), 0750); err != nil {
 		return "", core.NewGowrightError(core.BrowserError, "failed to create screenshot directory", err)
 	}
 
