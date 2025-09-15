@@ -368,7 +368,8 @@ func (t *OpenAPITester) getSpecFromGit(commit string) ([]byte, error) {
 		return nil, fmt.Errorf("invalid spec path: %s", t.specPath)
 	}
 
-	cmd := exec.Command("git", "show", fmt.Sprintf("%s:%s", commit, t.specPath))
+	// Use validated inputs with exec.Command (no shell injection possible)
+	cmd := exec.Command("git", "show", commit+":"+t.specPath)
 	return cmd.Output()
 }
 

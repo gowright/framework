@@ -12,13 +12,13 @@
 								},
 								"region": {
 									"endColumn": 9,
-									"endLine": 371,
+									"endLine": 372,
 									"snippet": {
-										"text": "cmd := exec.Command(\"git\", \"show\", fmt.Sprintf(\"%s:%s\", commit, t.specPath))"
+										"text": "cmd := exec.Command(\"git\", \"show\", commit+\":\"+t.specPath)"
 									},
 									"sourceLanguage": "go",
 									"startColumn": 9,
-									"startLine": 371
+									"startLine": 372
 								}
 							}
 						}
@@ -38,13 +38,13 @@
 								},
 								"region": {
 									"endColumn": 17,
-									"endLine": 469,
+									"endLine": 483,
 									"snippet": {
 										"text": "file, err := os.Create(filePath)"
 									},
 									"sourceLanguage": "go",
 									"startColumn": 17,
-									"startLine": 469
+									"startLine": 483
 								}
 							}
 						}
@@ -64,13 +64,13 @@
 								},
 								"region": {
 									"endColumn": 17,
-									"endLine": 440,
+									"endLine": 450,
 									"snippet": {
 										"text": "file, err := os.Create(filePath + \".gz\")"
 									},
 									"sourceLanguage": "go",
 									"startColumn": 17,
-									"startLine": 440
+									"startLine": 450
 								}
 							}
 						}
@@ -90,13 +90,13 @@
 								},
 								"region": {
 									"endColumn": 15,
-									"endLine": 284,
+									"endLine": 290,
 									"snippet": {
 										"text": "data, err := os.ReadFile(filePath)"
 									},
 									"sourceLanguage": "go",
 									"startColumn": 15,
-									"startLine": 284
+									"startLine": 290
 								}
 							}
 						}

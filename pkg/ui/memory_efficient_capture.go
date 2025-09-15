@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -280,6 +281,11 @@ func (m *MemoryEfficientCaptureManager) updateMemoryUsage(delta int64) {
 
 // compressFile compresses a file and returns the compressed file path
 func (m *MemoryEfficientCaptureManager) compressFile(filePath string) (string, error) {
+	// Validate file path to prevent path traversal
+	if !isValidFilePath(filePath) {
+		return "", fmt.Errorf("invalid file path: %s", filePath)
+	}
+
 	// Read original file
 	data, err := os.ReadFile(filePath)
 	if err != nil {
@@ -436,6 +442,10 @@ func (m *MemoryEfficientCaptureManager) CaptureDataStreamOptimized(data []byte, 
 
 	if shouldCompress {
 		if m.config.EnableStreaming {
+			// Validate file path to prevent path traversal
+			if !isValidFilePath(filePath) {
+				return nil, fmt.Errorf("invalid file path: %s", filePath)
+			}
 			// Use streaming compression
 			file, err := os.Create(filePath + ".gz")
 			if err != nil {
@@ -465,6 +475,10 @@ func (m *MemoryEfficientCaptureManager) CaptureDataStreamOptimized(data []byte, 
 		}
 	} else {
 		if m.config.EnableStreaming {
+			// Validate file path to prevent path traversal
+			if !isValidFilePath(filePath) {
+				return nil, fmt.Errorf("invalid file path: %s", filePath)
+			}
 			// Use streaming without compression
 			file, err := os.Create(filePath)
 			if err != nil {
@@ -640,4 +654,18 @@ func (m *MemoryEfficientCaptureManager) Cleanup() error {
 
 	m.totalMemoryUsed = 0
 	return nil
+}
+
+// isValidFilePath validates that the file path is safe to use
+func isValidFilePath(path string) bool {
+	// Prevent path traversal attacks
+	if strings.Contains(path, "..") || strings.Contains(path, "~") {
+		return false
+	}
+	// Prevent absolute paths that could access system files
+	if strings.HasPrefix(path, "/") || strings.Contains(path, ":") {
+		return false
+	}
+	// Only allow reasonable file extensions and paths
+	return len(path) > 0 && len(path) < 500 // reasonable path length limit
 }
