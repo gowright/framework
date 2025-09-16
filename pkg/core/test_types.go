@@ -20,10 +20,11 @@ type UIAction struct {
 
 // UIAssertion represents a UI validation
 type UIAssertion struct {
-	Type     string      `json:"type"`
-	Selector string      `json:"selector,omitempty"`
-	Expected interface{} `json:"expected"`
-	Options  interface{} `json:"options,omitempty"`
+	Type      string      `json:"type"`
+	Selector  string      `json:"selector,omitempty"`
+	Expected  interface{} `json:"expected"`
+	Attribute string      `json:"attribute,omitempty"`
+	Options   interface{} `json:"options,omitempty"`
 }
 
 // APITest represents an API test case
