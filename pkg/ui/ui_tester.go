@@ -434,7 +434,27 @@ func (ut *UITester) WaitForText(selector, expectedText string, timeout time.Dura
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	return ut.page.Context(ctx).WaitElementsMoreThan(selector, 0)
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return core.NewGowrightError(core.BrowserError, fmt.Sprintf("timeout waiting for text '%s' in selector '%s'", expectedText, selector), nil)
+		case <-ticker.C:
+			el, err := ut.page.Element(selector)
+			if err != nil {
+				continue // element not found yet, keep waiting
+			}
+			text, err := el.Text()
+			if err != nil {
+				continue // unable to get text, keep waiting
+			}
+			if strings.Contains(text, expectedText) {
+				return nil
+			}
+		}
+	}
 }
 
 // ExecuteTest executes a UI test and returns the result
