@@ -156,3 +156,4 @@ if err != nil {
 4. **Use structured tests**: Leverage `UITest` for complex flows
 5. **Handle errors**: Check all return values
 6. **Configure timeouts**: Set appropriate timeouts for your application
+7. **Cleanup gracefully**: The framework handles cleanup errors automatically with warnings

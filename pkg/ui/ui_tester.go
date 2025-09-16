@@ -136,12 +136,18 @@ func (ut *UITester) Initialize(cfg interface{}) error {
 // Cleanup performs cleanup operations
 func (ut *UITester) Cleanup() error {
 	if ut.page != nil {
-		ut.page.Close()
+		if err := ut.page.Close(); err != nil {
+			// Log error but continue cleanup
+			fmt.Printf("Warning: failed to close page: %v\n", err)
+		}
 		ut.page = nil
 	}
 
 	if ut.browser != nil {
-		ut.browser.Close()
+		if err := ut.browser.Close(); err != nil {
+			// Log error but continue cleanup
+			fmt.Printf("Warning: failed to close browser: %v\n", err)
+		}
 		ut.browser = nil
 	}
 
