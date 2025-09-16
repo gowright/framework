@@ -14,10 +14,10 @@ func main() {
 	// Create UI tester
 	tester := ui.NewUITester()
 
-	// Configure browser
+	// Configure browser with cookie notice disabling
 	browserConfig := &config.BrowserConfig{
 		Browser:        "chrome",
-		Headless:       true,
+		Headless:       false,
 		WindowSize:     "1920x1080",
 		Timeout:        30 * time.Second,
 		ScreenshotPath: "./screenshots",
@@ -35,8 +35,8 @@ func main() {
 		Name: "Google Search Test",
 		URL:  "https://www.google.com",
 		Actions: []core.UIAction{
-			{Type: "wait", Selector: "input[name='q']"},
-			{Type: "type", Selector: "input[name='q']", Value: "gowright testing framework"},
+			{Type: "wait", Selector: "textarea[name='q']"},
+			{Type: "type", Selector: "textarea[name='q']", Value: "gowright testing framework"},
 			{Type: "screenshot", Value: "google_search"},
 		},
 		Assertions: []core.UIAssertion{

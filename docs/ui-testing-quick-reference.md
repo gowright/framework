@@ -46,6 +46,7 @@ defer tester.Cleanup()
 | Scroll | `ScrollToElement(selector)` | `tester.ScrollToElement("#footer")` |
 | Execute JS | `ExecuteScript(script)` | `result, err := tester.ExecuteScript("return document.title")` |
 | Page Source | `GetPageSource()` | `html, err := tester.GetPageSource()` |
+| Dismiss Cookies | `DismissCookieNotices()` | `err := tester.DismissCookieNotices()` |
 
 ## Structured Testing
 
@@ -103,12 +104,34 @@ result := tester.ExecuteTest(test)
     DisableImages:  false,              // Disable images
     DisableCSS:     false,              // Disable CSS
     DisableJS:      false,              // Disable JavaScript
-    BrowserArgs:    []string{           // Custom arguments
+    BrowserArgs:    []string{           // Custom arguments (pending implementation)
         "--no-sandbox",
         "--disable-dev-shm-usage",
     },
 }
 ```
+
+### Default Chrome Arguments
+
+These arguments are automatically applied:
+- `--no-default-browser-check` - Prevents default browser check
+- `--no-first-run` - Skips first run experience  
+- `--disable-fre` - Disables first run experience
+
+## Cookie Notice Handling
+
+```go
+// Programmatically dismiss cookie notices after page load
+err := tester.DismissCookieNotices()
+
+// Typical usage pattern
+err = tester.Navigate("https://example.com")
+time.Sleep(2 * time.Second) // Wait for page load
+err = tester.DismissCookieNotices() // Dismiss any cookie notices
+// Continue with test actions...
+```
+
+**Note**: Browser argument configuration is pending rod API integration.
 
 ## Error Handling
 

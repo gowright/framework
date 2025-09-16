@@ -10,6 +10,8 @@ Gowright is a comprehensive testing framework for Go that provides unified testi
 ## Features
 
 - **🌐 UI Testing**: Browser automation using Chrome DevTools Protocol via [go-rod/rod](https://github.com/go-rod/rod)
+  - Automatic Chrome argument optimization for testing
+  - Built-in cookie notice dismissal capabilities
 - **📱 Mobile Testing**: Comprehensive native mobile app automation using Appium WebDriver protocol
   - Cross-platform support for Android and iOS
   - Touch gestures and mobile-specific interactions
