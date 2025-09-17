@@ -65,6 +65,11 @@ func (ut *UITester) Initialize(cfg interface{}) error {
 	ut.launcher = ut.launcher.Set("no-first-run")             // Skips first run experience and setup wizard
 	ut.launcher = ut.launcher.Set("disable-fre")              // Disables first run experience (additional safety)
 
+	// Add essential arguments for CI/containerized environments
+	ut.launcher = ut.launcher.Set("no-sandbox")            // Required for containerized environments (CI/CD)
+	ut.launcher = ut.launcher.Set("disable-dev-shm-usage") // Prevents /dev/shm issues in containers
+	ut.launcher = ut.launcher.Set("disable-gpu")           // Disable GPU acceleration for headless environments
+
 	// Configure headless mode
 	if browserConfig.Headless {
 		ut.launcher = ut.launcher.Headless(true)

@@ -23,7 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **UIAssertion struct**: Added `Attribute` field for attribute-based assertions
 - **Error handling**: Improved error messages, error type consistency, and proper cleanup error handling
 - **Documentation**: Comprehensive UI testing documentation and examples
-- **Default Chrome Arguments**: Automatically applies `--no-default-browser-check`, `--no-first-run`, and `--disable-fre` for better automation experience
+- **Default Chrome Arguments**: Automatically applies essential arguments for automation and CI environments:
+  - `--no-default-browser-check`, `--no-first-run`, `--disable-fre` for better automation experience
+  - `--no-sandbox`, `--disable-dev-shm-usage`, `--disable-gpu` for CI/containerized environments
 - **Cookie Notice Handling**: Added `DismissCookieNotices()` method with comprehensive JavaScript-based dismissal
 
 ### Dependencies

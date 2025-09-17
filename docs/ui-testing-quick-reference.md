@@ -117,6 +117,9 @@ These arguments are automatically applied:
 - `--no-default-browser-check` - Prevents default browser check
 - `--no-first-run` - Skips first run experience  
 - `--disable-fre` - Disables first run experience
+- `--no-sandbox` - Required for CI/containerized environments
+- `--disable-dev-shm-usage` - Prevents container /dev/shm issues
+- `--disable-gpu` - Disables GPU for headless environments
 
 ## Cookie Notice Handling
 

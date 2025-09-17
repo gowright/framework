@@ -19,6 +19,17 @@ The UI testing module requires:
 - `github.com/go-rod/rod v0.116.2` - Browser automation library
 - Chrome/Chromium browser (automatically managed by rod if not present)
 
+### CI/CD Environment Setup
+
+For GitHub Actions or other CI environments, ensure Chrome is installed:
+
+```yaml
+- name: Install Chrome
+  uses: browser-actions/setup-chrome@latest
+```
+
+The framework automatically applies CI-friendly arguments (`--no-sandbox`, `--disable-dev-shm-usage`, `--disable-gpu`) so no additional configuration is needed.
+
 ## Supported Browsers
 
 - **Chrome/Chromium** (primary support) - Full feature support
@@ -50,6 +61,9 @@ The following Chrome arguments are automatically applied to improve the automati
 - `--no-default-browser-check` - Prevents default browser check dialog
 - `--no-first-run` - Skips first run experience and setup wizard
 - `--disable-fre` - Disables first run experience
+- `--no-sandbox` - Required for containerized environments (CI/CD)
+- `--disable-dev-shm-usage` - Prevents /dev/shm issues in containers
+- `--disable-gpu` - Disable GPU acceleration for headless environments
 
 ## Basic Usage
 
