@@ -129,7 +129,7 @@ func (ut *UITester) Initialize(cfg interface{}) error {
 
 	// Create screenshot directory if specified
 	if browserConfig.ScreenshotPath != "" {
-		if err := os.MkdirAll(browserConfig.ScreenshotPath, 0755); err != nil {
+		if err := os.MkdirAll(browserConfig.ScreenshotPath, 0750); err != nil {
 			return core.NewGowrightError(core.BrowserError, "failed to create screenshot directory", err)
 		}
 	}
@@ -321,7 +321,7 @@ func (ut *UITester) TakeScreenshot(filename string) (string, error) {
 	}
 
 	// Write screenshot to file
-	err = os.WriteFile(fullPath, screenshot, 0644)
+	err = os.WriteFile(fullPath, screenshot, 0600)
 	if err != nil {
 		return "", core.NewGowrightError(core.BrowserError, "failed to save screenshot", err)
 	}

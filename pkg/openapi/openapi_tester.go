@@ -369,6 +369,7 @@ func (t *OpenAPITester) getSpecFromGit(commit string) ([]byte, error) {
 	}
 
 	// Use validated inputs with exec.Command (no shell injection possible)
+	// #nosec G204 - commit and specPath are validated above
 	cmd := exec.Command("git", "show", commit+":"+t.specPath)
 	return cmd.Output()
 }
