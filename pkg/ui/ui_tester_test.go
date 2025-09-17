@@ -169,7 +169,7 @@ func (suite *UITesterTestSuite) TestExecuteTest() {
 		<button id="login-btn">Login</button>
 		<div class="welcome">Welcome to the application</div>
 	</body></html>`
-	
+
 	test := &core.UITest{
 		Name: "Test Login",
 		URL:  testHTML,
@@ -205,7 +205,7 @@ func (suite *UITesterTestSuite) TestExecuteAction() {
 		<button id="button">Click me</button>
 		<input id="input" type="text" />
 	</body></html>`
-	
+
 	err = suite.tester.Navigate(testHTML)
 	suite.NoError(err)
 
@@ -247,7 +247,7 @@ func (suite *UITesterTestSuite) TestExecuteAssertion() {
 		<input id="input" value="test value" />
 		<div class="visible-element" style="display: block;">Visible</div>
 	</body></html>`
-	
+
 	err = suite.tester.Navigate(testHTML)
 	suite.NoError(err)
 
