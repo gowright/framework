@@ -21,10 +21,10 @@ func main() {
 		WindowSize:     "1920x1080",
 		Timeout:        30 * time.Second,
 		ScreenshotPath: "./screenshots",
-		
+
 		// Note: BrowserArgs implementation is pending rod API integration
 		// For now, we'll rely on the DismissCookieNotices() method and JavaScript
-		
+
 		// Additional configuration
 		UserAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
 	}
@@ -38,7 +38,7 @@ func main() {
 
 	// Test with a site that typically shows cookie notices
 	fmt.Println("Testing cookie notice suppression...")
-	
+
 	// Navigate to a site (replace with your target site)
 	err = tester.Navigate("https://www.google.com")
 	if err != nil {
@@ -85,7 +85,7 @@ func main() {
 		
 		return 'Cookie banners hidden';
 	`)
-	
+
 	if err != nil {
 		log.Printf("Failed to execute JavaScript: %v", err)
 	} else {
@@ -99,17 +99,17 @@ func main() {
 		Actions: []core.UIAction{
 			// Wait for page to load
 			{Type: "wait", Value: "2s"},
-			
+
 			// Try to dismiss any cookie notices that might still appear
 			// Note: These will fail silently if elements don't exist
 			{Type: "click", Selector: "[data-testid='cookie-accept']"},
 			{Type: "click", Selector: ".cookie-accept"},
 			{Type: "click", Selector: "#accept-cookies"},
 			{Type: "click", Selector: "button[contains(text(), 'Accept')]"},
-			
+
 			// Take screenshot after handling
 			{Type: "screenshot", Value: "after_cookie_handling"},
-			
+
 			// Continue with your actual test actions
 			{Type: "click", Selector: "input[name='search']"},
 			{Type: "type", Selector: "input[name='search']", Value: "test query"},
@@ -121,7 +121,7 @@ func main() {
 
 	fmt.Println("Running structured test with cookie handling...")
 	result := tester.ExecuteTest(test)
-	
+
 	fmt.Printf("Test completed: %s\n", result.Status)
 	if result.Error != nil {
 		fmt.Printf("Test error: %v\n", result.Error)

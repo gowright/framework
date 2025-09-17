@@ -13,7 +13,7 @@ func main() {
 	fmt.Println("Testing UI Tester with default Chrome arguments...")
 	fmt.Println("Default arguments applied:")
 	fmt.Println("  --no-default-browser-check")
-	fmt.Println("  --no-first-run") 
+	fmt.Println("  --no-first-run")
 	fmt.Println("  --disable-fre")
 	fmt.Println()
 
@@ -64,7 +64,7 @@ func main() {
 
 	// Test basic functionality
 	fmt.Println("Testing basic functionality...")
-	
+
 	// Try to get the page title
 	title, err := tester.ExecuteScript("return document.title")
 	if err != nil {
@@ -79,7 +79,7 @@ func main() {
 		log.Printf("Failed to check search box visibility: %v", err)
 	} else if visible {
 		fmt.Println("Search box is visible and ready for interaction")
-		
+
 		// Try typing in the search box
 		err = tester.Type("textarea[name='q']", "gowright testing framework")
 		if err != nil {
@@ -99,7 +99,7 @@ func main() {
 
 	fmt.Println("\nTest completed successfully!")
 	fmt.Println("The browser should have started cleanly without any setup dialogs.")
-	
+
 	// Keep browser open for a moment to observe
 	if !browserConfig.Headless {
 		fmt.Println("Browser will close in 5 seconds...")

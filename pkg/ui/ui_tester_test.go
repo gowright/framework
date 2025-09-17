@@ -162,10 +162,17 @@ func (suite *UITesterTestSuite) TestExecuteTest() {
 	err := suite.tester.Initialize(suite.config)
 	suite.NoError(err)
 
-	// Create a test
+	// Create a test with a data URL containing test elements
+	testHTML := `data:text/html,<html><body>
+		<input id="username" type="text" />
+		<input id="password" type="password" />
+		<button id="login-btn">Login</button>
+		<div class="welcome">Welcome to the application</div>
+	</body></html>`
+	
 	test := &core.UITest{
 		Name: "Test Login",
-		URL:  "https://example.com/login",
+		URL:  testHTML,
 		Actions: []core.UIAction{
 			{Type: "type", Selector: "#username", Value: "testuser"},
 			{Type: "type", Selector: "#password", Value: "testpass"},
@@ -193,10 +200,19 @@ func (suite *UITesterTestSuite) TestExecuteAction() {
 	err := suite.tester.Initialize(suite.config)
 	suite.NoError(err)
 
+	// Navigate to a test HTML page with the elements we need
+	testHTML := `data:text/html,<html><body>
+		<button id="button">Click me</button>
+		<input id="input" type="text" />
+	</body></html>`
+	
+	err = suite.tester.Navigate(testHTML)
+	suite.NoError(err)
+
 	// Test click action
 	clickAction := &core.UIAction{Type: "click", Selector: "#button"}
 	err = suite.tester.executeAction(clickAction)
-	suite.NoError(err) // Mock implementation returns no error
+	suite.NoError(err)
 
 	// Test type action
 	typeAction := &core.UIAction{Type: "type", Selector: "#input", Value: "test"}
@@ -224,6 +240,17 @@ func (suite *UITesterTestSuite) TestExecuteAssertion() {
 	err := suite.tester.Initialize(suite.config)
 	suite.NoError(err)
 
+	// Navigate to a test HTML page with the elements we need
+	// Using data URL to create a test page without external dependencies
+	testHTML := `data:text/html,<html><body>
+		<div id="element">expected text</div>
+		<input id="input" value="test value" />
+		<div class="visible-element" style="display: block;">Visible</div>
+	</body></html>`
+	
+	err = suite.tester.Navigate(testHTML)
+	suite.NoError(err)
+
 	// Test text_equals assertion
 	textEqualsAssertion := &core.UIAssertion{
 		Type:     "text_equals",
@@ -237,7 +264,7 @@ func (suite *UITesterTestSuite) TestExecuteAssertion() {
 	textContainsAssertion := &core.UIAssertion{
 		Type:     "text_contains",
 		Selector: "#element",
-		Expected: "partial",
+		Expected: "expected",
 	}
 	err = suite.tester.executeAssertion(textContainsAssertion)
 	suite.NoError(err)

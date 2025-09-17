@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for 7 different assertion types
 - Added support for 6 different action types
 - Created example applications demonstrating UI testing capabilities
+- Updated unit tests to work with real browser automation (using data URLs for test HTML)
 - Full compatibility with existing Gowright framework architecture
 
 ## [v1.0.0] - Previous Release

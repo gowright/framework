@@ -70,7 +70,7 @@ func main() {
 
 	// Try interacting with the page to ensure it's functional
 	fmt.Println("Testing page interaction...")
-	
+
 	// Look for a search input or similar element
 	searchSelectors := []string{
 		"input[name='q']",
@@ -83,7 +83,7 @@ func main() {
 		visible, err := tester.IsElementVisible(selector)
 		if err == nil && visible {
 			fmt.Printf("Found interactive element: %s\n", selector)
-			
+
 			// Try to click and type in it
 			err = tester.Click(selector)
 			if err == nil {

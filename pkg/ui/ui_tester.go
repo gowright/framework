@@ -63,7 +63,7 @@ func (ut *UITester) Initialize(cfg interface{}) error {
 	// These prevent Chrome setup dialogs and first-run experiences that can interfere with testing
 	ut.launcher = ut.launcher.Set("no-default-browser-check") // Prevents "Set as default browser" dialog
 	ut.launcher = ut.launcher.Set("no-first-run")             // Skips first run experience and setup wizard
-	ut.launcher = ut.launcher.Set("disable-fre")             // Disables first run experience (additional safety)
+	ut.launcher = ut.launcher.Set("disable-fre")              // Disables first run experience (additional safety)
 
 	// Configure headless mode
 	if browserConfig.Headless {
@@ -588,24 +588,24 @@ func GetRecommendedCookieDisablingArgs() []string {
 		// Disable cookie notices and privacy sandbox
 		"--disable-features=VizDisplayCompositor,PrivacySandboxSettings4",
 		"--disable-privacy-sandbox-ads-apis",
-		
+
 		// Disable various Chrome notifications and popups
 		"--disable-notifications",
 		"--disable-default-apps",
 		"--disable-extensions",
 		"--disable-translate",
-		
+
 		// Disable sync and sign-in prompts
 		"--disable-sync",
 		"--disable-background-networking",
-		
+
 		// Security and privacy settings
 		"--no-first-run",
 		"--no-default-browser-check",
 		"--disable-default-browser-check",
 		"--disable-client-side-phishing-detection",
 		"--disable-component-update",
-		
+
 		// Disable cookie deprecation testing
 		"--disable-features=CookieDeprecationFacilitatedTesting",
 		"--disable-blink-features=AutomationControlled",

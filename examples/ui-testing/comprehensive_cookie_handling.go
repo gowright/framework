@@ -21,10 +21,10 @@ func main() {
 		WindowSize:     "1920x1080",
 		Timeout:        30 * time.Second,
 		ScreenshotPath: "./screenshots",
-		
+
 		// Note: BrowserArgs implementation is pending rod API integration
 		// For now, we'll rely on the DismissCookieNotices() method
-		
+
 		// Additional configuration
 		UserAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
 	}
@@ -45,7 +45,7 @@ func main() {
 
 	for i, site := range testSites {
 		fmt.Printf("\n=== Testing site %d: %s ===\n", i+1, site)
-		
+
 		// Navigate to the site
 		err = tester.Navigate(site)
 		if err != nil {
@@ -86,17 +86,17 @@ func main() {
 
 	// Demonstrate using cookie handling in a structured test
 	fmt.Println("\n=== Running structured test with cookie handling ===")
-	
+
 	test := &core.UITest{
 		Name: "Test with Automatic Cookie Handling",
 		URL:  "https://www.google.com",
 		Actions: []core.UIAction{
 			// Wait for page to load
 			{Type: "wait", Value: "2s"},
-			
+
 			// Take initial screenshot
 			{Type: "screenshot", Value: "initial_load"},
-			
+
 			// The cookie dismissal will be handled programmatically after this test
 			// Continue with normal test actions
 			{Type: "wait", Selector: "textarea[name='q']"},
@@ -111,7 +111,7 @@ func main() {
 
 	// Execute the test
 	result := tester.ExecuteTest(test)
-	
+
 	// After the test, dismiss any cookie notices that might have appeared
 	err = tester.DismissCookieNotices()
 	if err != nil {
