@@ -58,32 +58,34 @@ func main() {
 
 	// Additional JavaScript to hide any remaining cookie banners
 	_, err = tester.ExecuteScript(`
-		// Hide common cookie banner selectors
-		const cookieSelectors = [
-			'[id*="cookie"]', '[class*="cookie"]',
-			'[id*="consent"]', '[class*="consent"]', 
-			'[id*="gdpr"]', '[class*="gdpr"]',
-			'[id*="privacy"]', '[class*="privacy"]',
-			'[aria-label*="cookie"]', '[aria-label*="consent"]',
-			'.cookie-banner', '.consent-banner', '.privacy-banner',
-			'#cookieConsent', '#cookie-consent', '#privacy-notice'
-		];
-		
-		cookieSelectors.forEach(selector => {
-			document.querySelectorAll(selector).forEach(el => {
-				el.style.display = 'none';
-				el.remove();
+		() => {
+			// Hide common cookie banner selectors
+			const cookieSelectors = [
+				'[id*="cookie"]', '[class*="cookie"]',
+				'[id*="consent"]', '[class*="consent"]',
+				'[id*="gdpr"]', '[class*="gdpr"]',
+				'[id*="privacy"]', '[class*="privacy"]',
+				'[aria-label*="cookie"]', '[aria-label*="consent"]',
+				'.cookie-banner', '.consent-banner', '.privacy-banner',
+				'#cookieConsent', '#cookie-consent', '#privacy-notice'
+			];
+	
+			cookieSelectors.forEach(selector => {
+				document.querySelectorAll(selector).forEach(el => {
+					el.style.display = 'none';
+					el.remove();
+				});
 			});
-		});
-		
-		// Also hide any overlay backgrounds
-		document.querySelectorAll('[class*="overlay"], [class*="backdrop"]').forEach(el => {
-			if (el.style.zIndex > 1000) {
-				el.style.display = 'none';
-			}
-		});
-		
-		return 'Cookie banners hidden';
+	
+			// Also hide any overlay backgrounds
+			document.querySelectorAll('[class*="overlay"], [class*="backdrop"]').forEach(el => {
+				if (el.style.zIndex > 1000) {
+					el.style.display = 'none';
+				}
+			});
+	
+			return 'Cookie banners hidden';
+		}
 	`)
 
 	if err != nil {

@@ -35,12 +35,13 @@ func main() {
 		Name: "Google Search Test",
 		URL:  "https://www.google.com",
 		Actions: []core.UIAction{
+			{Type: "click", Selector: "button:nth-of-type(2) > div[role='none']"},
 			{Type: "wait", Selector: "textarea[name='q']"},
 			{Type: "type", Selector: "textarea[name='q']", Value: "gowright testing framework"},
 			{Type: "screenshot", Value: "google_search"},
 		},
 		Assertions: []core.UIAssertion{
-			{Type: "element_exists", Selector: "input[name='q']"},
+			{Type: "element_exists", Selector: "textarea[name='q']"},
 			{Type: "page_title_equals", Expected: "Google"},
 		},
 	}
