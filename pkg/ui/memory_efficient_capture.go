@@ -287,6 +287,7 @@ func (m *MemoryEfficientCaptureManager) compressFile(filePath string) (string, e
 	}
 
 	// Read original file
+	// #nosec G304 - filePath is validated above with isValidFilePath
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return "", err
@@ -447,6 +448,7 @@ func (m *MemoryEfficientCaptureManager) CaptureDataStreamOptimized(data []byte, 
 				return nil, fmt.Errorf("invalid file path: %s", filePath)
 			}
 			// Use streaming compression
+			// #nosec G304 - filePath is validated above with isValidFilePath
 			file, err := os.Create(filePath + ".gz")
 			if err != nil {
 				return nil, err
@@ -480,6 +482,7 @@ func (m *MemoryEfficientCaptureManager) CaptureDataStreamOptimized(data []byte, 
 				return nil, fmt.Errorf("invalid file path: %s", filePath)
 			}
 			// Use streaming without compression
+			// #nosec G304 - filePath is validated above with isValidFilePath
 			file, err := os.Create(filePath)
 			if err != nil {
 				return nil, err

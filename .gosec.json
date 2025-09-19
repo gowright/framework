@@ -1,0 +1,20 @@
+{
+  "severity": "medium",
+  "confidence": "medium",
+  "exclude": {
+    "G204": [
+      "pkg/openapi/openapi_tester.go"
+    ],
+    "G304": [
+      "pkg/ui/memory_efficient_capture.go"
+    ]
+  },
+  "exclude-generated": true,
+  "exclude-dirs": [
+    "vendor",
+    "examples"
+  ],
+  "tests": false,
+  "fmt": "sarif",
+  "out": "gosec.sarif"
+}

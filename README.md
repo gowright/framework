@@ -10,6 +10,8 @@ Gowright is a comprehensive testing framework for Go that provides unified testi
 ## Features
 
 - **🌐 UI Testing**: Browser automation using Chrome DevTools Protocol via [go-rod/rod](https://github.com/go-rod/rod)
+  - Automatic Chrome argument optimization for testing
+  - Built-in cookie notice dismissal capabilities
 - **📱 Mobile Testing**: Comprehensive native mobile app automation using Appium WebDriver protocol
   - Cross-platform support for Android and iOS
   - Touch gestures and mobile-specific interactions
@@ -274,35 +276,64 @@ func TestDatabaseOperations(t *testing.T) {
 
 ### UI Testing
 
+Browser automation using rod with Chrome DevTools Protocol:
+
 ```go
 func TestWebApplication(t *testing.T) {
-    // Create UI tester
-    config := &gowright.BrowserConfig{
-        Headless: true,
-        Timeout:  30 * time.Second,
+    // Create UI tester with rod
+    tester := ui.NewUITester()
+    
+    // Configure browser
+    config := &config.BrowserConfig{
+        Browser:        "chrome",
+        Headless:       true,
+        WindowSize:     "1920x1080",
+        Timeout:        30 * time.Second,
+        ScreenshotPath: "./screenshots",
     }
     
-    uiTester := gowright.NewRodUITester()
-    err := uiTester.Initialize(config)
+    err := tester.Initialize(config)
     assert.NoError(t, err)
-    defer uiTester.Cleanup()
+    defer tester.Cleanup()
     
-    // Navigate to page
-    err = uiTester.Navigate("https://example.com")
+    // Execute structured UI test
+    test := &core.UITest{
+        Name: "Login Test",
+        URL:  "https://example.com/login",
+        Actions: []core.UIAction{
+            {Type: "type", Selector: "#username", Value: "testuser"},
+            {Type: "type", Selector: "#password", Value: "testpass"},
+            {Type: "click", Selector: "#login-btn"},
+            {Type: "wait", Selector: ".dashboard"},
+            {Type: "screenshot", Value: "after_login"},
+        },
+        Assertions: []core.UIAssertion{
+            {Type: "element_exists", Selector: ".dashboard"},
+            {Type: "text_contains", Selector: ".welcome", Expected: "Welcome"},
+            {Type: "url_contains", Expected: "/dashboard"},
+        },
+    }
+    
+    result := tester.ExecuteTest(test)
+    assert.Equal(t, core.TestStatusPassed, result.Status)
+    
+    // Or use direct methods
+    err = tester.Navigate("https://example.com")
     assert.NoError(t, err)
     
-    // Interact with elements
-    err = uiTester.Click("button#submit")
+    text, err := tester.GetText("#title")
+    assert.NoError(t, err)
+    assert.Contains(t, text, "Expected Title")
+    
+    // Advanced features
+    visible, err := tester.IsElementVisible("#modal")
     assert.NoError(t, err)
     
-    // Wait for element
-    err = uiTester.WaitForElement(".success-message", 5*time.Second)
+    attr, err := tester.GetAttribute("#input", "value")
     assert.NoError(t, err)
     
-    // Take screenshot
-    screenshotPath, err := uiTester.TakeScreenshot("test-result.png")
+    result, err := tester.ExecuteScript("return document.title;")
     assert.NoError(t, err)
-    assert.NotEmpty(t, screenshotPath)
 }
 ```
 
