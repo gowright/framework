@@ -422,6 +422,46 @@ func (ut *UITester) ScrollToElement(selector string) error {
 	return nil
 }
 
+// ScrollPage scrolls page
+func (ut *UITester) ScrollPage(opts interface{}) error {
+	opt := opts.(ScrollOptions)
+
+	steps := 0
+	switch opt.Speed {
+	case "slow":
+		steps = 100
+	case "medium":
+		steps = 50
+	case "fast":
+		steps = 25
+	}
+
+	offsetX := 0.0
+	offsetY := 0.0
+	switch opt.Direction {
+	case "up":
+		offsetX = 0
+		offsetY = -float64(opt.Distance)
+	case "down":
+		offsetX = 0
+		offsetY = float64(opt.Distance)
+	case "left":
+		offsetX = -float64(opt.Distance)
+		offsetY = 0
+	case "right":
+		offsetX = float64(opt.Distance)
+		offsetY = 0
+	case "top":
+		offsetX = 0
+		offsetY = 0
+	case "bottom":
+		offsetX = 0
+		offsetY = 99999.0
+	}
+
+	return ut.page.Mouse.Scroll(offsetX, offsetY, steps)
+}
+
 // ExecuteScript executes JavaScript in the browser
 func (ut *UITester) ExecuteScript(script string) (interface{}, error) {
 	if !ut.initialized {
@@ -493,26 +533,26 @@ func (ut *UITester) DismissCookieNotices() error {
 			const cookieSelectors = [
 				// Generic selectors
 				'[id*="cookie" i]', '[class*="cookie" i]',
-				'[id*="consent" i]', '[class*="consent" i]', 
+				'[id*="consent" i]', '[class*="consent" i]',
 				'[id*="gdpr" i]', '[class*="gdpr" i]',
 				'[id*="privacy" i]', '[class*="privacy" i]',
 				'[aria-label*="cookie" i]', '[aria-label*="consent" i]',
-				
+
 				// Common class names
 				'.cookie-banner', '.consent-banner', '.privacy-banner',
 				'.cookie-notice', '.consent-notice', '.privacy-notice',
 				'.cookie-bar', '.consent-bar', '.privacy-bar',
 				'.gdpr-banner', '.gdpr-notice', '.gdpr-bar',
-				
+
 				// Common IDs
 				'#cookieConsent', '#cookie-consent', '#privacy-notice',
 				'#gdpr-consent', '#cookie-banner', '#consent-banner',
-				
+
 				// Button selectors for accepting
 				'button[id*="accept" i]', 'button[class*="accept" i]',
 				'button[id*="agree" i]', 'button[class*="agree" i]',
 				'a[id*="accept" i]', 'a[class*="accept" i]',
-				
+
 				// Specific popular cookie consent tools
 				'#onetrust-accept-btn-handler', // OneTrust
 				'.ot-sdk-show-settings', // OneTrust settings
@@ -523,16 +563,16 @@ func (ut *UITester) DismissCookieNotices() error {
 				'[data-testid*="cookie"]', // Test ID based
 				'[data-cy*="cookie"]', // Cypress test selectors
 			];
-			
+
 			let dismissed = 0;
-			
+
 			// Try to click accept buttons first
 			cookieSelectors.forEach(selector => {
 				try {
 					const elements = document.querySelectorAll(selector);
 					elements.forEach(el => {
-						if (el && (el.tagName === 'BUTTON' || el.tagName === 'A') && 
-							(el.textContent.toLowerCase().includes('accept') || 
+						if (el && (el.tagName === 'BUTTON' || el.tagName === 'A') &&
+							(el.textContent.toLowerCase().includes('accept') ||
 							 el.textContent.toLowerCase().includes('agree') ||
 							 el.textContent.toLowerCase().includes('allow') ||
 							 el.id.toLowerCase().includes('accept') ||
@@ -545,7 +585,7 @@ func (ut *UITester) DismissCookieNotices() error {
 					// Ignore errors for individual selectors
 				}
 			});
-			
+
 			// Then hide remaining banners
 			cookieSelectors.forEach(selector => {
 				try {
@@ -561,17 +601,17 @@ func (ut *UITester) DismissCookieNotices() error {
 					// Ignore errors for individual selectors
 				}
 			});
-			
+
 			// Hide overlay backgrounds that might be left behind
 			document.querySelectorAll('[class*="overlay"], [class*="backdrop"], [class*="modal-backdrop"]').forEach(el => {
-				if (el.style.zIndex > 1000 || el.className.toLowerCase().includes('cookie') || 
+				if (el.style.zIndex > 1000 || el.className.toLowerCase().includes('cookie') ||
 					el.className.toLowerCase().includes('consent') || el.className.toLowerCase().includes('gdpr')) {
 					el.style.display = 'none';
 					el.remove();
 					dismissed++;
 				}
 			});
-			
+
 			return dismissed;
 		}
 	`
@@ -700,11 +740,16 @@ func (ut *UITester) executeAction(action *core.UIAction) error {
 			}
 		}
 		return core.NewGowrightError(core.BrowserError, "invalid wait action configuration", nil)
-	case "scroll":
+	case "scroll_to_element":
 		if action.Selector != "" {
 			return ut.ScrollToElement(action.Selector)
 		}
-		return core.NewGowrightError(core.BrowserError, "scroll action requires selector", nil)
+		return core.NewGowrightError(core.BrowserError, "scroll to element action requires selector", nil)
+	case "scroll_page":
+		if action.Options != nil {
+			return ut.ScrollPage(action.Options)
+		}
+		return core.NewGowrightError(core.BrowserError, "scroll page action requires scroll options", nil)
 	case "screenshot":
 		filename := action.Value
 		if filename == "" {
