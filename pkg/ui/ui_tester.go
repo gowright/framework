@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/go-rod/rod"
+	"github.com/go-rod/rod/lib/devices"
 	"github.com/go-rod/rod/lib/launcher"
 	"github.com/go-rod/rod/lib/proto"
 	"github.com/gowright/framework/pkg/assertions"
@@ -112,6 +113,7 @@ func (ut *UITester) Initialize(cfg interface{}) error {
 
 	// Connect to browser
 	ut.browser = rod.New().ControlURL(url)
+	ut.browser.DefaultDevice(devices.Device{})
 	if err := ut.browser.Connect(); err != nil {
 		return core.NewGowrightError(core.BrowserError, "failed to connect to browser", err)
 	}
