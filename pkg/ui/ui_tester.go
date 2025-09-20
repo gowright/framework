@@ -456,7 +456,7 @@ func (ut *UITester) ScrollPage(opts interface{}) error {
 		offsetX = 0
 		offsetY = 99999.0
 	}
-	
+
 	return ut.page.Mouse.Scroll(offsetX, offsetY, steps)
 }
 
